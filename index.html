@@ -945,7 +945,7 @@ function seedDemo() {
   const yestS = ymd(new Date(base - D));
   const tomS = ymd(new Date(base + D));
   const day2 = ymd(new Date(base + 2 * D));
-  /* 오늘 현황판을 채우는 일정들 */
+  /* 오늘 일정 예시 */
   pushDuty({ startDate: yestS, endDate: todayS, type: "overnight_island", memberId: "u_seoyeon", memberName: "박서연", memo: "백령도 1박", createdAt: now - 20 * 3600000 });
   pushDuty({ startDate: todayS, endDate: todayS, type: "day_island", memberId: "u_yerin", memberName: "강예린", memo: "연평도 당일", createdAt: now - 6 * 3600000 });
   pushDuty({ startDate: todayS, endDate: todayS, type: "day_island", memberId: "u_jisu", memberName: "한지수", memo: "덕적도 당일", createdAt: now - 5 * 3600000 });
@@ -2233,7 +2233,7 @@ function renderTeam() {
       (S.mode === "live" ? "연결됨 · " + esc(S.cfg.projectId || "") : "미리보기 모드 — 실제 팀과 함께 쓰려면 연결하세요") + "</p></div>" +
       '<span class="badge ' + (S.mode === "live" ? "live" : "") + '">' + (S.mode === "live" ? "LIVE" : "DEMO") + "</span></button>" +
     '<button class="set-item" id="setTeam"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + "</p></div></button>" +
-    '<button class="set-item" id="setGuide"><div class="si"><b>사용 안내</b><p>승인 흐름 · 상태 표시 · 사진 압축 방식</p></div></button>' +
+    '<button class="set-item" id="setGuide"><div class="si"><b>사용 안내</b><p>승인 흐름 · 당직 운영 · 사진 압축 방식</p></div></button>' +
     (isAdmin() ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc(S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브 · 20명 이내 팀 전용<br>' +
@@ -2373,6 +2373,7 @@ function openGuideSheet() {
       '<div class="sec-title">2. 달력</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🛡️ 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🛡️ 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀장은 당직 달력의 <b>👥 명단 · 생성 · 🔁 재배정</b>으로 명단(가나다순)을 관리하고 다음 달 당직을 자동 배정합니다. 매월 24일 생성이 편해요. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날은 당직을 건너뜁니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
         '<div class="sc duty" style="align-self:flex-start"><span class="em">🛡️</span><span class="nm">당직</span></div>' +
         '<div class="sc island-day" style="align-self:flex-start"><span class="em">☀️⛴️</span><span class="nm">당일 섬</span></div>' +
