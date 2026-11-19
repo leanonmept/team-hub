@@ -3596,7 +3596,7 @@ function applyModeUI() {
     ? "실시간 연결 중 · <b style=\"color:var(--brand-d)\">" + esc(S.cfg.projectId || "") + "</b><br>팀원끼리 같은 데이터를 함께 봅니다.<br>" +
       '<a href="#" id="authTryDemo" style="color:var(--ink3);font-size:11px;text-decoration:underline">체험 모드로 둘러보기</a>'
     : "지금은 <b>체험 모드</b>입니다 · 이 폰에만 저장돼요<br>" +
-      '<a href="#" id="authBackLive" style="font-size:11px;color:var(--brand-d);text-decoration:underline">실시간 연결로 돌아가기</a>';
+      (cfgComplete(FIREBASE_CONFIG) ? '<a href="#" id="authBackLive" style="font-size:11px;color:var(--brand-d);text-decoration:underline">실시간 연결로 돌아가기</a>' : "");
   const td = $("#authTryDemo");
   if (td) td.addEventListener("click", e => {
     e.preventDefault();
