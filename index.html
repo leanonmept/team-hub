@@ -118,7 +118,7 @@ input,textarea,select{outline:none}
 .field label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:0 0 6px 3px;letter-spacing:-.01em}
 .field input,.field textarea,.field select{
   width:100%; border:1px solid var(--line); background:#fafbfe; border-radius:12px;
-  padding:12px 13px; font-size:15px; transition:.15s; appearance:none;
+  padding:12px 13px; font-size:16px; transition:.15s; appearance:none;   /* iOS: 16px 미만이면 포커스 시 화면이 확대돼 버튼이 엉뚱하게 눌림 */
 }
 .field textarea{min-height:96px;resize:vertical;line-height:1.6}
 .field input:focus,.field textarea:focus,.field select:focus{background:#fff;border-color:#b9cbff;box-shadow:0 0 0 3px rgba(47,107,246,.12)}
@@ -422,7 +422,7 @@ input,textarea,select{outline:none}
 }
 .composer textarea{
   flex:1;border:1px solid var(--line);background:#f6f8fc;border-radius:19px;padding:10px 14px;
-  font-size:14px;line-height:1.45;max-height:104px;min-height:40px;resize:none;overflow-y:auto;
+  font-size:16px;line-height:1.45;max-height:120px;min-height:40px;resize:none;overflow-y:auto;
 }
 .composer textarea:focus{background:#fff;border-color:#c3d3ff}
 .composer .send{
