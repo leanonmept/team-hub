@@ -7,27 +7,37 @@
 
    ▶ 최초 1회 설정 (무료 Spark 요금제 기준, 카드 등록 불필요)
      1) Authentication → Sign in method → "이메일/비밀번호" 사용 설정
+        (앱은 사번을 사번@teamhub.local 로 바꿔서 이 방식을 그대로 씀니다)
      2) Authentication → Settings → 승인된 도메인에 앱 주소 추가
         (예: 내아이디.github.io)
      3) Firestore Database 만들기 (위치: asia-northeast3 서울 권장)
-     4) 첫 팀장(관리자) 지정 — 둘 중 하나
-        (a) 앱에서 가장 먼저 회원가입한 뒤, 콘솔 users/{uid} 문서에서
+     4) 첫 관리자 지정 — 둘 중 하나
+        (a) 앱에서 가장 먼저 회원가입(이름·사번·직책·비밀번호)한 뒤, 콘솔 users/{uid} 문서에서
             role = "admin", status = "approved" 로 수정
-        (b) 아래 BOOTSTRAP 에 관리자 이메일을 넣으면 그 이메일로 가입할 때
-            처음부터 admin / approved 로 만들어집니다.
+        (b) 아래 BOOTSTRAP 에 그 사람의 가상 이메일(사번@teamhub.local)을 넣으면
+            그 사번으로 가입할 때 처음부터 admin / approved 로 만들어집니다.
      5) 이 파일을 게시
 
    ▶ 데이터 구조
-     users/{uid}            { email, name, position, role:'admin'|'member',
+     users/{uid}            { empId, email(=사번@teamhub.local), name, position,
+                              role:'admin'|'member', canManageDuty,
                               status:'pending'|'approved'|'rejected',
                               workStatus, statusNote, statusUpdatedAt, createdAt }
+                            → 로그인은 사번 + 비밀번호. 사번은 내부에서만
+                              사번@teamhub.local 가상 이메일로 변환해 Auth 에 넘깁니다.
+                            → position(직책: 팀장·주무관·주임…)과 앱 권한은 별개
+                              role = 'admin'        : 관리자(승인·권한 부여)
+                              canManageDuty = true  : 당직 관리(명단·재배정·행사일·자동 배정)
      announcements/{id}     { title, body, is_pinned, is_important, author_id,
                               author_name, createdAt }
        └ comments/{cid}     { author_id, author_name, body, createdAt }
        └ reads/{uid}        { uid, name, at }
      duty_schedules/{id}    { startDate:'YYYY-MM-DD', endDate:'YYYY-MM-DD',
                               type:'day_island'|'overnight_island'|'duty'|'edu',
-                              memberId, memberName, memo, createdBy, createdAt }
+                              memberId, memberName, memo, createdBy, createdAt,
+                              history:[{fromName,toName,editedByName,editedAt}],
+                              previousMemberName, updatedByName, updatedAt }
+                              → 당직 담당자를 바꾼 이력(누가·언제) 누적
      duty_roster_config/config
                             { excluded:[uid,...], customMembers:[{id,name},...],
                               updatedBy, updatedAt }
@@ -41,8 +51,13 @@
    ▶ 원칙
      - 승인(status == 'approved')된 팀원만 공지·일정·사진·대화를 읽고 쓸 수 있습니다.
      - 승인 대기(pending)·거절(rejected) 상태는 자기 프로필만 볼 수 있습니다.
-     - 역할(role)·승인 상태(status) 변경은 관리자(role == 'admin')만 가능합니다.
-     - 일정은 본인 것만 등록/수정/삭제할 수 있고, 팀장은 전원 일정을 관리합니다.
+     - 직책(position)은 표시용이고, 실제 권한은 role 과 canManageDuty 로만 정해집니다.
+     - 권한(role·canManageDuty)·승인 상태(status) 변경은 관리자(role == 'admin')만 가능합니다.
+     - 일정은 본인 것만 등록/수정/삭제할 수 있고, 관리자는 전원 일정을 관리합니다.
+     - 당직(type == 'duty') 일정은 팀원끼리 상의해 서로 바꿀 수 있도록 승인 팀원 누구나
+       담당자를 만들고 바꿀 수 있습니다. 바꿀 때마다 history 에 누가·언제·누구를 누구로
+       바꿨는지가 쌓입니다.
+     - 당직 명단(duty_roster_config)·행사일(team_events)은 관리자와 당직 관리 권한자가 관리합니다.
      - 사진은 Storage 없이 Firestore 문서(imageData)로 저장 → Spark 요금제 호환.
    ============================================================================ */
 
@@ -51,8 +66,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /* ---------- 부트스트랩 관리자 이메일 ----------
-       최초 관리자로 만들 이메일을 적어두세요. (없으면 빈 문자열 유지)
+    /* ---------- 부트스트랩 관리자 (가상 이메일) ----------
+       최초 관리자로 만들 사번을 사번@teamhub.local 형태로 적어두세요. (없으면 빈 문자열 유지)
        예: 'kim@example.com'                                     */
     function isBootstrap() {
       return signedIn() && request.auth.token.email == '';
@@ -78,6 +93,12 @@ service cloud.firestore {
     function isAdmin() {
       return myProfileExists() && myData().role == 'admin' && myData().status == 'approved';
     }
+    /* 당직 관리 권한 — 관리자이거나 관리자가 canManageDuty 를 부여한 팀원 */
+    function canManageDuty() {
+      return isApproved()
+        && (myData().role == 'admin'
+            || (('canManageDuty' in myData()) && myData().canManageDuty == true));
+    }
     function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
     }
@@ -91,6 +112,13 @@ service cloud.firestore {
     function validEntryType(t) {
       return t in ['day_island', 'overnight_island', 'duty', 'edu'];
     }
+    /* 담당자 변경 이력 필드 검증 */
+    function validHistory(d) {
+      return (!('history' in d) || (d.history is list && d.history.size() <= 30))
+        && (!('previousMemberName' in d) || d.previousMemberName is string)
+        && (!('updatedByName' in d) || d.updatedByName is string)
+        && (!('updatedAt' in d) || d.updatedAt is int);
+    }
 
     /* =====================================================================
        users — 프로필 · 승인 상태 · 근무 상태
@@ -103,22 +131,32 @@ service cloud.firestore {
          (BOOTSTRAP 이메일은 예외적으로 admin/approved 생성 허용) */
       allow create: if isSelf(uid)
         && request.resource.data.keys().hasOnly(
-             ['email','name','position','role','status','workStatus','statusNote','statusUpdatedAt','createdAt'])
+             ['empId','email','name','position','role','status','canManageDuty','workStatus','statusNote','statusUpdatedAt','createdAt'])
         && (
-             (request.resource.data.status == 'pending' && request.resource.data.role == 'member')
+             (request.resource.data.status == 'pending' && request.resource.data.role == 'member'
+                && (!('canManageDuty' in request.resource.data) || request.resource.data.canManageDuty == false))
              || (isBootstrap() && request.resource.data.status == 'approved' && request.resource.data.role == 'admin')
            )
+        && request.resource.data.empId is string
+        && request.resource.data.empId.matches('^[0-9A-Za-z_-]{2,20}$')
+        && request.resource.data.position is string
+        && (request.resource.data.position == ''
+            || request.resource.data.position in ['주임','대리','과장','팀장','센터장','부장'])
         && request.resource.data.email is string
         && request.resource.data.name is string
         && request.resource.data.name.size() <= 30;
 
-      /* 관리자: 누구든 role/status 변경 가능
-         본인: 이름·직책·근무상태만 변경 가능 (role/status 는 절대 못 바꿈) */
+      /* 관리자: 누구든 role/status/canManageDuty 변경 가능 (권한 부여·해제)
+         본인: 이름·직책·근무상태만 변경 가능 (사번/role/status/canManageDuty 는 절대 못 바꿈) */
       allow update: if isAdmin()
         || (isSelf(uid)
             && onlyChanged(['name','position','workStatus','statusNote','statusUpdatedAt'])
             && request.resource.data.role == resource.data.role
             && request.resource.data.status == resource.data.status
+            && (!('empId' in request.resource.data) || !('empId' in resource.data)
+                || request.resource.data.empId == resource.data.empId)
+            && (!('canManageDuty' in request.resource.data)
+                || request.resource.data.canManageDuty == (('canManageDuty' in resource.data) && resource.data.canManageDuty == true))
             && validStatus(request.resource.data.workStatus));
 
       /* 관리자만 팀원 삭제(내보내기) — 본인 삭제는 불가 */
@@ -173,10 +211,13 @@ service cloud.firestore {
     match /duty_schedules/{id} {
       allow read: if isApproved();
 
-      /* 본인 일정만 등록, 팀장은 전원 지정 가능 */
+      /* 본인 일정만 등록. 관리자는 전원, 당직(type 'duty')은 승인 팀원 누구나 지정 가능(팀원끼리 교대) */
       allow create: if isApproved()
-        && (request.resource.data.memberId == request.auth.uid || isAdmin())
+        && (request.resource.data.memberId == request.auth.uid
+            || isAdmin()
+            || request.resource.data.type == 'duty')
         && validEntryType(request.resource.data.type)
+        && validHistory(request.resource.data)
         && request.resource.data.startDate is string
         && request.resource.data.endDate is string
         && request.resource.data.startDate.size() == 10
@@ -185,32 +226,37 @@ service cloud.firestore {
         && request.resource.data.memo is string
         && request.resource.data.memo.size() <= 200;
 
-      /* 본인 것만 수정 (기존 소유자 기준), 팀장은 전원 */
+      /* 본인 것만 수정 (기존 소유자 기준), 관리자는 전원, 당직은 승인 팀원 누구나 */
       allow update: if isApproved()
-        && (resource.data.memberId == request.auth.uid || isAdmin())
-        && (request.resource.data.memberId == request.auth.uid || isAdmin())
+        && (resource.data.memberId == request.auth.uid
+            || isAdmin()
+            || (resource.data.type == 'duty' && request.resource.data.type == 'duty'))
+        && (request.resource.data.memberId == request.auth.uid || isAdmin() || request.resource.data.type == 'duty')
         && validEntryType(request.resource.data.type)
+        && validHistory(request.resource.data)
         && request.resource.data.endDate >= request.resource.data.startDate;
 
       allow delete: if isApproved()
-        && (resource.data.memberId == request.auth.uid || isAdmin());
+        && (resource.data.memberId == request.auth.uid
+            || isAdmin()
+            || resource.data.type == 'duty');
     }
 
     /* =====================================================================
        duty_roster_config — 당직 명단 설정
        · 승인된 팀원이 가나다순으로 순번을 이루고, excluded 의 uid 는 명단에서 뺍니다.
        · customMembers 는 회원 가입을 하지 않은 사람도 당직 순번에 넣기 위한 직접 추가 이름입니다.
-       · 명단 변경은 관리자만 (달력의 [🛡️ 명단] 시트)
+       · 명단 변경은 관리자 또는 당직 관리 권한자만 (달력의 [🛡️ 명단] 시트)
        ===================================================================== */
     match /duty_roster_config/{docId} {
       allow read: if isApproved();
-      allow create, update: if isAdmin()
+      allow create, update: if canManageDuty()
         && request.resource.data.excluded is list
         && request.resource.data.excluded.size() <= 50
         && (!('customMembers' in request.resource.data) || (
               request.resource.data.customMembers is list
               && request.resource.data.customMembers.size() <= 30));
-      allow delete: if isAdmin();
+      allow delete: if canManageDuty();
     }
 
     /* =====================================================================
@@ -220,15 +266,14 @@ service cloud.firestore {
        ===================================================================== */
     match /team_events/{dateId} {
       allow read: if isApproved();
-      allow create, update: if isApproved()
+      allow create, update: if canManageDuty()
         && request.resource.data.date == dateId
         && request.resource.data.date is string
         && request.resource.data.date.size() == 10
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 30;
-      allow delete: if isApproved()
-        && (resource.data.createdBy == request.auth.uid || isAdmin());
+      allow delete: if canManageDuty();
     }
 
     /* =====================================================================
@@ -244,7 +289,7 @@ service cloud.firestore {
         && request.resource.data.caption is string
         && request.resource.data.caption.size() <= 200;
 
-      /* 좋아요·댓글은 팀원 누구나, 그 외 수정은 작성자·팀장만 */
+      /* 좋아요·댓글은 팀원 누구나, 그 외 수정은 작성자·관리자만 */
       allow update: if isApproved()
         && (
              (resource.data.author_id == request.auth.uid || isAdmin())

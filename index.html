@@ -277,6 +277,19 @@ input,textarea,select{outline:none}
 .dpill.duty{background:#e58a09}
 .dpill.edu{background:#059669}
 .dpill.more{background:#e9edf6;color:#5b6474}
+/* ⛴️ 섬·교육 — 주 단위 연속 막대 */
+.grid.wklist{display:block}
+.grid.wklist .wk{position:relative}
+.grid.wklist .wk + .wk{margin-top:2px}
+.wkdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.grid.wklist .day{height:auto;min-height:70px}
+.wkbars{position:absolute;left:0;right:0;top:26px;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;pointer-events:none;z-index:2}
+.wkbars{overflow:visible}
+.sbar{display:flex;align-items:center;gap:2px;height:13px;min-width:0;margin:1px 0;border-radius:5px;padding:0 3px;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.05em;overflow:hidden;white-space:nowrap}
+.sbar .em{font-style:normal;font-size:8px;letter-spacing:0}
+.sbar .rg{font-weight:600;font-size:7px;opacity:.85;margin-left:2px;letter-spacing:0}
+.sbar.island-day{background:#0ea5e9}.sbar.island-night{background:#2b3480}.sbar.edu{background:#059669}
+.sbar.mine{box-shadow:0 0 0 1.5px #fff inset, 0 2px 6px -3px rgba(20,26,36,.45)}
 .legend{display:flex;flex-wrap:wrap;gap:9px;padding:9px 6px 4px;border-top:1px solid var(--line2);margin-top:5px}
 .legend span{display:flex;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:var(--ink2)}
 .legend i{width:7px;height:7px;border-radius:2px;display:block}
@@ -300,6 +313,13 @@ input,textarea,select{outline:none}
 .duty-item .di b{font-size:13.5px;display:flex;align-items:center;gap:6px}
 .duty-item .di p{margin:2px 0 0;font-size:11.5px;color:var(--ink3);white-space:pre-wrap}
 .type-badge{font-size:10px;font-weight:800;padding:2px 6px;border-radius:6px;color:#fff}
+/* 당직 담당자 변경 이력 */
+.dhist{margin-top:6px;padding:6px 8px;background:#fff;border:1px solid #eaeef8;border-radius:9px;font-size:10.5px;line-height:1.6;color:var(--ink3)}
+.dhist>b,.dhist .dh-t{display:block;font-size:10px;font-weight:800;color:#96590a;margin-bottom:2px}
+.dhist b{color:var(--ink2);font-weight:800}
+.dhist .dmore{color:#9aa3b2}
+.edmark{font-style:normal;font-size:9px;color:#e07a00;margin-left:2px;vertical-align:super}
+.day.edited .num{color:#96590a}
 
 /* ============ photos ============ */
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0 -1px}
@@ -506,7 +526,7 @@ input,textarea,select{outline:none}
 .ops-badge.hot{color:#fff;background:#e58a09;border-color:#e58a09;box-shadow:0 3px 8px -4px rgba(229,138,9,.9)}
 .ops-st{font-size:11px;color:var(--ink3);line-height:1.5;margin-bottom:9px}
 .ops-st b{color:var(--ink2)}
-.ops-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.ops-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ops-btns button{display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 2px;border-radius:11px;background:#f3f6fc;color:var(--ink2);font-size:11.5px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
 .ops-btns button.primary{background:#fff3dd;color:#96590a}
 .ops-btns button:active{transform:scale(.98)}
@@ -610,8 +630,8 @@ input,textarea,select{outline:none}
 
         <form id="formLogin">
           <div class="field">
-            <label>이메일</label>
-            <input type="email" id="liEmail" inputmode="email" autocomplete="email" placeholder="name@example.com">
+            <label>사번</label>
+            <input type="text" id="liEmp" inputmode="numeric" autocomplete="username" placeholder="사번 (예: 1001)">
           </div>
           <div class="field">
             <label>비밀번호</label>
@@ -628,18 +648,26 @@ input,textarea,select{outline:none}
               <input type="text" id="suName" autocomplete="name" placeholder="홍길동">
             </div>
             <div class="field">
-              <label>직책 / 직급</label>
-              <input type="text" id="suPos" placeholder="주무관">
+              <label>사번</label>
+              <input type="text" id="suEmp" inputmode="numeric" autocomplete="off" placeholder="예: 1001">
             </div>
           </div>
           <div class="field">
-            <label>이메일</label>
-            <input type="email" id="suEmail" inputmode="email" autocomplete="email" placeholder="name@example.com">
+            <label>직책</label>
+            <select id="suPos">
+              <option value="">직책을 선택하세요</option>
+              <option value="주임">주임</option>
+              <option value="대리">대리</option>
+              <option value="과장">과장</option>
+              <option value="팀장">팀장</option>
+              <option value="센터장">센터장</option>
+              <option value="부장">부장</option>
+            </select>
           </div>
           <div class="field">
             <label>비밀번호</label>
             <input type="password" id="suPw" autocomplete="new-password" placeholder="6자 이상">
-            <div class="hint">가입 후 팀장(관리자) 승인을 받아야 입장할 수 있어요.</div>
+            <div class="hint">가입 후 관리자 승인을 받아야 입장할 수 있어요.</div>
           </div>
           <button class="btn" type="submit" id="btnSignup">가입 신청하기</button>
           <div id="signupErr" class="field hint" style="color:var(--danger);text-align:center;margin-top:8px"></div>
@@ -649,7 +677,7 @@ input,textarea,select{outline:none}
           <h4>⚡ 미리보기 모드 <span class="badge" style="margin-left:auto">DB 연결 전</span></h4>
           <p>지금은 이 폰에만 저장되는 체험 모드예요. 버튼 한 번으로 화면과 승인 흐름을 모두 볼 수 있어요.</p>
           <div class="demo-btns">
-            <button type="button" data-demo="admin"><span>👑</span>팀장 체험</button>
+            <button type="button" data-demo="admin"><span>👑</span>관리자 체험</button>
             <button type="button" data-demo="member"><span>🙋</span>팀원 체험</button>
             <button type="button" data-demo="pending"><span>⏳</span>승인 대기</button>
           </div>
@@ -673,11 +701,11 @@ input,textarea,select{outline:none}
         </svg>
       </div>
       <h2>승인 대기 중</h2>
-      <p>가입 신청이 접수됐어요.<br>팀장님이 승인하면 바로 입장할 수 있어요.</p>
+      <p>가입 신청이 접수됐어요.<br>관리자가 승인하면 바로 입장할 수 있어요.</p>
       <div class="pending-who" id="pendingWho"></div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn" id="btnCheckApproval">승인 상태 확인</button>
-        <button class="btn ghost hidden" id="btnPendingAdmin">👑 팀장 계정으로 전환해 승인하기</button>
+        <button class="btn ghost hidden" id="btnPendingAdmin">👑 관리자 계정으로 전환해 승인하기</button>
         <button class="btn ghost-line" id="btnLogout2">로그아웃</button>
       </div>
       <div class="pending-note">승인 전에는 공지·사진·대화 내용을 볼 수 없어요.</div>
@@ -764,6 +792,8 @@ const DEMO_KEY = "teamhub.demo.v2";
 const SESSION_KEY = "teamhub.session";
 
 /* ---------- 2. 상태 ---------- */
+/* 실시간 구독으로 데이터가 한 번이라도 도착했는지 (당직 자동 배정 전제 조건) */
+const LOADED = { members: false, duty: false, roster: false };
 const S = {
   mode: "demo",            // 'demo' | 'live'
   cfg: {},
@@ -802,6 +832,14 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&a
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function ymd(d) { const x = new Date(d); return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate()); }
+/* 사번 → 가상 이메일. Firebase Auth 는 이메일만 받으므로 사번을 내부에서만 변환합니다. */
+const VIRTUAL_DOMAIN = "teamhub.local";
+function normEmp(v) { return String(v == null ? "" : v).trim().toUpperCase(); }
+function empToEmail(empId) { return String(empId == null ? "" : empId).trim().toLowerCase() + "@" + VIRTUAL_DOMAIN; }
+function emailToEmp(email) {
+  const s = String(email || "");
+  return s.indexOf("@" + VIRTUAL_DOMAIN) > 0 ? s.split("@")[0] : "";
+}
 function fmtTime(ms) { const d = new Date(ms); const h = d.getHours(); return (h < 12 ? "오전 " : "오후 ") + (h % 12 === 0 ? 12 : h % 12) + ":" + pad2(d.getMinutes()); }
 function fmtClock(ms) { const d = new Date(ms); const h = d.getHours(); return (h < 12 ? "오전 " : "오후 ") + (h % 12 === 0 ? 12 : h % 12) + ":" + pad2(d.getMinutes()); }
 function fmtDay(ms) {
@@ -824,6 +862,8 @@ function fmtRel(ms) {
   return (d.getMonth() + 1) + "/" + d.getDate();
 }
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+/* 직책 — 앱 권한(role·canManageDuty)과는 별개의 표시용 값 */
+const POSITIONS = ["주임", "대리", "과장", "팀장", "센터장", "부장"];
 const COLORS = ["#2f6bf6", "#6b53d8", "#e0713a", "#158f5f", "#c2417a", "#0e8a9c", "#b08217", "#4b5563"];
 function colorOf(name) {
   let h = 0; const s = String(name || "?");
@@ -898,23 +938,25 @@ function seedDemo() {
   const base = today.getTime();
 
   const users = [
-    { uid: "u_admin", email: "admin@team.kr", pw: "123456", name: "김영환", position: "팀장", role: "admin", status: "approved", createdAt: now - 260 * D },
-    { uid: "u_seoyeon", email: "seoyeon@team.kr", pw: "123456", name: "박서연", position: "주무관", role: "member", status: "approved", createdAt: now - 250 * D },
-    { uid: "u_junho", email: "junho@team.kr", pw: "123456", name: "이준호", position: "주임", role: "member", status: "approved", createdAt: now - 240 * D },
-    { uid: "u_mina", email: "mina@team.kr", pw: "123456", name: "최민아", position: "대리", role: "member", status: "approved", createdAt: now - 210 * D },
-    { uid: "u_hyunwoo", email: "hyunwoo@team.kr", pw: "123456", name: "정현우", position: "사원", role: "member", status: "approved", createdAt: now - 180 * D },
-    { uid: "u_yerin", email: "yerin@team.kr", pw: "123456", name: "강예린", position: "주무관", role: "member", status: "approved", createdAt: now - 120 * D },
-    { uid: "u_dohyun", email: "dohyun@team.kr", pw: "123456", name: "윤도현", position: "주임", role: "member", status: "approved", createdAt: now - 90 * D },
-    { uid: "u_jisu", email: "jisu@team.kr", pw: "123456", name: "한지수", position: "실무관", role: "member", status: "approved", createdAt: now - 60 * D },
-    { uid: "u_sehoon", email: "sehoon@team.kr", pw: "123456", name: "오세훈", position: "주무관", role: "member", status: "pending", createdAt: now - 2 * D },
-    { uid: "u_gayoung", email: "gayoung@team.kr", pw: "123456", name: "문가영", position: "주임", role: "member", status: "pending", createdAt: now - 20 * 3600000 }
+    /* 직책(position)과 앱 권한(role·canManageDuty)은 별개입니다.
+       직책이 팀장이어도 관리자가 아닐 수 있고, 주무관이 관리자일 수 있습니다. */
+    { uid: "u_admin", empId: "1001", email: "1001@teamhub.local", pw: "123456", name: "김영환", position: "과장", role: "admin", canManageDuty: true, status: "approved", createdAt: now - 260 * D },
+    { uid: "u_seoyeon", empId: "1002", email: "1002@teamhub.local", pw: "123456", name: "박서연", position: "팀장", role: "member", canManageDuty: false, status: "approved", createdAt: now - 250 * D },
+    { uid: "u_junho", empId: "1003", email: "1003@teamhub.local", pw: "123456", name: "이준호", position: "대리", role: "member", canManageDuty: true, status: "approved", createdAt: now - 240 * D },
+    { uid: "u_mina", empId: "1004", email: "1004@teamhub.local", pw: "123456", name: "최민아", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 210 * D },
+    { uid: "u_hyunwoo", empId: "1005", email: "1005@teamhub.local", pw: "123456", name: "정현우", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 180 * D },
+    { uid: "u_yerin", empId: "1006", email: "1006@teamhub.local", pw: "123456", name: "강예린", position: "대리", role: "member", canManageDuty: false, status: "approved", createdAt: now - 120 * D },
+    { uid: "u_dohyun", empId: "1007", email: "1007@teamhub.local", pw: "123456", name: "윤도현", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 90 * D },
+    { uid: "u_jisu", empId: "1008", email: "1008@teamhub.local", pw: "123456", name: "한지수", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 60 * D },
+    { uid: "u_sehoon", empId: "1009", email: "1009@teamhub.local", pw: "123456", name: "오세훈", position: "주임", role: "member", canManageDuty: false, status: "pending", createdAt: now - 2 * D },
+    { uid: "u_gayoung", empId: "1010", email: "1010@teamhub.local", pw: "123456", name: "문가영", position: "대리", role: "member", canManageDuty: false, status: "pending", createdAt: now - 20 * 3600000 }
   ];
 
   const announcements = [
     {
       id: "n1", title: "11월 정기 안전점검 일정 안내", is_pinned: true, is_important: true,
       author_id: "u_admin", author_name: "김영환", createdAt: now - 3 * 3600000,
-      body: "안녕하세요, 팀장 김영환입니다.\n\n11월 정기 안전점검 일정을 아래와 같이 안내드립니다.\n\n• 일시: 11월 21일(금) 14:00 ~ 16:00\n• 대상: 사무실 전체 및 창고\n• 협조: 점검 시간 중 좌석을 비워주시고, 개인 물품은 서랍에 보관해 주세요.\n\n부득이하게 자리를 비워야 하는 경우 당일 오전까지 저에게 알려주시기 바랍니다.\n\n감사합니다.",
+      body: "안녕하세요, 김영환입니다.\n\n11월 정기 안전점검 일정을 아래와 같이 안내드립니다.\n\n• 일시: 11월 21일(금) 14:00 ~ 16:00\n• 대상: 사무실 전체 및 창고\n• 협조: 점검 시간 중 좌석을 비워주시고, 개인 물품은 서랍에 보관해 주세요.\n\n부득이하게 자리를 비워야 하는 경우 당일 오전까지 저에게 알려주시기 바랍니다.\n\n감사합니다.",
       reads: ["u_seoyeon", "u_junho", "u_mina", "u_yerin"],
       comments: [
         { id: "c1", author_id: "u_seoyeon", author_name: "박서연", body: "확인했습니다. 21일 오후 일정 비워두겠습니다.", createdAt: now - 2.5 * 3600000 },
@@ -978,6 +1020,10 @@ function seedDemo() {
   const yestS = ymd(new Date(base - D));
   const tomS = ymd(new Date(base + D));
   const day2 = ymd(new Date(base + 2 * D));
+  /* 여러 날 교육 · 주 경계를 넘는 1박 (연속 막대 확인용) */
+  const nextSat = new Date(base); nextSat.setDate(nextSat.getDate() + ((6 - nextSat.getDay() + 7) % 7) + 7);
+  pushDuty({ startDate: ymd(new Date(base + 7 * D)), endDate: ymd(new Date(base + 9 * D)), type: "edu", memberId: "u_hyunwoo", memberName: "정현우", memo: "직무교육 (3일)", createdAt: now - 3 * 3600000 });
+  pushDuty({ startDate: ymd(nextSat), endDate: ymd(new Date(nextSat.getTime() + D)), type: "overnight_island", memberId: "u_seoyeon", memberName: "박서연", memo: "대청도 1박", createdAt: now - 2.5 * 3600000 });
   /* 오늘 일정 예시 */
   pushDuty({ startDate: yestS, endDate: todayS, type: "overnight_island", memberId: "u_seoyeon", memberName: "박서연", memo: "백령도 1박", createdAt: now - 20 * 3600000 });
   pushDuty({ startDate: todayS, endDate: todayS, type: "day_island", memberId: "u_yerin", memberName: "강예린", memo: "연평도 당일", createdAt: now - 6 * 3600000 });
@@ -993,7 +1039,7 @@ function seedDemo() {
   const photos = [
     { id: "p1", imageData: demoPhoto("11월 팀 워크숍", "#2f6bf6", "#6f46ea"), caption: "11월 팀 워크숍 단체사진 📸", author_id: "u_seoyeon", author_name: "박서연", likes: ["u_admin", "u_junho", "u_mina", "u_yerin"], createdAt: now - 5 * 3600000, comments: [{ id: "pc1", author_id: "u_junho", author_name: "이준호", body: "다들 너무 잘 어울리네요!", createdAt: now - 4 * 3600000 }] },
     { id: "p2", imageData: demoPhoto("사무실 풍경", "#0e8a9c", "#158f5f"), caption: "새로 정리한 사무실 자리", author_id: "u_junho", author_name: "이준호", likes: ["u_seoyeon", "u_admin"], createdAt: now - 26 * 3600000, comments: [] },
-    { id: "p3", imageData: demoPhoto("간식 타임", "#e0713a", "#c2417a"), caption: "팀장님이 쏘신 간식 🍩", author_id: "u_mina", author_name: "최민아", likes: ["u_admin", "u_seoyeon", "u_junho", "u_hyunwoo", "u_jisu"], createdAt: now - 2 * D, comments: [{ id: "pc2", author_id: "u_yerin", author_name: "강예린", body: "감사합니다 잘 먹었습니다 🙏", createdAt: now - 2 * D + 3600000 }] },
+    { id: "p3", imageData: demoPhoto("간식 타임", "#e0713a", "#c2417a"), caption: "관리자님이 쏘신 간식 🍩", author_id: "u_mina", author_name: "최민아", likes: ["u_admin", "u_seoyeon", "u_junho", "u_hyunwoo", "u_jisu"], createdAt: now - 2 * D, comments: [{ id: "pc2", author_id: "u_yerin", author_name: "강예린", body: "감사합니다 잘 먹었습니다 🙏", createdAt: now - 2 * D + 3600000 }] },
     { id: "p4", imageData: demoPhoto("야근 인증", "#4b5563", "#2f6bf6"), caption: "야근 중인 사무실 (불 꺼진 복도)", author_id: "u_dohyun", author_name: "윤도현", likes: ["u_mina"], createdAt: now - 3 * D, comments: [] },
     { id: "p5", imageData: demoPhoto("단체 회식", "#b08217", "#e0713a"), caption: "분기 회식 날 🍶", author_id: "u_admin", author_name: "김영환", likes: ["u_seoyeon", "u_junho", "u_mina", "u_yerin", "u_dohyun", "u_jisu", "u_hyunwoo"], createdAt: now - 6 * D, comments: [] },
     { id: "p6", imageData: demoPhoto("민원 창구", "#6b53d8", "#0e8a9c"), caption: "새로 바뀐 민원 창구 안내판", author_id: "u_yerin", author_name: "강예린", likes: ["u_admin", "u_seoyeon"], createdAt: now - 9 * D, comments: [] }
@@ -1001,7 +1047,7 @@ function seedDemo() {
 
   const messages = [
     { id: "m1", author_id: "u_admin", author_name: "김영환", body: "좋은 아침입니다. 오늘도 안전하게 근무하시고, 21일 안전점검 준비 부탁드립니다.", createdAt: now - 26 * 3600000 },
-    { id: "m2", author_id: "u_seoyeon", author_name: "박서연", body: "네 팀장님! 비품 신청 마감이 22일까지인 것도 잊지 마세요 :)", createdAt: now - 25.5 * 3600000 },
+    { id: "m2", author_id: "u_seoyeon", author_name: "박서연", body: "네, 확인했습니다! 비품 신청 마감이 22일까지인 것도 잊지 마세요 :)", createdAt: now - 25.5 * 3600000 },
     { id: "m3", author_id: "u_junho", author_name: "이준호", body: "창고 정리 다 했습니다. 이제 점검 동선만 확인하면 될 것 같아요.", createdAt: now - 25 * 3600000 },
     { id: "m4", author_id: "u_mina", author_name: "최민아", body: "오늘 당직 제가 서는데, 혹시 인수인계 받을 때 챙길 서류 있을까요?", createdAt: now - 6 * 3600000 },
     { id: "m5", author_id: "u_dohyun", author_name: "윤도현", body: "당직일지랑 열쇠 인계 장부만 챙기시면 됩니다! 나머지는 제가 정리해뒀어요.", createdAt: now - 5.6 * 3600000 },
@@ -1041,7 +1087,7 @@ function demoWrite(d) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(d));
 /* 데모 상태 → S 반영 */
 function syncDemo() {
   const d = demoGet();
-  S.members = d.users.map(u => ({ uid: u.uid, email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, createdAt: u.createdAt, workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
+  S.members = d.users.map(u => ({ uid: u.uid, empId: u.empId || emailToEmp(u.email), email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, canManageDuty: u.canManageDuty === true, createdAt: u.createdAt, workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
   S.announcements = (d.announcements || []).map(a => ({
     id: a.id, title: a.title, body: a.body, is_pinned: !!a.is_pinned, is_important: !!a.is_important,
     author_id: a.author_id, author_name: a.author_name, createdAt: a.createdAt
@@ -1055,6 +1101,7 @@ function syncDemo() {
   S.events = (d.events || []).map(e => ({ id: e.id || e.date, date: e.date || e.id, title: e.title || "", createdAt: e.createdAt || Date.now() }));
   S.photos = (d.photos || []).slice();
   S.messages = (d.messages || []).slice().sort((a, b) => a.createdAt - b.createdAt);
+  LOADED.members = LOADED.duty = LOADED.roster = true;
   if (S.user) {
     const me = d.users.find(u => u.uid === S.user.uid);
     if (me) S.user = Object.assign({}, me);
@@ -1085,12 +1132,12 @@ async function initFirebase(cfg) {
 function fbErrMsg(e) {
   const c = (e && e.code) || "";
   const map = {
-    "auth/invalid-email": "이메일 형식이 올바르지 않습니다.",
+    "auth/invalid-email": "사번 형식이 올바르지 않습니다.",
     "auth/missing-password": "비밀번호를 입력해 주세요.",
-    "auth/wrong-password": "이메일 또는 비밀번호가 맞지 않습니다.",
-    "auth/invalid-credential": "이메일 또는 비밀번호가 맞지 않습니다.",
-    "auth/user-not-found": "등록되지 않은 이메일입니다. 먼저 가입해 주세요.",
-    "auth/email-already-in-use": "이미 가입된 이메일입니다. 로그인해 주세요.",
+    "auth/wrong-password": "사번 또는 비밀번호가 맞지 않습니다.",
+    "auth/invalid-credential": "사번 또는 비밀번호가 맞지 않습니다.",
+    "auth/user-not-found": "등록되지 않은 사번입니다. 먼저 가입해 주세요.",
+    "auth/email-already-in-use": "이미 가입된 사번입니다. 로그인해 주세요.",
     "auth/weak-password": "비밀번호는 6자 이상이어야 합니다.",
     "auth/operation-not-allowed": "Firebase 콘솔에서 이메일/비밀번호 로그인을 사용 설정해 주세요.",
     "auth/network-request-failed": "네트워크 연결을 확인해 주세요.",
@@ -1119,7 +1166,11 @@ const STATUS_ORDER = ["day_island", "overnight_island", "duty", "edu"];
 const PRIORITY = ["overnight_island", "day_island", "duty", "edu"];
 
 const myUid = () => (S.user ? S.user.uid : "");
+/* 앱 권한 — 직책(position: 팀장·주무관·주임…)과는 별개입니다.
+   role: 'admin' = 관리자(승인·권한 부여) / 그 외 'member'
+   canManageDuty: 관리자가 따로 부여하는 당직 관리 권한(명단·재배정·행사일) */
 const isAdmin = () => !!(S.user && S.user.role === "admin");
+const canManageDuty = () => !!(S.user && (S.user.role === "admin" || S.user.canManageDuty === true));
 const approved = () => S.members.filter(m => m.status === "approved");
 const memberOf = id => S.members.find(m => m.uid === id) || null;
 const readBy = id => S.reads[id] || [];
@@ -1133,6 +1184,12 @@ function addDays(ds, n) {
 }
 function dayDiff(a, b) { return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); }
 function shortDate(ds) { return Number(ds.slice(5, 7)) + "/" + Number(ds.slice(8, 10)); }
+/* 수정 이력 시각 표기 — 11/19 22:55 */
+function fmtEditAt(ms) {
+  if (!ms) return "-";
+  const d = new Date(ms);
+  return (d.getMonth() + 1) + "/" + d.getDate() + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
 
 /* 일정(달력) 헬퍼 ------------------------------------------------------- */
 function entryStart(e) { return e.startDate || e.duty_date || ""; }
@@ -1352,42 +1409,80 @@ async function applyDutyPlan(rows, onlyEmpty) {
   return { created: created, replaced: replaced, kept: kept };
 }
 
+/* 한국 시간(KST) 기준 시각 — 기기 시간대와 무관하게 24일 00:00을 판단 */
+function kstNow() {
+  const t = new Date();
+  return new Date(t.getTime() + t.getTimezoneOffset() * 60000 + 9 * 3600000);
+}
+
 function nextMonthInfo() {
-  const now = new Date();
+  const now = kstNow();
   const d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const from = ymd(d), to = ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0));
   const duties = S.duty.filter(e => e.type === "duty" && entryStart(e) >= from && entryStart(e) <= to);
   return {
     y: d.getFullYear(), m: d.getMonth(), label: (d.getMonth() + 1) + "월",
     from: from, to: to, count: duties.length, roster: rosterMembers().length,
-    due: now.getDate() >= 24
+    day: now.getDate(), due: now.getDate() >= 24
   };
 }
 
-async function generateNextMonth() {
+/* 당직 자동 배정 — 매월 24일 00:00(KST) 이후 앱을 열면 다음 달 당직을 한 번 만든다.
+   · 다음 달 일정이 하나도 없을 때만, 한 달에 한 번만(로컬 플래그) 실행
+   · 규칙은 재배정과 같음: 가나다순, 주말·공휴일·행사일 제외,
+     12월은 명단 처음부터 · 1월 이후는 전달 마지막 담당자 다음 사람부터 */
+const AUTODUTY_KEY = "teamhub.autoduty.v1";
+const AUTO_DUTY_TRIED = {};
+let autoDutyBusy = false;
+function autoDutySeen(ds) {
+  try {
+    const m = JSON.parse(localStorage.getItem(AUTODUTY_KEY) || "{}") || {};
+    return !!m[ds];
+  } catch (e) { return false; }
+}
+function autoDutyMark(ds) {
+  try {
+    const m = JSON.parse(localStorage.getItem(AUTODUTY_KEY) || "{}") || {};
+    m[ds] = Date.now();
+    const ks = Object.keys(m).sort();
+    while (ks.length > 24) delete m[ks.shift()];
+    localStorage.setItem(AUTODUTY_KEY, JSON.stringify(m));
+  } catch (e) {}
+}
+
+async function autoAssignNextMonth() {
+  if (autoDutyBusy) return;
+  if (!S.user || S.user.status !== "approved" || !canManageDuty()) return;
+  if (!LOADED.members || !LOADED.duty || !LOADED.roster) return;
   const info = nextMonthInfo();
-  if (!info.roster) return toast("당직 명단이 비어 있어요");
-  const plan = buildDutyPlan(info.from, info.to);
-  if (!plan.rows.length) return toast(info.label + "에 배정할 평일이 없습니다");
-  const msg = info.label + " 당직을 자동으로 배정할까요?\n\n" +
-    "· 대상 " + plan.rows.length + "일 (주말·공휴일·행사일 제외)\n" +
-    "· 명단 " + plan.roster.length + "명 가나다순 순번\n" +
-    "· 이미 등록된 날짜는 그대로 둡니다";
-  if (!confirm(msg)) return;
-  const r = await applyDutyPlan(plan.rows, true);
-  S.cursor = new Date(info.y, info.m, 1);
-  renderDuty();
-  const n = r.created + r.replaced;
-  toast(n
-    ? info.label + " 당직 " + n + "건을 배정했어요" + (r.kept ? " · " + r.kept + "일은 그대로" : "")
-    : info.label + " 당직은 이미 배정되어 있어요");
+  if (!info.due) return;                       /* 24일 00:00(KST) 이전에는 만들지 않음 */
+  if (AUTO_DUTY_TRIED[info.from]) return;
+  if (autoDutySeen(info.from)) return;          /* 이미 이 달은 자동 배정함 */
+  if (info.count) { AUTO_DUTY_TRIED[info.from] = 1; return; }  /* 이미 일정이 있으면 손대지 않음 */
+  if (!info.roster) return;                     /* 명단이 비어 있으면 다음 접속 때 */
+  AUTO_DUTY_TRIED[info.from] = 1;
+  autoDutyBusy = true;
+  try {
+    if (!holidayOnline(info.y)) { try { await loadHolidays(info.y); } catch (e) {} }
+    const plan = buildDutyPlan(info.from, info.to);
+    if (!plan.rows.length) return;
+    const r = await applyDutyPlan(plan.rows, true);
+    autoDutyMark(info.from);
+    const n = r.created + r.replaced;
+    if (!n) return;
+    S.cursor = new Date(info.y, info.m, 1);
+    if (S.tab === "duty") renderDuty();
+    toast(info.label + " 당직 " + n + "건을 자동 배정했어요");
+  } catch (e) {
+    console.warn("당직 자동 배정 실패:", (e && e.message) || e);
+  } finally { autoDutyBusy = false; }
 }
 
 /* 명단 관리 시트 --------------------------------------------------------- */
 function openRosterSheet(editId) {
   const all = rosterAll();
   const ex = excludedList();
-  const admin = isAdmin();
+  const admin = canManageDuty();
   const active = rosterMembers();
   const order = {};
   active.forEach((m, i) => { order[m.uid] = i + 1; });
@@ -1513,7 +1608,7 @@ function openRebalanceSheet() {
       '<div class="field"><label>시작 날짜</label><input type="date" id="rbStart" value="' + start + '"></div>' +
       '<div class="sec-title" style="margin-top:0" id="rbSum"></div>' +
       '<div id="rbBox">' + preview() + "</div>" +
-      '<div class="notice-bar" style="margin-top:10px;background:#f2f5fb;border-color:#e3e9f4;color:var(--ink2)">주말·공휴일·행사일은 건너뛰고 명단 ' + rosterMembers().length + '명 순번대로 배정합니다. 12월은 명단 처음부터 시작합니다.</div>',
+      '<div class="notice-bar" style="margin-top:10px;background:#f2f5fb;border-color:#e3e9f4;color:var(--ink2)">주말·공휴일·행사일은 건너뛰고 명단 ' + rosterMembers().length + '명 순번대로 배정합니다. 12월은 명단 처음부터, 1월부터는 전달 마지막 담당자 다음 사람부터 이어서 배정합니다.</div>',
     footer: '<button class="btn" id="rbApply">적용</button>',
     onMount: root => {
       const sum = $("#rbSum", root), box = $("#rbBox", root), btn = $("#rbApply", root);
@@ -1641,7 +1736,7 @@ const MEMO_PH = {
   duty: "예: 주말 당직",
   day_island: "예: 연평도 당일",
   overnight_island: "예: 백령도 1박",
-  edu: "예: 직무교육"
+  edu: "예: 직무교육 (여러 날이면 종료일 지정)"
 };
 
 function openScheduleSheet(ds, presetUid, editEntry, mode) {
@@ -1650,7 +1745,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
   const typeKeys = CAL_MODES[mode].types;
   const isDuty = mode === "duty";
   const entries = entriesOn(ds).filter(e => typeKeys.indexOf(e.type) >= 0);
-  const canAssign = isAdmin();
+  const canAssign = isDuty ? true : isAdmin();   /* 당직은 팀원끼리 상의해 서로 바꿀 수 있음 */
   const target = presetUid || myUid();
   const editing = editEntry || null;
 
@@ -1659,11 +1754,16 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
     const mm = memberOf(e.memberId);
     const mine = e.memberId === myUid();
     const editable = mine || canAssign;
+    const hist = Array.isArray(e.history) ? e.history : [];
+    const histHtml = hist.length
+      ? '<div class="dhist"><span class="dh-t">✏️ 변경 이력</span>' + hist.slice(-3).map(h => '<div>' + esc(h.fromName) + ' → <b>' + esc(h.toName) + '</b> · ' + fmtEditAt(h.editedAt) + ' · ' + esc(h.editedByName) + ' 수정</div>').join("") +
+        (hist.length > 3 ? '<div class="dmore">이전 이력 ' + (hist.length - 3) + '건 더</div>' : "") + "</div>"
+      : "";
     const span = entryEnd(e) !== entryStart(e) ? ' <span style="font-size:10px;color:var(--ink3)">' + shortDate(entryStart(e)) + "~" + shortDate(entryEnd(e)) + "</span>" : "";
     return '<div class="duty-item">' +
       '<span class="avatar" style="background:' + colorOf(mm ? mm.name : e.memberName) + '">' + esc(initial(mm ? mm.name : e.memberName)) + "</span>" +
       '<div class="di"><b>' + esc(mm ? mm.name : e.memberName) + ' <span class="type-badge" style="background:' + (s.cls === "island-night" ? "#333a9e" : s.cls === "island-day" ? "#0ea5e9" : s.cls === "duty" ? "#e07a00" : "#059669") + '">' + s.em + " " + s.label + "</span>" + span + "</b>" +
-      (e.memo ? "<p>" + esc(e.memo) + "</p>" : "") + "</div>" +
+      (e.memo ? "<p>" + esc(e.memo) + "</p>" : "") + histHtml + "</div>" +
       (editable ? '<button class="btn sm ghost" data-edit="' + e.id + '">' + ICON.pencil + "</button>" : "") +
       (editable ? '<button class="btn sm danger" data-del="' + e.id + '">' + ICON.trash + "</button>" : "") +
     "</div>";
@@ -1695,7 +1795,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       }).join("") + "</div></div>";
 
   const dayEv = isDuty ? eventOf(ds) : null;
-  const eventBlock = !isDuty ? "" :
+  const eventBlock = (!isDuty || !canManageDuty()) ? "" :
     '<div class="hr"></div><div class="sec-title" style="margin-top:0">🎈 행사일 (당직 없음)</div>' +
     (dayEv
       ? '<div class="ev-box"><span>🎈</span><span class="t">' + esc(dayEv.title) + '</span><button class="btn sm danger" id="evDel">삭제</button></div>' +
@@ -1710,12 +1810,13 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       : '<div class="hr"></div>' +
         '<div class="sec-title" style="margin-top:0">' + (editing ? "일정 수정" : (isDuty ? "당직 등록" : "일정 등록")) + "</div>" +
         '<div class="field"><label>팀원</label><select id="schMember"' + (canAssign ? "" : " disabled") + ">" + memberOptions + "</select>" +
-          (canAssign ? "" : '<div class="hint">본인 일정만 등록할 수 있어요. 다른 팀원 지정은 팀장만 가능합니다.</div>') + "</div>" +
+          (canAssign ? "" : '<div class="hint">본인 일정만 등록할 수 있어요. 다른 팀원 지정은 ' + (isDuty ? "관리자·당직 관리 권한자" : "관리자") + '만 가능합니다.</div>') + "</div>" +
         typeBlock +
-        (isDuty ? "" : '<div class="field" id="endWrap" style="' + (curEnd || curType === "overnight_island" ? "" : "display:none") + '">' +
-          '<label>종료일 <span style="font-weight:500;color:var(--ink3)">(1박 섬은 다음 날까지)</span></label>' +
-          '<input type="date" id="schEnd" value="' + (curEnd || addDays(ds, 1)) + '" min="' + ds + '"></div>') +
+        (isDuty ? "" : '<div class="field" id="endWrap" style="' + (curEnd || curType === "overnight_island" || curType === "edu" ? "" : "display:none") + '">' +
+          '<label>종료일 <span style="font-weight:500;color:var(--ink3)">(여러 날이면 종료일을 뒤로 · 1박 섬은 다음 날)</span></label>' +
+          '<input type="date" id="schEnd" value="' + (curEnd || (curType === "overnight_island" ? addDays(ds, 1) : ds)) + '" min="' + ds + '"></div>') +
         '<div class="field"><label>메모 (선택)</label><input type="text" id="schMemo" maxlength="40" placeholder="' + esc(MEMO_PH[curType] || "메모를 입력하세요") + '" value="' + esc(editing ? editing.memo : "") + '"></div>' +
+        (isDuty ? '<div class="hint" style="margin:-4px 2px 8px">팀원끼리 상의해 담당자를 바꿀 수 있어요. 담당자를 바꾸면 누가·언제 바꿨는지 이력이 남습니다.</div>' : "") +
         '<div class="notice-bar">여기서 등록한 일정은 ' + (isDuty ? "<b>🛡️ 당직 달력</b>" : "<b>⛴️ 섬·교육 달력</b>") + "에 바로 표시됩니다.</div>";
 
   openSheet({
@@ -1735,8 +1836,9 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       $$("#schPick button", root).forEach(b => b.addEventListener("click", () => {
         picked = b.dataset.type;
         $$("#schPick button", root).forEach(x => x.classList.toggle("on", x === b));
-        if (endWrap) endWrap.style.display = picked === "overnight_island" ? "" : "none";
-        if (endInp && picked === "overnight_island" && !endInp.value) endInp.value = addDays(ds, 1);
+        const multi = picked === "overnight_island" || picked === "edu";
+        if (endWrap) endWrap.style.display = multi ? "" : "none";
+        if (endInp && multi && (!endInp.value || endInp.value < ds)) endInp.value = picked === "overnight_island" ? addDays(ds, 1) : ds;
         if (memoInp && !memoInp.value) memoInp.placeholder = MEMO_PH[picked] || "메모를 입력하세요";
       }));
       $$("[data-del]", root).forEach(b => b.addEventListener("click", async () => {
@@ -1778,7 +1880,9 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         if (!picked) return toast("일정 종류를 골라주세요");
         const who = canAssign ? ($("#schMember", root).value || myUid()) : myUid();
         const mm = memberOf(who) || rosterMember(who);
-        const end = picked === "overnight_island" ? ((endInp && endInp.value) || addDays(ds, 1)) : ds;
+        const multi = picked === "overnight_island" || picked === "edu";
+        let end = multi ? ((endInp && endInp.value) || (picked === "overnight_island" ? addDays(ds, 1) : ds)) : ds;
+        if (end < ds) end = ds;
         const body = {
           startDate: ds, endDate: end, type: picked,
           memberId: who, memberName: mm ? mm.name : (S.user.name || "팀원"),
@@ -1786,7 +1890,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         };
         $("#schSave", root).disabled = true;
         try {
-          await dbSaveEntry(body, editing ? editing.id : null);
+          await dbSaveEntry(body, editing ? editing.id : null, editing || null);
           closeSheet();
           if (S.tab === "duty") renderDuty();
           toast((mm ? mm.name : "팀원") + " · " + STATUS[picked].label + " 일정을 저장했어요");
@@ -1797,17 +1901,31 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
 }
 
 /* 일정 저장 · 삭제 */
-async function dbSaveEntry(data, existingId) {
+async function dbSaveEntry(data, existingId, prevEntry) {
   const newId = data.startDate + "_" + data.memberId + "_" + data.type;
+  /* 담당자를 바꾸면 이력 남김 — 누가·언제·누구를 누구로 */
+  let extra = {};
+  if (prevEntry && data.type === "duty") {
+    const changed = !!prevEntry.memberId && prevEntry.memberId !== data.memberId;
+    const hist = (Array.isArray(prevEntry.history) ? prevEntry.history : []).slice(-19);
+    if (changed) hist.push({ fromName: prevEntry.memberName || "", toName: data.memberName || "", editedByName: (S.user && S.user.name) || "", editedAt: Date.now() });
+    extra = {
+      history: hist,
+      previousMemberName: changed ? (prevEntry.memberName || "") : (prevEntry.previousMemberName || ""),
+      updatedByName: changed ? ((S.user && S.user.name) || "") : (prevEntry.updatedByName || ""),
+      updatedAt: changed ? Date.now() : (prevEntry.updatedAt || 0)
+    };
+  }
+  const payload = Object.assign({}, data, extra);
   if (S.mode === "demo") {
     demoMutate(d => {
       d.duty = (d.duty || []).filter(x => x.id !== existingId && x.id !== newId);
-      d.duty.push(Object.assign({ id: newId, createdAt: Date.now() }, data));
+      d.duty.push(Object.assign({ id: newId, createdAt: Date.now() }, payload));
     });
   } else {
     const { doc, setDoc, deleteDoc, serverTimestamp } = FB.f;
     if (existingId && existingId !== newId) { try { await deleteDoc(doc(FB.db, "duty_schedules", existingId)); } catch (e) {} }
-    await setDoc(doc(FB.db, "duty_schedules", newId), Object.assign({}, data, { createdBy: myUid(), createdAt: serverTimestamp() }));
+    await setDoc(doc(FB.db, "duty_schedules", newId), Object.assign({}, payload, { createdBy: myUid(), createdAt: serverTimestamp() }));
   }
 }
 async function dbDeleteEntry(id) {
@@ -2029,6 +2147,38 @@ function calAll() {
   return S.duty.filter(e => ty.indexOf(e.type) >= 0);
 }
 
+/* 주 한 줄 안에서 여러 날 일정(1박 섬·연속 교육)을 가로 막대로 나누고 lane 배치 */
+function islandWeekSpans(week) {
+  const ty = calTypes();
+  const firstDs = ymd(week[0]), lastDs = ymd(week[6]);
+  const items = S.duty.filter(e => ty.indexOf(e.type) >= 0 && entryEnd(e) > entryStart(e) && entryEnd(e) >= firstDs && entryStart(e) <= lastDs)
+    .map(e => {
+      const s = entryStart(e) < firstDs ? firstDs : entryStart(e);
+      const t = entryEnd(e) > lastDs ? lastDs : entryEnd(e);
+      let c0 = -1, c1 = -1;
+      week.forEach((d, i) => { const ds = ymd(d); if (ds === s) c0 = i; if (ds === t) c1 = i; });
+      return { e: e, c0: c0, c1: c1 < 0 ? 6 : c1 };
+    })
+    .filter(x => x.c0 >= 0 && x.c1 >= x.c0)
+    .sort((a, b) => a.c0 - b.c0 || (b.c1 - b.c0) - (a.c1 - a.c0));
+  const lanes = [];
+  items.forEach(sp => {
+    let i = 0;
+    while (lanes[i] && lanes[i].some(o => !(sp.c1 < o.c0 || sp.c0 > o.c1))) i++;
+    (lanes[i] = lanes[i] || []).push(sp);
+    sp.lane = i;
+  });
+  return items;
+}
+function islandBarHtml(sp) {
+  const e = sp.e, s = STATUS[e.type] || STATUS.edu;
+  const mine = e.memberId === myUid();
+  const range = shortDate(entryStart(e)) + "~" + shortDate(entryEnd(e));
+  const cols = sp.c1 - sp.c0 + 1;
+  return '<div class="sbar ' + s.cls + (mine ? " mine" : "") + '" style="grid-column:' + (sp.c0 + 1) + " / span " + cols + ";grid-row:" + (sp.lane + 1) + '" title="' + esc(e.memberName + " · " + s.label + " " + range) + '">' +
+    '<i class="em">' + (s.mini || s.em) + "</i>" + esc(e.memberName) + (cols > 1 ? '<span class="rg">' + range + "</span>" : "") + "</div>";
+}
+
 function renderDuty() {
   const v = $("#view-duty");
   const mode = CAL_MODES[S.calMode] ? S.calMode : "duty";
@@ -2038,7 +2188,6 @@ function renderDuty() {
   const y = cur.getFullYear(), m = cur.getMonth();
   const first = new Date(y, m, 1);
   const todayStr = ymd(new Date());
-  const cells = [];
   /* 🛡️ 당직 달력은 월~금 5열, ⛴️ 섬·교육 달력은 일~토 7열 */
   const days = [];
   if (isDuty) {
@@ -2059,10 +2208,12 @@ function renderDuty() {
   }
   if (isDuty) ensureHolidays(y);
 
-  days.forEach(d => {
+  /* 한 날짜 칸 — pad 는 연속 막대 자리만큼 띄우는 위쪽 여백 */
+  const dayCell = (d, pad, hideMulti) => {
     const ds = ymd(d);
     const inMonth = d.getMonth() === m;
-    const all = inMonth ? calEntriesOn(ds) : [];
+    const allRaw = inMonth ? calEntriesOn(ds) : [];
+    const all = hideMulti ? allRaw.filter(e => entryEnd(e) === entryStart(e)) : allRaw;
     const list = all.filter(e => e.memberId === myUid()).concat(all.filter(e => e.memberId !== myUid()));
     const takes = Math.min(list.length, 2);
     const shown = list.slice(0, takes).map(e => {
@@ -2072,21 +2223,38 @@ function renderDuty() {
       return '<span class="dpill ' + s.cls + '"><i class="em">' + (s.mini || s.em) + "</i>" + esc(e.memberName) + "</span>";
     }).join("");
     const more = list.length > takes ? '<span class="dpill more">+' + (list.length - takes) + "명</span>" : "";
-    const mine = list.some(e => e.memberId === myUid());
+    const mine = allRaw.some(e => e.memberId === myUid());
+    const editedDay = isDuty && inMonth && allRaw.some(e => Array.isArray(e.history) && e.history.length);
     const ev = (isDuty && inMonth) ? eventOf(ds) : null;
     const hol = inMonth ? holidayName(ds) : "";
-    cells.push(
-      '<div class="day' + (inMonth ? "" : " out") + (ds === todayStr ? " today" : "") + (mine ? " hasmine" : "") + (hol ? " hol" : "") +
+    return '<div class="day' + (inMonth ? "" : " out") + (ds === todayStr ? " today" : "") + (mine ? " hasmine" : "") + (hol ? " hol" : "") + (editedDay ? " edited" : "") +
         '" data-day="' + ds + '"' + (hol ? ' title="' + esc(hol) + ' (공휴일)"' : "") + ">" +
-        '<span class="num">' + d.getDate() + "</span>" +
-        '<div class="dcells">' +
+        '<span class="num">' + d.getDate() + (editedDay ? '<i class="edmark" title="담당자가 바뀐 날">✎</i>' : "") + "</span>" +
+        '<div class="dcells"' + (pad ? ' style="padding-top:' + pad + 'px"' : "") + ">" +
           (ev ? '<span class="dpill event">🎈 행사</span>' : "") +
           (hol && isDuty ? '<span class="dpill hols">' + esc(hol) + "</span>" : "") +
           shown + more +
         "</div>" +
-      "</div>"
-    );
-  });
+      "</div>";
+  };
+
+  let gridHtml;
+  if (isDuty) {
+    gridHtml = days.map(d => dayCell(d, 0, false)).join("");
+  } else {
+    /* 섬·교육 달력 — 주(일~토) 단위로 묶어 여러 날 일정을 가로 막대로 그립니다 */
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+    gridHtml = weeks.map(week => {
+      const spans = islandWeekSpans(week);
+      const lanes = spans.reduce((mx, sp) => Math.max(mx, sp.lane + 1), 0);
+      const pad = lanes ? 26 + lanes * 15 : 0;
+      return '<div class="wk">' +
+        '<div class="wkdays">' + week.map(d => dayCell(d, pad, true)).join("") + "</div>" +
+        (spans.length ? '<div class="wkbars" style="grid-template-rows:repeat(' + lanes + ',15px)">' + spans.map(islandBarHtml).join("") + "</div>" : "") +
+      "</div>";
+    }).join("");
+  }
 
   /* 요약은 지금 보고 있는 달력 모드 기준으로 집계 */
   const from = ymd(new Date(y, m, 1)), to = ymd(new Date(y, m + 1, 0));
@@ -2125,19 +2293,15 @@ function renderDuty() {
 
   /* 당직 운영 카드 (관리자) */
   let opsHtml = "";
-  if (isDuty && isAdmin()) {
+  if (isDuty && canManageDuty()) {
     const info = nextMonthInfo();
     const exN = excludedList().length;
     opsHtml =
       '<div class="ops">' +
-        '<div class="ops-hd"><b>🛡️ 당직 운영</b><span class="ops-badge' + (info.due && !info.count ? " hot" : "") + '">매월 24일 생성</span></div>' +
-        '<div class="ops-st">' + (info.count
-          ? "<b>" + info.label + " 당직 " + info.count + "건</b> 배정됨"
-          : "<b>" + info.label + " 당직 아직 없음</b>" + (info.due ? " · 지금 생성해 보세요" : "")) +
-          " · 명단 <b>" + info.roster + "명</b>" + (exN ? " (제외 " + exN + ")" : "") + "</div>" +
+        '<div class="ops-hd"><b>🛡️ 당직 운영</b><span class="ops-badge">매월 24일 자동 배정</span></div>' +
+        '<div class="ops-st"><b>' + info.label + " 당직 " + info.count + '건</b> · 명단 <b>' + info.roster + '명</b>' + (exN ? " (제외 " + exN + ")" : "") + "</div>" +
         '<div class="ops-btns">' +
           '<button id="opsRoster">👥 명단</button>' +
-          '<button id="opsGen" class="primary">' + info.label + ' 생성</button>' +
           '<button id="opsRebalance">🔁 재배정</button>' +
         "</div>" +
       "</div>";
@@ -2166,14 +2330,14 @@ function renderDuty() {
       '<div class="dow">' + (isDuty
         ? ["월", "화", "수", "목", "금"].map(d => '<span class="wk">' + d + "</span>").join("")
         : DAYS.map((d, i) => '<span class="' + (i === 0 ? "sun" : i === 6 ? "sat" : "") + '">' + d + "</span>").join("")) + "</div>" +
-      '<div class="grid" id="calGrid">' + cells.join("") + "</div>" +
+      '<div class="grid' + (isDuty ? "" : " wklist") + '" id="calGrid">' + gridHtml + "</div>" +
       (isDuty ? '<div class="holnote" id="holNote">' + holidayNoteHtml(y) + (wkDuty.length ? " · 주말 당직 " + wkDuty.length + "건은 아래 목록" : "") + "</div>" : "") +
       '<div class="legend">' + legendKeys.map(k => '<span><i class="' + STATUS[k].cls + '"></i>' + STATUS[k].em + " " + STATUS[k].label + "</span>").join("") +
         (isDuty ? '<span><i style="background:#c4b5fd"></i>🎈 행사일</span>' : "") + "</div>" +
     "</div>" +
-    '<div class="sec-title">이번 달 ' + (isDuty ? "당직" : "섬·교육") + " 일정 " + monthRows.length + "건" +
-      (monthEvents.length ? " · 행사일 " + monthEvents.length + "일" : "") + "</div>" +
-    monthList(monthRows, isDuty, monthEvents) +
+    (isDuty ? "" :
+      '<div class="sec-title">이번 달 섬·교육 일정 ' + monthRows.length + "건" + "</div>" +
+      monthList(monthRows, isDuty, monthEvents)) +
     '<div style="height:6px"></div>';
 
   $$("[data-calmode]", v).forEach(b => b.addEventListener("click", () => { S.calMode = b.dataset.calmode; renderDuty(); }));
@@ -2182,7 +2346,6 @@ function renderDuty() {
   $("#calNext").addEventListener("click", () => { S.cursor = new Date(y, m + 1, 1); renderDuty(); });
   $("#calToday").addEventListener("click", () => { S.cursor = new Date(); renderDuty(); });
   const oR = $("#opsRoster"); if (oR) oR.addEventListener("click", openRosterSheet);
-  const oG = $("#opsGen"); if (oG) oG.addEventListener("click", generateNextMonth);
   const oB = $("#opsRebalance"); if (oB) oB.addEventListener("click", openRebalanceSheet);
   $$("[data-day]", v).forEach(el => el.addEventListener("click", () => openScheduleSheet(el.dataset.day)));
 }
@@ -2487,7 +2650,7 @@ function renderTeam() {
     (adminOn && pend.length ? '<div class="sec-title" style="margin-top:2px">⏳ 승인 대기 ' + pend.length + "명</div>" +
       pend.map(m => '<div class="pend-card" data-pend="' + m.uid + '">' +
         '<div class="pt">' + avatarHtml(m.name) +
-          '<div class="pi"><b>' + esc(m.name) + "</b><p>" + esc(m.position || "-") + " · " + esc(m.email || "") + "</p></div>" +
+          '<div class="pi"><b>' + esc(m.name) + "</b><p>" + esc(m.position || "-") + " · 사번 " + esc(m.empId || "-") + "</p></div>" +
           '<span class="pill pending">' + fmtRel(m.createdAt) + " 신청</span>" +
         "</div>" +
         '<div class="pend-acts"><button class="btn sm danger" data-reject="' + m.uid + '">거절</button>' +
@@ -2500,14 +2663,15 @@ function renderTeam() {
         avatarHtml(m.name) +
         '<div class="mi"><b>' + esc(m.name) +
           ' <span class="pill ' + (m.role === "admin" ? "admin" : "approved") + '">' + (m.role === "admin" ? "관리자" : "팀원") + "</span>" +
-        "</b><p>" + esc(m.position || "") + "</p></div>" +
+          (m.role !== "admin" && m.canManageDuty ? ' <span class="pill" style="background:#fff3dd;color:#96590a">당직 관리</span>' : "") +
+        "</b><p>" + esc(m.position || "") + (m.empId ? " · 사번 " + esc(m.empId) : "") + "</p></div>" +
         '<span style="color:#c8cfdc">' + '<svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m1 1 6 6-6 6"/></svg>' + "</span>" +
       "</button>";
     }).join("") : '<div class="empty"><span>👤</span>아직 팀원이 없습니다.</div>') +
 
     (adminOn && rej.length ? '<div class="sec-title">🚫 거절된 신청</div>' + rej.map(m =>
       '<div class="mem"><span class="avatar" style="background:#c2c9d6">' + esc(initial(m.name)) + "</span>" +
-      '<div class="mi"><b>' + esc(m.name) + ' <span class="pill rejected">거절</span></b><p>' + esc(m.email || "") + "</p></div>" +
+      '<div class="mi"><b>' + esc(m.name) + ' <span class="pill rejected">거절</span></b><p>사번 ' + esc(m.empId || "-") + "</p></div>" +
       '<button class="btn sm ghost" data-approve="' + m.uid + '">다시 승인</button></div>').join("") : "") +
 
     '<div class="sec-title">⚙️ 관리</div>' +
@@ -2517,7 +2681,7 @@ function renderTeam() {
     '<button class="set-item" id="setTeam"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + "</p></div></button>" +
     '<button class="set-item" id="setGuide"><div class="si"><b>사용 안내</b><p>승인 흐름 · 당직 운영 · 사진 압축 방식</p></div></button>' +
     (isAdmin() ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
-    '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc(S.user.email || "") + "</p></div></button>" +
+    '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브 · 20명 이내 팀 전용<br>' +
       (S.mode === "live" ? "Firebase 실시간 동기화" : "미리보기 모드 (데이터는 이 기기에만 저장)") + "</div>";
 
@@ -2544,21 +2708,58 @@ function openMemberSheet(id) {
   const m = memberOf(id);
   if (!m) return;
   const canManage = isAdmin() && m.uid !== myUid();
+  const mAdm = m.role === "admin";
+  const mDuty = m.canManageDuty === true;
+  const pill = (txt, bg, fg) => '<span class="pill" style="background:' + bg + ';color:' + fg + '">' + txt + "</span>";
   openSheet({
     title: m.name,
     body:
       '<div style="text-align:center;padding:2px 0 16px">' +
         '<span class="avatar lg" style="background:' + colorOf(m.name) + ';margin:0 auto 10px">' + esc(initial(m.name)) + "</span>" +
         "<div style=\"font-size:17px;font-weight:800\">" + esc(m.name) + " <span style=\"font-size:12px;font-weight:600;color:var(--ink3)\">" + esc(m.position || "") + "</span></div>" +
-        '<div style="font-size:12px;color:var(--ink3);margin-top:3px">' + esc(m.email || "") + "</div>" +
+        '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(m.empId || "-") + "</div>" +
+        '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center">' +
+          pill(mAdm ? "👑 관리자" : "팀원", mAdm ? "#e8eafc" : "#e8f8f1", mAdm ? "#2f3391" : "#0d7a55") +
+          (mDuty ? pill("🛡️ 당직 관리", "#fff3dd", "#96590a") : "") +
+        "</div>" +
       "</div>" +
-      (canManage ? '<div class="hr"></div><div class="sec-title" style="margin-top:0">관리자 기능</div>' +
-        '<div style="display:flex;gap:8px"><button class="btn ghost sm" id="mRole" style="flex:1">' + (m.role === "admin" ? "팀원으로 변경" : "관리자로 지정") + "</button>" +
-        '<button class="btn danger sm" id="mDel" style="flex:1">팀원 내보내기</button></div>' : "")
+      '<div class="hint" style="margin:0 2px 10px">직책(' + esc(m.position || "-") + ')과 앱 권한은 별개입니다.</div>' +
+      (canManage ? '<div class="hr"></div><div class="sec-title" style="margin-top:0">직책 · 권한 관리</div>' +
+        '<div class="field" style="margin-bottom:10px"><label>직책</label><select id="mPos">' +
+          (m.position && POSITIONS.indexOf(m.position) < 0 ? '<option selected>' + esc(m.position) + "</option>" : "") +
+          POSITIONS.map(p => '<option' + (p === m.position ? " selected" : "") + ">" + p + "</option>").join("") +
+        "</select></div>" +
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
+          '<button class="btn ghost sm" id="mRole" style="width:100%">' + (mAdm ? "관리자 권한 해제" : "관리자 권한 부여") + "</button>" +
+          '<button class="btn ghost sm" id="mDuty" style="width:100%">' + (mDuty ? "당직 관리 권한 해제" : "당직 관리 권한 부여") + "</button>" +
+          '<button class="btn danger sm" id="mDel" style="width:100%">팀원 내보내기</button>' +
+        "</div>" +
+        '<div class="hint" style="margin:9px 2px 0">관리자: 팀원 승인·관리자 지정 등 모든 권한 · 당직 관리: 명단·재배정·행사일·자동 배정</div>' : "")
   });
   const rb = $("#mRole");
   if (rb) rb.addEventListener("click", async () => {
-    try { await dbSetRole(m.uid, m.role === "admin" ? "member" : "admin"); closeSheet(); toast("권한을 변경했습니다"); } catch (e) { toast(fbErrMsg(e)); }
+    const next = !mAdm;
+    try {
+      await dbSetRole(m.uid, next ? "admin" : "member");
+      closeSheet();
+      toast(m.name + " 님 " + (next ? "관리자 권한을 주었습니다" : "관리자 권한을 해제했습니다"));
+    } catch (e) { toast(fbErrMsg(e)); }
+  });
+  const dbd = $("#mDuty");
+  if (dbd) dbd.addEventListener("click", async () => {
+    const next = !mDuty;
+    try {
+      await dbSetCanManageDuty(m.uid, next);
+      closeSheet();
+      toast(m.name + " 님 " + (next ? "당직 관리 권한을 주었습니다" : "당직 관리 권한을 해제했습니다"));
+    } catch (e) { toast(fbErrMsg(e)); }
+  });
+  const mp = $("#mPos");
+  if (mp) mp.addEventListener("change", async () => {
+    const v = mp.value;
+    if (!v || v === m.position) return;
+    try { await dbSetPosition(m.uid, v); toast(m.name + " 님 직책을 " + v + "(으)로 바꿨습니다"); }
+    catch (e) { toast(fbErrMsg(e)); }
   });
   const db = $("#mDel");
   if (db) db.addEventListener("click", async () => {
@@ -2586,6 +2787,28 @@ async function dbSetRole(id, role) {
     const m = memberOf(id); if (m) m.role = role;
     renderAll();
   }
+}
+async function dbSetCanManageDuty(id, on) {
+  if (S.mode === "demo") {
+    demoMutate(d => { const u = d.users.find(x => x.uid === id); if (u) u.canManageDuty = !!on; });
+  } else {
+    const { doc, updateDoc } = FB.f;
+    await updateDoc(doc(FB.db, "users", id), { canManageDuty: !!on });
+    const m = memberOf(id); if (m) m.canManageDuty = !!on;
+  }
+  if (S.user && S.user.uid === id) S.user.canManageDuty = !!on;
+  renderAll();
+}
+async function dbSetPosition(id, pos) {
+  if (S.mode === "demo") {
+    demoMutate(d => { const u = d.users.find(x => x.uid === id); if (u) u.position = pos; });
+  } else {
+    const { doc, updateDoc } = FB.f;
+    await updateDoc(doc(FB.db, "users", id), { position: pos });
+    const m = memberOf(id); if (m) m.position = pos;
+    renderAll();
+  }
+  if (S.user && S.user.uid === id) S.user.position = pos;
 }
 async function dbRemoveMember(id) {
   if (S.mode === "demo") {
@@ -2651,11 +2874,13 @@ function openGuideSheet() {
     title: "사용 안내",
     body:
       '<div class="sec-title" style="margin-top:0">1. 가입과 승인</div>' +
-      '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">회원가입 후에는 <b>승인 대기</b> 상태가 됩니다. 팀장(관리자)이 [팀원] 탭에서 승인하면 공지·당직·사진·대화를 모두 쓸 수 있습니다.</p>' +
+      '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">회원가입 후에는 <b>승인 대기</b> 상태가 됩니다. 관리자가 [팀원] 탭에서 승인하면 공지·당직·사진·대화를 모두 쓸 수 있습니다.</p>' +
       '<div class="sec-title">2. 달력</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🛡️ 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🛡️ 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀장은 당직 달력의 <b>👥 명단 · 생성 · 🔁 재배정</b>으로 명단(가나다순)을 관리하고 다음 달 당직을 자동 배정합니다. 매월 24일 생성이 편해요. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날은 당직을 건너뜁니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날은 당직을 건너뜁니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 담당자는 팀원끼리 상의해 날짜를 눌러 바꿀 수 있습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
         '<div class="sc duty" style="align-self:flex-start"><span class="em">🛡️</span><span class="nm">당직</span></div>' +
         '<div class="sc island-day" style="align-self:flex-start"><span class="em">☀️⛴️</span><span class="nm">당일 섬</span></div>' +
@@ -2735,7 +2960,7 @@ function showPending() {
   const u = S.user || {};
   $("#pendingWho").innerHTML =
     "<b>" + esc(u.name || "팀원") + (u.position ? ' <span style="font-weight:600;color:var(--ink3);font-size:12px">' + esc(u.position) + "</span>" : "") + "</b>" +
-    "<span>" + esc(u.email || "") + "</span><br>" +
+    "<span>사번 " + esc(u.empId || "-") + "</span><br>" +
     '<span class="pill pending" style="margin-top:6px;display:inline-block">승인 대기</span>';
   $("#btnPendingAdmin").classList.toggle("hidden", S.mode !== "demo");
 }
@@ -2753,15 +2978,18 @@ function route() {
   $("#tabTeamLabel").textContent = isAdmin() ? "팀원관리" : "팀원";
   if (!S.seenChatAt) S.seenChatAt = Date.now();
   renderAll();
+  /* 매월 24일 00:00(KST) 이후 첫 접속이면 다음 달 당직을 자동 배정 */
+  autoAssignNextMonth();
 }
 
 /* =====================================================================
    15. 인증
    ===================================================================== */
-function demoLogin(email, pw) {
+function demoLogin(empId, pw) {
   const d = demoGet();
-  const u = d.users.find(x => String(x.email).toLowerCase() === String(email).toLowerCase());
-  if (!u) throw new Error("등록되지 않은 이메일입니다. 아래 체험 버튼을 이용해 보세요.");
+  const key = normEmp(empId);
+  const u = d.users.find(x => normEmp(x.empId) === key) || d.users.find(x => String(x.email || "").toLowerCase() === String(empId || "").toLowerCase());
+  if (!u) throw new Error("등록되지 않은 사번입니다. 아래 체험 버튼을 이용해 보세요.");
   if (String(u.pw) !== String(pw)) throw new Error("비밀번호가 맞지 않습니다. (체험 계정 비밀번호: 123456)");
   localStorage.setItem(SESSION_KEY, u.uid);
   S.user = Object.assign({}, u);
@@ -2769,27 +2997,29 @@ function demoLogin(email, pw) {
   route();
 }
 
-function demoSignup(name, pos, email, pw) {
+function demoSignup(name, empId, pos, pw) {
   const d = demoGet();
-  if (d.users.some(x => String(x.email).toLowerCase() === String(email).toLowerCase())) throw new Error("이미 가입된 이메일입니다.");
-  const u = { uid: "u_" + uid(), email: email, pw: pw, name: name, position: pos, role: "member", status: "pending", createdAt: Date.now(), workStatus: "", statusNote: "", statusUpdatedAt: Date.now() };
+  const key = normEmp(empId);
+  if (d.users.some(x => normEmp(x.empId) === key || String(x.email || "").toLowerCase() === empToEmail(empId))) throw new Error("이미 가입된 사번입니다.");
+  const u = { uid: "u_" + uid(), empId: empId, email: empToEmail(empId), pw: pw, name: name, position: pos, role: "member", canManageDuty: false, status: "pending", createdAt: Date.now(), workStatus: "", statusNote: "", statusUpdatedAt: Date.now() };
   d.users.push(u); demoWrite(d);
   localStorage.setItem(SESSION_KEY, u.uid);
   S.user = Object.assign({}, u);
   syncDemo();
   route();
-  toast("가입 신청 완료 — 팀장 승인을 기다려 주세요");
+  toast("가입 신청 완료 — 관리자 승인을 기다려 주세요");
 }
 
-async function doLogin(email, pw) {
-  if (S.mode === "demo") { demoLogin(email, pw); return; }
+async function doLogin(empId, pw) {
+  if (S.mode === "demo") { demoLogin(empId, pw); return; }
   const { signInWithEmailAndPassword } = FB.a;
-  await signInWithEmailAndPassword(FB.auth, email, pw);
+  await signInWithEmailAndPassword(FB.auth, empToEmail(empId), pw);
 }
-async function doSignup(name, pos, email, pw) {
-  if (S.mode === "demo") { demoSignup(name, pos, email, pw); return; }
+async function doSignup(name, empId, pos, pw) {
+  if (S.mode === "demo") { demoSignup(name, empId, pos, pw); return; }
   signingUp = true;
   try {
+    const email = empToEmail(empId);
     const { createUserWithEmailAndPassword, updateProfile } = FB.a;
     const cred = await createUserWithEmailAndPassword(FB.auth, email, pw);
     try { await updateProfile(cred.user, { displayName: name }); } catch (e) { /* noop */ }
@@ -2798,7 +3028,7 @@ async function doSignup(name, pos, email, pw) {
     const existing = await getDoc(ref);   // trigger 가 먼저 만들었을 수 있음
     if (!existing.exists()) {
       await setDoc(ref, {
-        email: email, name: name, position: pos, role: "member", status: "pending",
+        empId: empId, email: email, name: name, position: pos, role: "member", canManageDuty: false, status: "pending",
         workStatus: "", statusNote: "", statusUpdatedAt: serverTimestamp(), createdAt: serverTimestamp()
       });
     }
@@ -2812,8 +3042,8 @@ async function loadProfile(fbUser) {
   let snap = await getDoc(ref);
   if (!snap.exists()) {
     await setDoc(ref, {
-      email: fbUser.email || "", name: fbUser.displayName || String(fbUser.email || "").split("@")[0],
-      position: "", role: "member", status: "pending", workStatus: "", statusNote: "",
+      empId: emailToEmp(fbUser.email), email: fbUser.email || "", name: fbUser.displayName || String(fbUser.email || "").split("@")[0],
+      position: "", role: "member", canManageDuty: false, status: "pending", workStatus: "", statusNote: "",
       statusUpdatedAt: serverTimestamp(), createdAt: serverTimestamp()
     });
     snap = await getDoc(ref);
@@ -2858,14 +3088,16 @@ function startSubs() {
   S.subs.push(onSnapshot(collection(FB.db, "users"), snap => {
     S.members = snap.docs.map(d => {
       const v = d.data() || {};
-      return { uid: d.id, email: v.email || "", name: v.name || "(이름 없음)", position: v.position || "",
-        role: v.role || "member", status: v.status || "pending", createdAt: toMs(v.createdAt),
+      return { uid: d.id, empId: v.empId || emailToEmp(v.email), email: v.email || "", name: v.name || "(이름 없음)", position: v.position || "",
+        role: v.role || "member", status: v.status || "pending", canManageDuty: v.canManageDuty === true, createdAt: toMs(v.createdAt),
         workStatus: v.workStatus || "", statusNote: v.statusNote || "", statusUpdatedAt: toMs(v.statusUpdatedAt) };
     });
     const me = memberOf(myUid());
-    if (me) { S.user = Object.assign({}, S.user, { name: me.name, role: me.role, status: me.status, workStatus: me.workStatus, statusNote: me.statusNote }); }
+    if (me) { S.user = Object.assign({}, S.user, { name: me.name, position: me.position, role: me.role, status: me.status, canManageDuty: me.canManageDuty, workStatus: me.workStatus, statusNote: me.statusNote }); }
+    LOADED.members = true;
     if (S.user && S.user.status === "approved") renderAll();
     else if (S.user && S.user.status === "pending" && $("#scr-pending").classList.contains("active")) { route(); }
+    autoAssignNextMonth();
   }, e => console.warn("users:", e && e.code)));
 
   S.subs.push(onSnapshot(query(collection(FB.db, "announcements"), orderBy("createdAt", "desc")), snap => {
@@ -2884,9 +3116,14 @@ function startSubs() {
       const v = d.data() || {};
       return { id: d.id, startDate: v.startDate || v.duty_date || "", endDate: v.endDate || v.startDate || v.duty_date || "",
         type: v.type || "duty", memberId: v.memberId || v.member_id || "", memberName: v.memberName || v.member_name || "",
-        memo: v.memo || "", createdAt: toMs(v.createdAt) };
+        memo: v.memo || "", createdAt: toMs(v.createdAt),
+        history: Array.isArray(v.history) ? v.history : [],
+        previousMemberName: v.previousMemberName || "", updatedByName: v.updatedByName || "",
+        updatedAt: v.updatedAt ? toMs(v.updatedAt) : 0 };
     });
+    LOADED.duty = true;
     if (S.tab === "duty") renderDuty();
+    autoAssignNextMonth();
   }, e => console.warn("duty:", e && e.code)));
 
   S.subs.push(onSnapshot(doc(FB.db, "duty_roster_config", "config"), snap => {
@@ -2895,7 +3132,9 @@ function startSubs() {
       excluded: Array.isArray(v.excluded) ? v.excluded : [],
       customMembers: Array.isArray(v.customMembers) ? v.customMembers : []
     };
+    LOADED.roster = true;
     if (S.tab === "duty") renderDuty();
+    autoAssignNextMonth();
   }, e => console.warn("roster:", e && e.code)));
 
   S.subs.push(onSnapshot(collection(FB.db, "team_events"), snap => {
@@ -2964,31 +3203,32 @@ function bindGlobal() {
 
   $("#formLogin").addEventListener("submit", async e => {
     e.preventDefault();
-    const em = $("#liEmail").value.trim(), pw = $("#liPw").value;
+    const emp = $("#liEmp").value.trim(), pw = $("#liPw").value;
     $("#loginErr").textContent = "";
-    if (!em || !pw) { $("#loginErr").textContent = "이메일과 비밀번호를 입력해 주세요."; return; }
+    if (!emp || !pw) { $("#loginErr").textContent = "사번과 비밀번호를 입력해 주세요."; return; }
     const b = $("#btnLogin"); b.disabled = true; b.textContent = "로그인 중…";
-    try { await doLogin(em, pw); }
+    try { await doLogin(emp, pw); }
     catch (err) { $("#loginErr").textContent = S.mode === "demo" ? err.message : fbErrMsg(err); }
     finally { b.disabled = false; b.textContent = "로그인"; }
   });
 
   $("#formSignup").addEventListener("submit", async e => {
     e.preventDefault();
-    const name = $("#suName").value.trim(), pos = $("#suPos").value.trim();
-    const em = $("#suEmail").value.trim(), pw = $("#suPw").value;
+    const name = $("#suName").value.trim(), pos = $("#suPos").value.trim(), emp = $("#suEmp").value.trim();
+    const pw = $("#suPw").value;
     $("#signupErr").textContent = "";
     if (!name) { $("#signupErr").textContent = "이름을 입력해 주세요."; return; }
-    if (!em || em.indexOf("@") < 0) { $("#signupErr").textContent = "이메일을 정확히 입력해 주세요."; return; }
+    if (!pos) { $("#signupErr").textContent = "직책을 선택해 주세요."; return; }
+    if (!/^[0-9A-Za-z_-]{2,20}$/.test(emp)) { $("#signupErr").textContent = "사번은 영문·숫자 2~20자로 입력해 주세요."; return; }
     if (!pw || pw.length < 6) { $("#signupErr").textContent = "비밀번호는 6자 이상이어야 합니다."; return; }
     const b = $("#btnSignup"); b.disabled = true; b.textContent = "가입 중…";
-    try { await doSignup(name, pos, em, pw); $("#formSignup").reset(); }
+    try { await doSignup(name, emp, pos, pw); $("#formSignup").reset(); }
     catch (err) { $("#signupErr").textContent = S.mode === "demo" ? err.message : fbErrMsg(err); }
     finally { b.disabled = false; b.textContent = "가입 신청하기"; }
   });
 
   $$("[data-demo]").forEach(b => b.addEventListener("click", () => {
-    const map = { admin: "admin@team.kr", member: "seoyeon@team.kr", pending: "sehoon@team.kr" };
+    const map = { admin: "1001", member: "1002", pending: "1009" };
     try { demoLogin(map[b.dataset.demo], "123456"); } catch (e) { toast(e.message); }
   }));
 
@@ -3011,7 +3251,7 @@ function bindGlobal() {
   });
 
   $("#btnPendingAdmin").addEventListener("click", () => {
-    try { demoLogin("admin@team.kr", "123456"); setTab("team"); toast("팀장 계정입니다. 아래 승인 대기에서 승인해 보세요"); } catch (e) { toast(e.message); }
+    try { demoLogin("1001", "123456"); setTab("team"); toast("관리자 계정입니다. 아래 승인 대기에서 승인해 보세요"); } catch (e) { toast(e.message); }
   });
   $("#btnLogout2").addEventListener("click", doLogout);
 
@@ -3024,8 +3264,8 @@ function bindGlobal() {
         '<div style="text-align:center;padding:4px 0 16px">' +
           '<span class="avatar lg" style="background:' + colorOf(S.user.name) + ';margin:0 auto 10px">' + esc(initial(S.user.name)) + "</span>" +
           '<div style="font-size:18px;font-weight:800">' + esc(S.user.name) + ' <span style="font-size:12px;font-weight:600;color:var(--ink3)">' + esc(S.user.position || "") + "</span></div>" +
-          '<div style="font-size:12px;color:var(--ink3);margin-top:3px">' + esc(S.user.email || "") + "</div>" +
-          '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자(팀장)" : "팀원") + "</span></div>" +
+          '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(S.user.empId || "-") + "</div>" +
+          '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자" : (S.user.canManageDuty ? "팀원 · 당직 관리" : "팀원")) + "</span></div>" +
         "</div>" +
         '<button class="btn ghost" id="pfStatus" style="margin-bottom:8px">오늘 일정 관리</button>' +
         '<button class="btn ghost-line" id="pfCfg" style="margin-bottom:8px">Firebase 연결 설정</button>' +
