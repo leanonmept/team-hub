@@ -305,6 +305,9 @@ input,textarea,select{outline:none}
 .dpill.island-night{background:#2b3480}
 .dpill.duty{background:#e58a09}
 .dpill.edu{background:#059669}
+.dpill.board{background:#dc2626}
+.dpill.opinion{background:#2563eb}
+.dpill.survey{background:#16a34a}
 .dpill.more{background:#e9edf6;color:#5b6474}
 /* ⛴️ 섬·교육 — 주 단위 연속 막대 */
 .grid.wklist{display:block}
@@ -326,6 +329,9 @@ input,textarea,select{outline:none}
 .legend i.island-night{background:#2b3480}
 .legend i.duty{background:#e58a09}
 .legend i.edu{background:#059669}
+.legend i.board{background:#dc2626}
+.legend i.opinion{background:#2563eb}
+.legend i.survey{background:#16a34a}
 .sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:13px 0 4px}
 .sum{padding:13px;border-radius:15px;background:#fff;box-shadow:var(--shadow);border:1px solid rgba(20,26,36,.03)}
 .sum .lb{font-size:10.5px;font-weight:800;color:var(--ink3);display:flex;align-items:center;gap:4px;margin-bottom:7px}
@@ -573,6 +579,7 @@ input,textarea,select{outline:none}
 
 /* 행사일 */
 .dpill.event{background:#ede9fe;color:#5b46c9;letter-spacing:-.05em}
+.legend i.event{background:#c4b5fd}
 .dpill.hols{background:#fdecec;color:#c0392b;letter-spacing:-.06em}
 .day.hol .num{color:#e04b4b}
 
@@ -587,12 +594,47 @@ input,textarea,select{outline:none}
 .cal.fivecol .day.out .num{color:#cdd3de}
 .cal.fivecol .day.hasmine{background:#fffaf0;border-color:#ffe3b0}
 .cal.fivecol .day.hol{background:#fffafa;border-color:#fbe0e0}
+/* 🎈 행사일 — 칸 전체를 연보라로 음영(공휴일 연분홍과 구분) + 행사명 */
+.cal.fivecol .day.evday{background:#f3f0ff;border-color:#ddd6fe}
+.cal.fivecol .day.evday .num{color:#5b46c9}
+.cal.fivecol .day.hol.evday{background:#f3f0ff;border-color:#ddd6fe}
+.cal.fivecol .day .dpill.event{
+  font-size:10px;font-weight:800;padding:3px 2px;border-radius:5px;letter-spacing:-.05em;
+  background:#ede9fe;color:#5b46c9;border:1px solid #ddd6fe;
+  white-space:normal;word-break:keep-all;text-align:center;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  line-height:1.25;max-height:2.9em;
+}
 .cal.fivecol .day .dcells{gap:3px;padding:0}
 .cal.fivecol .day .dpill.duty{font-size:13px;font-weight:800;line-height:1.22;padding:3px 1px;border-radius:7px;background:#fff1d6;color:#8a4b00;border:1px solid #ffdfa4;letter-spacing:-.04em;white-space:normal;word-break:break-all;display:block}
 .cal.fivecol .day .dpill.duty.mine{background:#e58a09;color:#fff;border-color:#e58a09;box-shadow:0 2px 6px -3px rgba(229,138,9,.9)}
 .cal.fivecol .day .dpill.hols{font-size:10px;font-weight:800;padding:2px 1px;border-radius:5px;letter-spacing:-.05em}
 .cal.fivecol .day .dpill.event{font-size:10px;font-weight:800;padding:2px 1px;border-radius:5px;letter-spacing:-.05em}
-.cal.fivecol .day .dpill.more{font-size:9.5px;padding:2px}
+.cal.fivecol .day .dpill.more{font-size:9.5px;padding:2px}/* 맨 위 당직자 → 아래 등판(빨강) · 의소기한(파랑) · 조사기한(초록) */
+.cal.fivecol .day .dpill.ms{font-size:10px;font-weight:800;line-height:1.35;padding:2px 1px;border-radius:5px;letter-spacing:-.05em;display:block}
+.cal.fivecol .day .dpill.board{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+.cal.fivecol .day .dpill.opinion{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.cal.fivecol .day .dpill.survey{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+
+/* 상세 시트 — 등판·의소기한·조사기한 칩 */
+.ms-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ms-chip{
+  display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 3px;border-radius:11px;
+  border:1px solid var(--line);background:#f8f9fd;font-size:11.5px;font-weight:800;color:var(--ink3);letter-spacing:-.03em;
+}
+.ms-chip i.dot{width:7px;height:7px;border-radius:50%;background:#c8cede;flex:none}
+.ms-chip em{font-style:normal;font-size:8.5px;font-weight:800;color:#9aa3b2;background:#eef1f7;border-radius:4px;padding:1px 3px}
+.ms-chip b.ok{font-size:11px;font-weight:900}
+.ms-chip.board i.dot{background:#dc2626}
+.ms-chip.opinion i.dot{background:#2563eb}
+.ms-chip.survey i.dot{background:#16a34a}
+.ms-chip.on{color:#fff}
+.ms-chip.board.on{background:#dc2626;border-color:#dc2626}
+.ms-chip.opinion.on{background:#2563eb;border-color:#2563eb}
+.ms-chip.survey.on{background:#16a34a;border-color:#16a34a}
+.ms-chip.on i.dot{background:rgba(255,255,255,.88)}
+.ms-chip.on em{background:rgba(255,255,255,.22);color:#fff}
+.ms-chip:disabled{opacity:.55}
 .holnote{font-size:10px;font-weight:700;color:var(--ink3);padding:7px 4px 0;letter-spacing:-.01em}
 .ev-box{display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:13px;background:#f7f5ff;border:1px solid #e3ddff;font-size:13px;font-weight:800;color:#4b3fd8;margin-bottom:6px}
 .ev-box .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1206,10 +1248,14 @@ const STATUS = {
   overnight_island: { em: "🌙⛴️", label: "1박 섬",  cls: "island-night", short: "1박", mini: "🌙" },
   day_island:       { em: "☀️⛴️", label: "당일 섬",  cls: "island-day",   short: "당일", mini: "⛴️" },
   duty:             { em: "🛡️",  label: "당직",      cls: "duty",         short: "당직", mini: "🛡️" },
-  edu:              { em: "📚",  label: "교육",      cls: "edu",          short: "교육", mini: "📚" }
+  edu:              { em: "📚",  label: "교육",      cls: "edu",          short: "교육", mini: "📚" },
+  /* 당직 달력 아래 영역 — 등판/의소기한/조사기한 (당직자와 별개) */
+  board_meeting:    { em: "📋",  label: "등판",      cls: "board",        short: "등판", mini: "📋" },
+  opinion_due:      { em: "💬",  label: "의소기한",  cls: "opinion",      short: "의소", mini: "💬" },
+  survey_due:       { em: "📝",  label: "조사기한",  cls: "survey",       short: "조사", mini: "📝" }
 };
 const STATUS_ORDER = ["day_island", "overnight_island", "duty", "edu"];
-const PRIORITY = ["overnight_island", "day_island", "duty", "edu"];
+const PRIORITY = ["overnight_island", "day_island", "duty", "edu", "survey_due", "opinion_due", "board_meeting"];
 
 const myUid = () => (S.user ? S.user.uid : "");
 /* 앱 권한 — 직책(position: 팀장·주무관·주임…)과는 별개입니다.
@@ -1689,7 +1735,8 @@ function openRebalanceSheet() {
 function rosterPayload(patch) {
   return Object.assign({
     excluded: excludedList().slice(),
-    customMembers: customMembers().map(c => ({ id: c.id, name: c.name }))
+    customMembers: customMembers().map(c => ({ id: c.id, name: c.name })),
+    msOff: msOffList().slice()
   }, patch || {});
 }
 async function dbSaveRoster(patch) {
@@ -1801,8 +1848,11 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
   const replacing = (!editing && isDuty && dayDuty.length) ? (dayDuty[0] || null) : null;
   const baseEntry = editing || replacing;
   const prevName = baseEntry ? ((memberOf(baseEntry.memberId) || rosterMember(baseEntry.memberId) || {}).name || baseEntry.memberName || "팀원") : "";
+  /* 상세 시트의 '이 날의 당직' 카드 = 당직자만 (등판·의소기한·조사기한은 아래 별도 영역) */
+  const dutyItems = isDuty ? entries.filter(e => e.type === "duty") : entries;
+  const msItems = isDuty ? msOn(ds) : [];
 
-  const listHtml = entries.length ? entries.map(e => {
+  const listHtml = dutyItems.length ? dutyItems.map(e => {
     const s = STATUS[e.type] || STATUS.duty;
     const mm = memberOf(e.memberId);
     const mine = e.memberId === myUid();
@@ -1857,6 +1907,19 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         '<button class="btn ghost sm" id="evSave" style="width:100%">이 날을 행사일로 등록 (당직 없음)</button>' +
         '<div class="hint" style="margin:6px 2px 0">배정 전에 등록하면 다음 달 자동 배정에서 건너뜁니다. 배정 후에 등록하면 그날 당직만 취소됩니다.</div>');
 
+  const msBlock = !isDuty ? "" :
+    '<div class="sec-title" style="margin-top:14px">📋 등판 · 💬 의소기한 · 📝 조사기한</div>' +
+    '<div class="ms-chips">' + MS_TYPES.map(t => {
+      const s = STATUS[t];
+      const on = msItems.some(x => x.type === t);
+      const auto = msRuleTypes(ds).indexOf(t) >= 0;
+      return '<button type="button" class="ms-chip ' + s.cls + (on ? " on" : "") + '" data-ms="' + t + '"' + (canManageDuty() ? "" : " disabled") + '>' +
+        '<i class="dot"></i><span>' + s.label + "</span>" + (auto ? '<em>자동</em>' : "") + (on ? '<b class="ok">✓</b>' : "") + "</button>";
+    }).join("") + "</div>" +
+    '<div class="hint" style="margin:6px 2px 0">' + (canManageDuty()
+      ? "누르면 이 날에 붙이거나 뺍니다. 규칙 날짜(등판=격주 수요일 · 의소기한=등판 전주 목요일 · 조사기한=하루 전)는 자동으로 뜨고, 뺄 날짜만 따로 뺄 수 있어요."
+      : "관리자·당직 관리 권한자만 등판·의소기한·조사기한을 바꿀 수 있어요.") + "</div>";
+
   const formHtml =
     (isDuty && dayEv && !editing && !replacing)
       ? '<div class="hint" style="margin:10px 2px 0">행사일에는 당직을 등록하지 않습니다. 등록하려면 위에서 행사일을 삭제해 주세요.</div>'
@@ -1882,8 +1945,9 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
     title: (Number(ds.slice(5, 7))) + "월 " + (Number(ds.slice(8, 10))) + "일 (" + DAYS[new Date(ds + "T00:00:00").getDay()] + ") " + (isDuty ? "당직" : "섬·교육"),
     body:
       (editing ? '<div class="notice-bar" style="margin-bottom:12px">✏️ 기존 일정을 수정하고 있어요.</div>' : "") +
-      '<div class="sec-title" style="margin-top:0">이 날의 ' + (isDuty ? "당직" : "섬·교육 일정") + " " + entries.length + "건</div>" +
+      '<div class="sec-title" style="margin-top:0">이 날의 ' + (isDuty ? "당직" : "섬·교육 일정") + " " + dutyItems.length + "건</div>" +
       '<div id="dayList">' + listHtml + "</div>" +
+      msBlock +
       eventBlock +
       formHtml,
     footer: (isDuty && dayEv && !editing && !replacing) ? "" : '<button class="btn" id="schSave">' + (isDuty
@@ -1901,6 +1965,18 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         if (endWrap) endWrap.style.display = multi ? "" : "none";
         if (endInp && multi && (!endInp.value || endInp.value < ds)) endInp.value = picked === "overnight_island" ? addDays(ds, 1) : ds;
         if (memoInp && !memoInp.value) memoInp.placeholder = MEMO_PH[picked] || "메모를 입력하세요";
+      }));
+      $$("[data-ms]", root).forEach(btn => btn.addEventListener("click", async () => {
+        if (!canManageDuty()) return toast("관리자·당직 관리 권한자만 바꿀 수 있어요");
+        const t = btn.dataset.ms;
+        const wasOn = msItems.some(x => x.type === t);
+        btn.disabled = true;
+        try {
+          await msToggle(ds, t, !wasOn);
+          closeSheet();
+          setTimeout(() => openScheduleSheet(ds, target, null, mode), 90);
+          toast(STATUS[t].label + (wasOn ? " · 이 날에서 뺐어요" : " · 이 날에 넣었어요"));
+        } catch (e) { btn.disabled = false; toast(fbErrMsg(e)); }
       }));
       $$("[data-del]", root).forEach(b => b.addEventListener("click", async () => {
         if (!confirm("이 일정을 삭제할까요?")) return;
@@ -2208,7 +2284,7 @@ async function dbAddNoteComment(id, body) {
    11. 팀 캘린더 — 🛡️ 당직 / ⛴️ 섬·교육 분리
    ===================================================================== */
 const CAL_MODES = {
-  duty:   { em: "🛡️", label: "당직",     types: ["duty"] },
+  duty:   { em: "🛡️", label: "당직",     types: ["duty", "board_meeting", "opinion_due", "survey_due"] },
   island: { em: "⛴️", label: "섬·교육",  types: ["day_island", "overnight_island", "edu"] }
 };
 function calTypes() { return (CAL_MODES[S.calMode] || CAL_MODES.duty).types; }
@@ -2219,6 +2295,89 @@ function calEntriesOn(ds) {
 function calAll() {
   const ty = calTypes();
   return S.duty.filter(e => ty.indexOf(e.type) >= 0);
+}
+
+/* =====================================================================
+   📋 등판 · 💬 의소기한 · 📝 조사기한 — 당직 달력 아래 영역
+   · 등판: 2026-12-09(수)부터 격주 수요일
+   · 의소기한: 등판 전주 목요일(등판일 -6일)
+   · 조사기한: 의소기한 하루 전(등판일 -7일)
+   규칙 날짜는 저장 없이도 항상 달력에 뜨고, 관리자·당직 관리 권한자가
+   날짜 상세에서 빼면 roster.msOff 에 남겨 그 날짜는 다시 뜨지 않는다.
+   규칙 밖 날짜에 직접 넣은 항목만 duty_schedules(id = 날짜_ms_종류)에 저장된다.
+   ===================================================================== */
+const MS_TYPES = ["board_meeting", "opinion_due", "survey_due"];
+const MS_FIRST_BOARD = "2026-12-09";
+const isMsType = t => MS_TYPES.indexOf(t) >= 0;
+const msKey = (ds, t) => ds + "|" + t;
+/* 규칙 날짜 여부 — 12/9 를 기준으로 14일 주기 */
+function msRuleTypes(ds) {
+  const n = dayDiff(MS_FIRST_BOARD, ds);
+  const out = [];
+  if (n >= 0 && n % 14 === 0) out.push("board_meeting");
+  if (n >= -6 && (n + 6) % 14 === 0) out.push("opinion_due");
+  if (n >= -7 && (n + 7) % 14 === 0) out.push("survey_due");
+  return out;
+}
+function msOffList() {
+  const l = (S.roster && Array.isArray(S.roster.msOff)) ? S.roster.msOff : [];
+  return l.filter(x => typeof x === "string");
+}
+/* 그 날 저장된(직접 넣은) 마일스톤 항목 */
+function msStoredOn(ds) {
+  return entriesOn(ds).filter(e => isMsType(e.type));
+}
+/* 그 날 달력에 보여줄 마일스톤 — 직접 넣은 것 + 규칙(뺀 날짜 제외) */
+function msOn(ds) {
+  const off = msOffList();
+  const stored = msStoredOn(ds);
+  const seen = {};
+  const list = [];
+  stored.forEach(e => {
+    if (seen[e.type]) return;
+    seen[e.type] = 1;
+    list.push({ type: e.type, entry: e, auto: false });
+  });
+  msRuleTypes(ds).forEach(t => {
+    if (seen[t]) return;
+    if (off.indexOf(msKey(ds, t)) >= 0) return;
+    seen[t] = 1;
+    list.push({ type: t, entry: null, auto: true });
+  });
+  return MS_TYPES.filter(t => list.some(x => x.type === t)).map(t => list.filter(x => x.type === t)[0]);
+}
+/* 저장 — 규칙 밖 날짜에 직접 넣을 때 */
+async function dbSaveMilestone(ds, type) {
+  const id = ds + "_ms_" + type;
+  const data = { startDate: ds, endDate: ds, type: type, memberId: "ms", memberName: (STATUS[type] || {}).label || "", memo: "" };
+  if (S.mode === "demo") {
+    demoMutate(d => {
+      d.duty = (d.duty || []).filter(x => x.id !== id);
+      d.duty.push(Object.assign({ id: id, createdAt: Date.now() }, data));
+    });
+  } else {
+    const { doc, setDoc, serverTimestamp } = FB.f;
+    await setDoc(doc(FB.db, "duty_schedules", id), Object.assign({}, data, { createdBy: myUid(), createdAt: serverTimestamp() }));
+    S.duty = S.duty.filter(x => x.id !== id).concat([Object.assign({ id: id, createdAt: Date.now() }, data)]);
+  }
+}
+/* 그 날 마일스톤 붙이기/빼기 */
+async function msToggle(ds, type, on) {
+  if (!canManageDuty()) { toast("관리자·당직 관리 권한자만 바꿀 수 있어요"); return; }
+  const rule = msRuleTypes(ds).indexOf(type) >= 0;
+  const stored = msStoredOn(ds).filter(e => e.type === type);
+  const off = msOffList().slice();
+  const key = msKey(ds, type);
+  if (on) {
+    if (rule) {
+      if (off.indexOf(key) >= 0) await dbSaveRoster({ msOff: off.filter(k => k !== key) });
+    } else if (!stored.length) {
+      await dbSaveMilestone(ds, type);
+    }
+  } else {
+    if (rule && off.indexOf(key) < 0) await dbSaveRoster({ msOff: off.concat([key]) });
+    for (const e of stored) await dbDeleteEntry(e.id);
+  }
 }
 
 /* 주 한 줄 안에서 여러 날 일정(1박 섬·연속 교육)을 가로 막대로 나누고 lane 배치 */
@@ -2288,26 +2447,35 @@ function renderDuty() {
     const inMonth = d.getMonth() === m;
     const allRaw = inMonth ? calEntriesOn(ds) : [];
     const all = hideMulti ? allRaw.filter(e => entryEnd(e) === entryStart(e)) : allRaw;
-    const list = all.filter(e => e.memberId === myUid()).concat(all.filter(e => e.memberId !== myUid()));
-    const takes = Math.min(list.length, 2);
+    /* 🛡️ 당직 달력은 맨 위 당직자, 아래에 등판·의소기한·조사기한 */
+    const dutyAll = isDuty ? all.filter(e => e.type === "duty") : all;
+    const msList = (isDuty && inMonth) ? msOn(ds) : [];
+    const list = dutyAll.filter(e => e.memberId === myUid()).concat(dutyAll.filter(e => e.memberId !== myUid()));
+    const takes = Math.min(list.length, isDuty ? 1 : 2);
     const shown = list.slice(0, takes).map(e => {
       const s = STATUS[e.type] || STATUS.duty;
       const mine = e.memberId === myUid();
       if (isDuty) return '<span class="dpill duty' + (mine ? " mine" : "") + '">' + esc(e.memberName) + "</span>";
       return '<span class="dpill ' + s.cls + '"><i class="em">' + (s.mini || s.em) + "</i>" + esc(e.memberName) + "</span>";
     }).join("");
-    const more = list.length > takes ? '<span class="dpill more">+' + (list.length - takes) + "명</span>" : "";
+    const msTakes = Math.min(msList.length, 2);
+    const msShown = msList.slice(0, msTakes).map(x => {
+      const s = STATUS[x.type] || STATUS.duty;
+      return '<span class="dpill ms ' + s.cls + '" title="' + esc(s.label) + '">' + esc(s.label) + "</span>";
+    }).join("");
+    const more = (list.length > takes ? '<span class="dpill more">+' + (list.length - takes) + "명</span>" : "") +
+      (msList.length > msTakes ? '<span class="dpill more">+' + (msList.length - msTakes) + "</span>" : "");
     const mine = allRaw.some(e => e.memberId === myUid());
     const editedDay = isDuty && inMonth && allRaw.some(e => Array.isArray(e.history) && e.history.length);
     const ev = (isDuty && inMonth) ? eventOf(ds) : null;
     const hol = inMonth ? holidayName(ds) : "";
-    return '<div class="day' + (inMonth ? "" : " out") + (ds === todayStr ? " today" : "") + (mine ? " hasmine" : "") + (hol ? " hol" : "") + (editedDay ? " edited" : "") +
-        '" data-day="' + ds + '"' + (hol ? ' title="' + esc(hol) + ' (공휴일)"' : "") + ">" +
+    return '<div class="day' + (inMonth ? "" : " out") + (ds === todayStr ? " today" : "") + (mine ? " hasmine" : "") + (hol ? " hol" : "") + (ev ? " evday" : "") + (editedDay ? " edited" : "") +
+        '" data-day="' + ds + '"' + (ev ? ' data-event="' + esc(ev.title) + '"' : "") + (hol ? ' title="' + esc(hol) + ' (공휴일)"' : "") + ">" +
         '<span class="num">' + d.getDate() + (editedDay ? '<i class="edmark" title="담당자가 바뀐 날">✎</i>' : "") + "</span>" +
         '<div class="dcells"' + (pad ? ' style="padding-top:' + pad + 'px"' : "") + ">" +
-          (ev ? '<span class="dpill event">🎈 행사</span>' : "") +
+          shown + msShown + more +
+          (ev ? '<span class="dpill event" title="' + esc(ev.title) + '">🎈 ' + esc(ev.title) + "</span>" : "") +
           (hol && isDuty ? '<span class="dpill hols">' + esc(hol) + "</span>" : "") +
-          shown + more +
         "</div>" +
       "</div>";
   };
@@ -2330,19 +2498,22 @@ function renderDuty() {
     }).join("");
   }
 
-  /* 요약은 지금 보고 있는 달력 모드 기준으로 집계 */
+  /* 요약은 지금 보고 있는 달력 모드 기준으로 집계 (당직 모드는 당직자만 — 마일스톤 제외) */
   const from = ymd(new Date(y, m, 1)), to = ymd(new Date(y, m + 1, 0));
   const monthRows = calAll()
     .filter(e => entryEnd(e) >= from && entryStart(e) <= to)
     .sort((a, b) => entryStart(a) < entryStart(b) ? -1 : entryStart(a) > entryStart(b) ? 1 : 0);
+  const dutyMonthRows = isDuty ? monthRows.filter(e => e.type === "duty") : monthRows;
   const monthEvents = isDuty ? S.events.filter(ev => ev.date >= from && ev.date <= to) : [];
-  const wkDuty = isDuty ? monthRows.filter(e => isWeekendDs(entryStart(e))) : [];
-  const tList = calEntriesOn(todayStr);
+  const wkDuty = isDuty ? dutyMonthRows.filter(e => isWeekendDs(entryStart(e))) : [];
+  const tListAll = calEntriesOn(todayStr);
+  const tList = isDuty ? tListAll.filter(e => e.type === "duty") : tListAll;
+  const msToday = isDuty ? msOn(todayStr) : [];
 
   let c1val, c1small;
   if (isDuty) {
     c1val = tList.length ? esc(tList.map(e => e.memberName).join(", ")) : "없음";
-    c1small = (m + 1) + "월 당직 " + monthRows.length + "건";
+    c1small = (m + 1) + "월 당직 " + dutyMonthRows.length + "건" + (msToday.length ? " · 오늘 " + msToday.map(x => STATUS[x.type].label).join("·") : "");
   } else {
     c1val = tList.length
       ? esc(tList.slice(0, 2).map(e => e.memberName).join(", ")) + (tList.length > 2 ? " 외 " + (tList.length - 2) + "명" : "")
@@ -2363,7 +2534,7 @@ function renderDuty() {
     ? (STATUS[mineNext.type] || STATUS.duty).label + (mineNext.memo ? " · " + mineNext.memo : "")
     : (isDuty ? "당직 일정을 등록해 보세요" : "섬·교육 일정을 등록해 보세요");
 
-  const legendKeys = isDuty ? ["duty"] : ["day_island", "overnight_island", "edu"];
+  const legendKeys = isDuty ? ["duty", "board_meeting", "opinion_due", "survey_due"] : ["day_island", "overnight_island", "edu"];
 
   /* 당직 운영 카드 (관리자) */
   let opsHtml = "";
@@ -2953,6 +3124,7 @@ function openGuideSheet() {
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🛡️ 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🛡️ 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날은 당직을 건너뜁니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직은 <b>한 날짜에 1명</b>입니다. 이미 당직자가 있는 날짜를 열면 [당직 등록]이 아니라 <b>당직자 변경</b> 폼이 열리고, 새 담당자를 골라 저장하면 기존 담당자는 빠지고 새 담당자 1명만 남습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
@@ -3204,7 +3376,8 @@ function startSubs() {
     const v = snap.exists() ? (snap.data() || {}) : {};
     S.roster = {
       excluded: Array.isArray(v.excluded) ? v.excluded : [],
-      customMembers: Array.isArray(v.customMembers) ? v.customMembers : []
+      customMembers: Array.isArray(v.customMembers) ? v.customMembers : [],
+      msOff: Array.isArray(v.msOff) ? v.msOff : []
     };
     LOADED.roster = true;
     if (S.tab === "duty") renderDuty();

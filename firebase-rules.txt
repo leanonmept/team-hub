@@ -33,15 +33,20 @@
        └ comments/{cid}     { author_id, author_name, body, createdAt }
        └ reads/{uid}        { uid, name, at }
      duty_schedules/{id}    { startDate:'YYYY-MM-DD', endDate:'YYYY-MM-DD',
-                              type:'day_island'|'overnight_island'|'duty'|'edu',
+                              type:'day_island'|'overnight_island'|'duty'|'edu'
+                                   |'board_meeting'|'opinion_due'|'survey_due',
                               memberId, memberName, memo, createdBy, createdAt,
                               history:[{fromName,toName,editedByName,editedAt}],
                               previousMemberName, updatedByName, updatedAt }
                               → 당직 담당자를 바꾼 이력(누가·언제) 누적
+                              → board_meeting(등판) · opinion_due(의소기한) · survey_due(조사기한)은
+                                당직 달력 아래 영역. 규칙 밖 날짜에 직접 넣은 것만 여기 저장되고
+                                (id = 날짜_ms_종류, memberId = 'ms'), 규칙 날짜는 앱이 자동 계산
      duty_roster_config/config
                             { excluded:[uid,...], customMembers:[{id,name},...],
-                              updatedBy, updatedAt }
+                              msOff:['YYYY-MM-DD|종류',...], updatedBy, updatedAt }
                               → 당직 명단(가나다순): 제외한 uid + 회원이 아닌 직접 추가 이름
+                              → msOff: 자동 등판·의소기한·조사기한 중 뺀 날짜(다시 뜨지 않게)
      team_events/{date}     { date:'YYYY-MM-DD', title, createdBy, createdAt }
                               → 행사일(당직 없음). 문서 id = 날짜
      photos/{id}            { imageData(Data URL), caption, author_id, author_name,
@@ -58,6 +63,8 @@
        담당자를 만들고 바꿀 수 있습니다. 바꿀 때마다 history 에 누가·언제·누구를 누구로
        바꿨는지가 쌓입니다.
      - 당직 명단(duty_roster_config)·행사일(team_events)은 관리자와 당직 관리 권한자가 관리합니다.
+     - 등판(board_meeting)·의소기한(opinion_due)·조사기한(survey_due)은 팀 전체 일정이라
+       관리자와 당직 관리 권한자가 등록·삭제합니다(규칙 날짜는 앱이 자동 계산).
      - 사진은 Storage 없이 Firestore 문서(imageData)로 저장 → Spark 요금제 호환.
    ============================================================================ */
 
@@ -110,7 +117,12 @@ service cloud.firestore {
       return s in ['', 'day_island', 'overnight_island', 'duty', 'edu'];
     }
     function validEntryType(t) {
-      return t in ['day_island', 'overnight_island', 'duty', 'edu'];
+      return t in ['day_island', 'overnight_island', 'duty', 'edu',
+                   'board_meeting', 'opinion_due', 'survey_due'];
+    }
+    /* 등판·의소기한·조사기한 — 팀 전체 일정(당직 달력 아래 영역) */
+    function isMilestoneType(t) {
+      return t in ['board_meeting', 'opinion_due', 'survey_due'];
     }
     /* 담당자 변경 이력 필드 검증 */
     function validHistory(d) {
@@ -215,7 +227,8 @@ service cloud.firestore {
       allow create: if isApproved()
         && (request.resource.data.memberId == request.auth.uid
             || isAdmin()
-            || request.resource.data.type == 'duty')
+            || request.resource.data.type == 'duty'
+            || (isMilestoneType(request.resource.data.type) && canManageDuty()))
         && validEntryType(request.resource.data.type)
         && validHistory(request.resource.data)
         && request.resource.data.startDate is string
@@ -230,8 +243,12 @@ service cloud.firestore {
       allow update: if isApproved()
         && (resource.data.memberId == request.auth.uid
             || isAdmin()
-            || (resource.data.type == 'duty' && request.resource.data.type == 'duty'))
-        && (request.resource.data.memberId == request.auth.uid || isAdmin() || request.resource.data.type == 'duty')
+            || (resource.data.type == 'duty' && request.resource.data.type == 'duty')
+            || (resource.data.type == request.resource.data.type
+                && isMilestoneType(resource.data.type) && canManageDuty()))
+        && (request.resource.data.memberId == request.auth.uid || isAdmin()
+            || request.resource.data.type == 'duty'
+            || (isMilestoneType(request.resource.data.type) && canManageDuty()))
         && validEntryType(request.resource.data.type)
         && validHistory(request.resource.data)
         && request.resource.data.endDate >= request.resource.data.startDate;
@@ -239,7 +256,8 @@ service cloud.firestore {
       allow delete: if isApproved()
         && (resource.data.memberId == request.auth.uid
             || isAdmin()
-            || resource.data.type == 'duty');
+            || resource.data.type == 'duty'
+            || (isMilestoneType(resource.data.type) && canManageDuty()));
     }
 
     /* =====================================================================
@@ -255,7 +273,10 @@ service cloud.firestore {
         && request.resource.data.excluded.size() <= 50
         && (!('customMembers' in request.resource.data) || (
               request.resource.data.customMembers is list
-              && request.resource.data.customMembers.size() <= 30));
+              && request.resource.data.customMembers.size() <= 30))
+        && (!('msOff' in request.resource.data) || (
+              request.resource.data.msOff is list
+              && request.resource.data.msOff.size() <= 400));
       allow delete: if canManageDuty();
     }
 
