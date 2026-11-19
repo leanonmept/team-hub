@@ -329,7 +329,7 @@ service cloud.firestore {
    - 조회는 대부분 단순 정렬(orderBy createdAt)이라 복합 인덱스가 필요 없습니다.
    - 사진은 Storage 버킷을 쓰지 않으므로 Blaze(카드 등록) 없이 Spark 로 동작합니다.
      (브라우저에서 가로 960px / JPEG 0.72 로 압축 → 100~250KB 수준)
-   - 팀 규모가 20명 이내라 Spark 무료 할당량(일일 읽기 5만·쓰기 2만)으로 충분합니다.
+   - 팀 규모가 작아 Spark 무료 할당량(일일 읽기 5만·쓰기 2만)으로 충분합니다.
    - 앱의 상단 FIREBASE_CONFIG 또는 [설정 → Firebase 연결] 에
      apiKey / authDomain / projectId / storageBucket / messagingSenderId / appId 를
      넣으면 즉시 라이브 모드로 전환됩니다.

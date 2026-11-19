@@ -60,21 +60,50 @@ input,textarea,select{outline:none}
 #scr-auth.active{display:block}
 .auth-wrap{min-height:100%;display:flex;flex-direction:column;padding:0 22px calc(28px + var(--safe-b))}
 .auth-hero{
-  margin:0 -22px; padding:54px 30px 40px; position:relative; overflow:hidden;
-  background:linear-gradient(150deg,#2f6bf6 0%,#4a5bf0 52%,#6f46ea 100%);
-  border-radius:0 0 30px 30px; color:#fff;
+  margin:0 -22px; padding:44px 26px 28px; position:relative; overflow:hidden;
+  background:
+    radial-gradient(120% 80% at 108% -10%, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 56%),
+    radial-gradient(90% 70% at -10% 110%, rgba(122,75,234,.55) 0%, rgba(122,75,234,0) 60%),
+    linear-gradient(158deg,#1f3ec4 0%,#3b5cf0 46%,#7a4bea 100%);
+  border-radius:0 0 32px 32px; color:#fff;
+  box-shadow:0 22px 44px -30px rgba(31,62,196,.95);
+}
+.auth-hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.20) 1px, transparent 1px);
+  background-size:17px 17px; opacity:.45;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,0) 78%);
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,0) 78%);
 }
 .auth-hero::after{
-  content:""; position:absolute; width:300px; height:300px; right:-100px; top:-140px; border-radius:50%;
-  background:radial-gradient(circle at 32% 32%, rgba(255,255,255,.42), rgba(255,255,255,0) 58%);
+  content:""; position:absolute; width:280px; height:280px; right:-110px; top:-150px; border-radius:50%;
+  background:radial-gradient(circle at 34% 34%, rgba(255,255,255,.5), rgba(255,255,255,0) 60%);
+  filter:blur(2px);
 }
+.hero-top{position:relative;z-index:1;display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .auth-hero .mark{
-  width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.2);
-  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);
-  margin-bottom:16px; backdrop-filter:blur(6px);
+  width:54px;height:54px;border-radius:18px;margin:0;
+  background:linear-gradient(160deg,rgba(255,255,255,.34),rgba(255,255,255,.10));
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.42); backdrop-filter:blur(10px);
+  box-shadow:0 12px 26px -14px rgba(6,14,44,.85), inset 0 1px 0 rgba(255,255,255,.55);
 }
-.auth-hero h1{font-size:25px;margin:0 0 6px;font-weight:800;letter-spacing:-.03em}
-.auth-hero p{margin:0;font-size:13.5px;color:rgba(255,255,255,.86);line-height:1.55}
+.hero-chip{
+  font-size:10.5px;font-weight:800;letter-spacing:.01em;color:#fff;
+  padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.30); backdrop-filter:blur(8px);
+}
+.auth-hero h1{
+  position:relative;z-index:1;margin:0 0 7px;font-size:31px;line-height:1.16;
+  font-weight:900;letter-spacing:-.05em;text-shadow:0 3px 20px rgba(8,18,58,.30);
+}
+.auth-hero p{margin:0;font-size:13.5px;color:rgba(255,255,255,.90);line-height:1.55;position:relative;z-index:1;font-weight:600;letter-spacing:-.01em}
+.hero-tags{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:6px;margin-top:15px}
+.hero-tags span{
+  font-size:11px;font-weight:700;letter-spacing:-.01em;color:#fff;
+  padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(6px);
+}
 .auth-card{
   background:var(--card); border-radius:22px; box-shadow:var(--shadow);
   margin-top:-22px; padding:20px 18px 18px; position:relative; z-index:2;
@@ -612,14 +641,20 @@ input,textarea,select{outline:none}
   <section class="screen active" id="scr-auth">
     <div class="auth-wrap">
       <div class="auth-hero">
-        <div class="mark">
-          <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 20v-1.6a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.4"/>
-            <path d="M22 20v-1.6a4 4 0 0 0-3-3.85"/><path d="M16 3.7a3.4 3.4 0 0 1 0 6.6"/>
-          </svg>
+        <div class="hero-top">
+          <div class="mark">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 20v-1.6a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.4"/>
+              <path d="M22 20v-1.6a4 4 0 0 0-3-3.85"/><path d="M16 3.7a3.4 3.4 0 0 1 0 6.6"/>
+            </svg>
+          </div>
+          <span class="hero-chip">TEAM WORKSPACE</span>
         </div>
         <h1>우리팀 허브</h1>
-        <p>공지 · 당직 · 사진 · 대화를 한 곳에서<br>20명 이내 소규모 팀을 위한 공간</p>
+        <p>공지 · 당직 · 사진 · 대화를 한 곳에서</p>
+        <div class="hero-tags">
+          <span>🛡️ 당직 자동 배정</span><span>📌 공지</span><span>📸 사진</span><span>💬 대화</span>
+        </div>
       </div>
 
       <div class="auth-card">
@@ -771,7 +806,7 @@ input,textarea,select{outline:none}
 <div class="toast" id="toast"></div>
 <script>
 /* =====================================================================
-   우리팀 허브 — 20명 이내 팀용 모바일 웹앱 (단일 HTML)
+   우리팀 허브 — 팀용 모바일 웹앱 (단일 HTML)
    모드 1) 데모/미리보기 : localStorage, 샘플 데이터, 승인 흐름 체험
    모드 2) 라이브(Firebase) : Auth + Firestore 실시간 동기화
    ===================================================================== */
@@ -2645,7 +2680,7 @@ function renderTeam() {
 
   v.innerHTML =
     '<div class="vhead"><div><h2>' + (adminOn ? "팀원 관리" : "팀원") + "</h2><div class=\"sub\">" +
-      "승인 " + app.length + "명" + (pend.length ? " · 대기 " + pend.length + "명" : "") + " / 최대 20명</div></div></div>" +
+      "승인 " + app.length + "명" + (pend.length ? " · 대기 " + pend.length + "명" : "") + "</div></div></div>" +
 
     (adminOn && pend.length ? '<div class="sec-title" style="margin-top:2px">⏳ 승인 대기 ' + pend.length + "명</div>" +
       pend.map(m => '<div class="pend-card" data-pend="' + m.uid + '">' +
@@ -2682,7 +2717,7 @@ function renderTeam() {
     '<button class="set-item" id="setGuide"><div class="si"><b>사용 안내</b><p>승인 흐름 · 당직 운영 · 사진 압축 방식</p></div></button>' +
     (isAdmin() ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
-    '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브 · 20명 이내 팀 전용<br>' +
+    '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브<br>' +
       (S.mode === "live" ? "Firebase 실시간 동기화" : "미리보기 모드 (데이터는 이 기기에만 저장)") + "</div>";
 
   $$("[data-approve]", v).forEach(b => b.addEventListener("click", async () => {
