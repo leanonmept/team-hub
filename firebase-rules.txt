@@ -75,9 +75,10 @@ service cloud.firestore {
 
     /* ---------- 부트스트랩 관리자 (가상 이메일) ----------
        최초 관리자로 만들 사번을 사번@teamhub.local 형태로 적어두세요. (없으면 빈 문자열 유지)
-       예: 'kim@example.com'                                     */
+       예: 'kim@example.com'
+       현재 지정: 사번 250620 → '250620@teamhub.local'            */
     function isBootstrap() {
-      return signedIn() && request.auth.token.email == '';
+      return signedIn() && request.auth.token.email == '250620@teamhub.local';
     }
 
     /* ---------- 공통 헬퍼 ---------- */
