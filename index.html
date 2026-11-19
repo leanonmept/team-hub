@@ -902,7 +902,7 @@ const S = {
   noticeFilter: "all",
   cursor: new Date(),
   calMode: "duty",          // 'duty' | 'island'
-  roster: { excluded: [], customMembers: [] }, // 당직 명단: 제외 uid + 직접 추가한 이름
+  roster: { excluded: [], customMembers: [], teamName: "" }, // 당직 명단 + 팀 이름(관리자가 바꾸면 전원에게 실시간)
   events: [],               // 행사일(당직 없음) [{id,date,title}]
   subs: [],
   commentSubs: {},
@@ -1213,9 +1213,12 @@ function syncDemo() {
   S.comments = {}; S.reads = {};
   (d.announcements || []).forEach(a => { S.comments[a.id] = a.comments || []; S.reads[a.id] = a.reads || []; });
   S.duty = (d.duty || []).slice();
-  S.roster = Object.assign({ excluded: [], customMembers: [] }, d.roster || {});
+  S.roster = Object.assign({ excluded: [], customMembers: [], teamName: "" }, d.roster || {});
   if (!Array.isArray(S.roster.excluded)) S.roster.excluded = [];
   if (!Array.isArray(S.roster.customMembers)) S.roster.customMembers = [];
+  if (typeof S.roster.teamName !== "string") S.roster.teamName = "";
+  /* 미리보기 모드에서도 관리자가 바꾼 팀 이름이 이 기기의 모든 화면에 반영되도록 */
+  if (S.roster.teamName.trim()) setTeamName(S.roster.teamName);
   S.events = (d.events || []).map(e => ({ id: e.id || e.date, date: e.date || e.id, title: e.title || "", createdAt: e.createdAt || Date.now() }));
   S.photos = (d.photos || []).slice();
   S.messages = (d.messages || []).slice().sort((a, b) => a.createdAt - b.createdAt);
@@ -1765,11 +1768,16 @@ function openRebalanceSheet() {
 /* 명단·행사일 저장 -------------------------------------------------------- */
 /* 명단 저장 — Firestore(duty_roster_config/config) 또는 미리보기 localStorage --------------- */
 function rosterPayload(patch) {
-  return Object.assign({
+  const base = {
     excluded: excludedList().slice(),
     customMembers: customMembers().map(c => ({ id: c.id, name: c.name })),
     msOff: msOffList().slice()
-  }, patch || {});
+  };
+  /* 팀 이름도 같은 문서에 함께 저장합니다(관리자가 바꾸면 전원에게 실시간).
+     아직 받은 값이 없으면 넣지 않아, 다른 기기의 이름을 빈 값으로 덮지 않습니다. */
+  const tn = (S.roster && typeof S.roster.teamName === "string") ? S.roster.teamName.trim().slice(0, 20) : "";
+  if (tn) base.teamName = tn;
+  return Object.assign(base, patch || {});
 }
 async function dbSaveRoster(patch) {
   const next = rosterPayload(patch);
@@ -1777,10 +1785,42 @@ async function dbSaveRoster(patch) {
     demoMutate(d => { d.roster = Object.assign({}, d.roster || {}, next, { updatedAt: Date.now() }); });
   } else {
     const { doc, setDoc, serverTimestamp } = FB.f;
-    await setDoc(doc(FB.db, "duty_roster_config", "config"), Object.assign({}, next, { updatedAt: serverTimestamp(), updatedBy: myUid() }));
+    /* merge: 명단을 저장해도 같은 문서의 teamName 등 다른 값이 지워지지 않게 */
+    await setDoc(doc(FB.db, "duty_roster_config", "config"), Object.assign({}, next, { updatedAt: serverTimestamp(), updatedBy: myUid() }), { merge: true });
     S.roster = Object.assign({}, S.roster, next);
     if (S.tab === "duty") renderDuty();
   }
+}
+
+/* 팀 이름 — 화면(상단 헤더·대화방·설정)과 localStorage 에 즉시 반영 ------------------------- */
+function setTeamName(name) {
+  const v = String(name == null ? "" : name).replace(/\s+/g, " ").trim().slice(0, 20) || "우리팀";
+  const changed = v !== S.team;
+  S.team = v;
+  try { localStorage.setItem(TEAM_KEY, v); } catch (e) {}
+  const hdr = $("#hdrSub"); if (hdr) hdr.textContent = v;
+  const ct = $("#chatTeamName"); if (ct) ct.textContent = v + " 단체방";
+  const ca = $("#chatAvatar"); if (ca) ca.textContent = v.slice(0, 1);
+  if (changed && S.user && S.user.status === "approved") {
+    if (S.tab === "team") renderTeam();     /* 팀원관리의 팀 이름 표시 갱신 */
+    else if (S.tab === "chat") renderMessages();
+  }
+  return changed;
+}
+/* 관리자가 팀 이름을 저장 — duty_roster_config/config.teamName (규칙 그대로, 다시 게시 불필요) */
+async function dbSetTeamName(name) {
+  const v = String(name == null ? "" : name).replace(/\s+/g, " ").trim().slice(0, 20);
+  if (!v) { toast("팀 이름을 입력해 주세요"); return false; }
+  if (S.mode === "demo") {
+    demoMutate(d => { d.roster = Object.assign({}, d.roster || {}, { teamName: v, updatedAt: Date.now() }); });
+  } else {
+    const { doc, setDoc, serverTimestamp } = FB.f;
+    await setDoc(doc(FB.db, "duty_roster_config", "config"),
+      Object.assign({}, rosterPayload({ teamName: v }), { updatedAt: serverTimestamp(), updatedBy: myUid() }), { merge: true });
+    S.roster = Object.assign({}, S.roster, { teamName: v });
+  }
+  setTeamName(v);
+  return true;
 }
 async function dbSetExcluded(uid, off) {
   const cur = excludedList().slice();
@@ -1813,7 +1853,7 @@ async function dbRenameCustomMember(id, name) {
     });
   } else {
     const { doc, setDoc, serverTimestamp } = FB.f;
-    await setDoc(doc(FB.db, "duty_roster_config", "config"), Object.assign({}, rosterPayload({ customMembers: list }), { updatedAt: serverTimestamp(), updatedBy: myUid() }));
+    await setDoc(doc(FB.db, "duty_roster_config", "config"), Object.assign({}, rosterPayload({ customMembers: list }), { updatedAt: serverTimestamp(), updatedBy: myUid() }), { merge: true });
     S.roster = Object.assign({}, S.roster, { customMembers: list });
     for (const e of S.duty.filter(x => x.memberId === id)) {
       try { await setDoc(doc(FB.db, "duty_schedules", e.id), { memberName: nm }, { merge: true }); } catch (err) {}
@@ -2878,8 +2918,8 @@ function renderChat() {
   if (!$("#msgs", v)) {
     v.innerHTML =
       '<div class="chat-top">' +
-        '<span class="avatar" style="background:linear-gradient(140deg,#2f6bf6,#6f46ea)">' + esc(S.team.slice(0, 1)) + "</span>" +
-        "<div><b>" + esc(S.team) + " 단체방</b><br>" +
+        '<span class="avatar" id="chatAvatar" style="background:linear-gradient(140deg,#2f6bf6,#6f46ea)">' + esc(S.team.slice(0, 1)) + "</span>" +
+        '<div><b id="chatTeamName">' + esc(S.team) + " 단체방</b><br>" +
         '<span><i class="dotlive"></i>' + (S.mode === "live" ? "실시간 연결" : "미리보기 · 이 폰에만 저장") + " · " + approved().length + "명</span></div>" +
       "</div>" +
       '<div class="msgs" id="msgs"></div>' +
@@ -2986,8 +3026,13 @@ function renderTeam() {
     '<button class="set-item" id="setFb"><div class="si"><b>Firebase 연결 설정</b><p>' +
       (S.mode === "live" ? "연결됨 · " + esc(S.cfg.projectId || "") : "미리보기 모드 — 실제 팀과 함께 쓰려면 연결하세요") + "</p></div>" +
       '<span class="badge ' + (S.mode === "live" ? "live" : "") + '">' + (S.mode === "live" ? "LIVE" : "DEMO") + "</span></button>" +
-    '<button class="set-item" id="setTeam"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + "</p></div></button>" +
     '<button class="set-item" id="setGuide"><div class="si"><b>사용 안내</b><p>승인 흐름 · 당직 운영 · 사진 압축 방식</p></div></button>' +
+    (adminOn
+      ? '<button class="set-item" id="setTeam"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + '</p></div>' +
+        '<span style="font-size:11.5px;font-weight:800;color:var(--brand-d)">변경</span></button>'
+      : '<div class="set-item" style="cursor:default"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + ' · 관리자만 바꿀 수 있어요</p></div>' +
+        '<span style="color:var(--ink3);display:flex;align-items:center">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg></span></div>') +
     (isAdmin() ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브<br>' +
@@ -3002,7 +3047,8 @@ function renderTeam() {
   }));
   $$("[data-member]", v).forEach(b => b.addEventListener("click", () => openMemberSheet(b.dataset.member)));
   $("#setFb").addEventListener("click", openCfgSheet);
-  $("#setTeam").addEventListener("click", openTeamNameSheet);
+  const setTeamBtn = $("#setTeam");
+  if (setTeamBtn) setTeamBtn.addEventListener("click", openTeamNameSheet);   /* 관리자에게만 있는 항목 */
   $("#setGuide").addEventListener("click", openGuideSheet);
   $("#setLogout").addEventListener("click", doLogout);
   const rs = $("#setReset");
@@ -3144,13 +3190,14 @@ function openCfgSheet() {
       F("messagingSenderId", "messagingSenderId", "1234567890") +
       F("appId", "appId", "1:1234:web:abcd") +
       '<div class="field"><label>팀 이름</label><input type="text" id="cfgTeam" value="' + esc(S.team) + '"></div>' +
+      '<div class="notice-bar">실시간 연결에서는 <b>팀원관리 → 팀 이름</b>에서 관리자만 바꿀 수 있고, 팀원 모두에게 바로 적용됩니다. 위 입력은 이 기기에만 저장됩니다.</div>' +
       '<div class="notice-bar">저장하면 새로고침되며 해당 프로젝트로 연결됩니다.<br>Firestore 보안 규칙은 <b>firebase-rules.txt</b> 내용을 콘솔에 붙여넣으세요.</div>',
     footer: '<button class="btn ghost" id="cfgClear" style="flex:0 0 30%">기본값으로</button><button class="btn" id="cfgSave">저장</button>',
     onMount: root => {
       $("#cfgSave", root).addEventListener("click", () => {
         const out = {};
         $$("[data-cfg]", root).forEach(i => { out[i.dataset.cfg] = i.value.trim(); });
-        saveConfig(out, $("#cfgTeam", root).value.trim() || "행정지원팀");
+        saveConfig(out, ($("#cfgTeam", root) && $("#cfgTeam", root).value.trim()) || "");
         toast("저장했습니다. 새로고침합니다");
         setTimeout(() => location.reload(), 500);
       });
@@ -3162,18 +3209,32 @@ function openCfgSheet() {
   });
 }
 function openTeamNameSheet() {
+  if (!isAdmin()) { toast("팀 이름은 관리자만 바꿀 수 있어요"); return; }
   openSheet({
     title: "팀 이름",
-    body: '<div class="field"><label>팀 이름</label><input type="text" id="tnIn" maxlength="20" value="' + esc(S.team) + '"></div>',
+    body: '<div class="field"><label>팀 이름</label><input type="text" id="tnIn" maxlength="20" value="' + esc(S.team) + '"></div>' +
+      '<div class="hint" style="margin:9px 2px 0">저장하면 팀원 모두의 화면(상단·대화방·설정)에 바로 적용됩니다.</div>',
     footer: '<button class="btn" id="tnSave">저장</button>',
     onMount: root => {
-      $("#tnSave", root).addEventListener("click", () => {
-        const v = $("#tnIn", root).value.trim() || "우리팀";
-        localStorage.setItem(TEAM_KEY, v);
-        S.team = v;
-        $("#hdrSub").textContent = v;
-        closeSheet(); renderChat(); toast("팀 이름을 변경했습니다");
-      });
+      const inp = $("#tnIn", root);
+      const btn = $("#tnSave", root);
+      const save = async () => {
+        const v = String(inp.value || "").replace(/\s+/g, " ").trim().slice(0, 20);
+        if (!v) { toast("팀 이름을 입력해 주세요"); return; }
+        if (v === S.team) { closeSheet(); return; }
+        btn.disabled = true; btn.textContent = "저장 중…";
+        try {
+          await dbSetTeamName(v);
+          closeSheet();
+          if (S.tab === "team") renderTeam(); else renderCurrent();
+          toast("팀 이름을 변경했습니다");
+        } catch (e) {
+          btn.disabled = false; btn.textContent = "저장";
+          toast(fbErrMsg(e));
+        }
+      };
+      btn.addEventListener("click", save);
+      if (inp) { inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } }); }
     }
   });
 }
@@ -3190,6 +3251,7 @@ function openGuideSheet() {
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직은 <b>한 날짜에 1명</b>입니다. 이미 당직자가 있는 날짜를 열면 [당직 등록]이 아니라 <b>당직자 변경</b> 폼이 열리고, 새 담당자를 골라 저장하면 기존 담당자는 빠지고 새 담당자 1명만 남습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀 이름은 [팀원관리] 맨 아래 <b>팀 이름</b>에서 <b>관리자만</b> 바꿀 수 있습니다. 저장하면 팀원 모두의 상단·대화방·설정에 바로 적용되고, 팀원은 현재 이름만 볼 수 있습니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
         '<div class="sc duty" style="align-self:flex-start"><span class="em">🛡️</span><span class="nm">당직</span></div>' +
         '<div class="sc island-day" style="align-self:flex-start"><span class="em">☀️⛴️</span><span class="nm">당일 섬</span></div>' +
@@ -3435,15 +3497,7 @@ function startSubs() {
   }, e => console.warn("duty:", e && e.code)));
 
   S.subs.push(onSnapshot(doc(FB.db, "duty_roster_config", "config"), snap => {
-    const v = snap.exists() ? (snap.data() || {}) : {};
-    S.roster = {
-      excluded: Array.isArray(v.excluded) ? v.excluded : [],
-      customMembers: Array.isArray(v.customMembers) ? v.customMembers : [],
-      msOff: Array.isArray(v.msOff) ? v.msOff : []
-    };
-    LOADED.roster = true;
-    if (S.tab === "duty") renderDuty();
-    autoAssignNextMonth();
+    applyRosterDoc(snap.exists() ? (snap.data() || {}) : {});
   }, e => console.warn("roster:", e && e.code)));
 
   S.subs.push(onSnapshot(collection(FB.db, "team_events"), snap => {
@@ -3471,6 +3525,22 @@ function startSubs() {
     renderMessages(); updateDots();
   }, e => console.warn("chat:", e && e.code)));
 }
+/* 당직 명단·팀 이름 문서 반영 — 모든 팀원이 같은 값을 실시간으로 봅니다 ------------------ */
+function applyRosterDoc(v) {
+  const d = v || {};
+  S.roster = {
+    excluded: Array.isArray(d.excluded) ? d.excluded : [],
+    customMembers: Array.isArray(d.customMembers) ? d.customMembers : [],
+    msOff: Array.isArray(d.msOff) ? d.msOff : [],
+    teamName: typeof d.teamName === "string" ? d.teamName.trim().slice(0, 20) : ""
+  };
+  LOADED.roster = true;
+  /* 관리자가 바꾼 팀 이름이 오면 상단 헤더·설정·대화방을 바로 갱신 */
+  if (S.roster.teamName) setTeamName(S.roster.teamName);
+  if (S.tab === "duty") renderDuty();
+  autoAssignNextMonth();
+}
+
 function subExtras(id) {
   if (S.commentSubs[id]) return;
   const { collection, onSnapshot } = FB.f;
