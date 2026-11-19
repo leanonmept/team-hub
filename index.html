@@ -351,6 +351,13 @@ input,textarea,select{outline:none}
 .dhist .dh-line i{font-style:normal;color:#b9c0cd}
 .dhist .dh-meta{font-size:9.5px;color:#9aa3b2;letter-spacing:-.01em}
 .dhist .dmore{color:#9aa3b2}
+/* 당직자 변경(교체) 안내 */
+.duty-swap{display:flex;gap:8px;align-items:flex-start;margin:0 0 10px;padding:9px 11px;border-radius:11px;background:#fff8ec;border:1px solid #f3dfb9}
+.duty-swap .em{font-size:15px;line-height:1.2}
+.duty-swap b{display:block;font-size:12px;color:#8a5a00}
+.duty-swap b i{font-style:normal;color:#c79a4e;margin:0 1px}
+.duty-swap p{margin:3px 0 0;font-size:11px;line-height:1.55;color:#9a6b1c}
+.duty-swap p b{display:inline;font-size:11px;color:#8a5a00}
 .edmark{font-style:normal;font-size:9px;color:#e07a00;margin-left:2px;vertical-align:super}
 .day.edited .num{color:#96590a}
 
@@ -1787,6 +1794,13 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
   const canAssign = isDuty ? true : isAdmin();   /* 당직은 팀원끼리 상의해 서로 바꿀 수 있음 */
   const target = presetUid || myUid();
   const editing = editEntry || null;
+  /* 🛡️ 당직은 하루 1명 — 이미 배정된 날에는 '등록(추가)' 폼을 띄우지 않고
+     하단 폼을 '당직자 변경(교체)' 모드로 연다. 저장하면 기존 담당자 항목이 제거되고
+     새 담당자 1명만 남으며, 누가→누구로·언제·누가 바꿨는지는 history 에 남는다. */
+  const dayDuty = isDuty ? entries.filter(e => e.type === "duty") : [];
+  const replacing = (!editing && isDuty && dayDuty.length) ? (dayDuty[0] || null) : null;
+  const baseEntry = editing || replacing;
+  const prevName = baseEntry ? ((memberOf(baseEntry.memberId) || rosterMember(baseEntry.memberId) || {}).name || baseEntry.memberName || "팀원") : "";
 
   const listHtml = entries.length ? entries.map(e => {
     const s = STATUS[e.type] || STATUS.duty;
@@ -1811,7 +1825,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
   /* 수동 지정 드롭다운도 당직은 '활성 명단(가나다순)', 섬·교육은 승인 팀원 */
   const pool = isDuty ? rosterMembers() : approved().map(m => ({ uid: m.uid, name: m.name, position: m.position || "", custom: false }));
   const poolList = canAssign ? pool.slice() : pool.filter(m => m.uid === myUid());
-  const curMemberId = editing ? editing.memberId : target;
+  const curMemberId = baseEntry ? baseEntry.memberId : target;
   if (canAssign && curMemberId && !poolList.some(m => m.uid === curMemberId)) {
     const ex = rosterMember(curMemberId);
     if (ex) poolList.push(ex);   // 제외된 사람의 기존 일정을 수정할 때
@@ -1844,17 +1858,23 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         '<div class="hint" style="margin:6px 2px 0">배정 전에 등록하면 다음 달 자동 배정에서 건너뜁니다. 배정 후에 등록하면 그날 당직만 취소됩니다.</div>');
 
   const formHtml =
-    (isDuty && dayEv && !editing)
+    (isDuty && dayEv && !editing && !replacing)
       ? '<div class="hint" style="margin:10px 2px 0">행사일에는 당직을 등록하지 않습니다. 등록하려면 위에서 행사일을 삭제해 주세요.</div>'
       : '<div class="hr"></div>' +
-        '<div class="sec-title" style="margin-top:0">' + (editing ? "일정 수정" : (isDuty ? "당직 등록" : "일정 등록")) + "</div>" +
-        '<div class="field"><label>팀원</label><select id="schMember"' + (canAssign ? "" : " disabled") + ">" + memberOptions + "</select>" +
+        '<div class="sec-title" style="margin-top:0">' + (isDuty
+          ? (editing ? "당직자 변경" : (replacing ? "당직자 변경" : "당직 등록"))
+          : (editing ? "일정 수정" : "일정 등록")) + "</div>" +
+        (isDuty && baseEntry
+          ? '<div class="duty-swap"><span class="em">🔁</span><div><b>' + esc(prevName) + ' <i>→</i> 새 담당자</b>' +
+            '<p>저장하면 ' + esc(prevName) + ' 님은 이 날 당직에서 빠지고 <b>새 담당자 1명만</b> 달력에 표시됩니다. 변경 이력은 그대로 남아요.</p></div></div>'
+          : "") +
+        '<div class="field"><label>' + (isDuty && baseEntry ? "바꿀 담당자" : "팀원") + '</label><select id="schMember"' + (canAssign ? "" : " disabled") + ">" + memberOptions + "</select>" +
           (canAssign ? "" : '<div class="hint">본인 일정만 등록할 수 있어요. 다른 팀원 지정은 ' + (isDuty ? "관리자·당직 관리 권한자" : "관리자") + '만 가능합니다.</div>') + "</div>" +
         typeBlock +
         (isDuty ? "" : '<div class="field" id="endWrap" style="' + (curEnd || curType === "overnight_island" || curType === "edu" ? "" : "display:none") + '">' +
           '<label>종료일 <span style="font-weight:500;color:var(--ink3)">(여러 날이면 종료일을 뒤로 · 1박 섬은 다음 날)</span></label>' +
           '<input type="date" id="schEnd" value="' + (curEnd || (curType === "overnight_island" ? addDays(ds, 1) : ds)) + '" min="' + ds + '"></div>') +
-        '<div class="field"><label>메모 (선택)</label><input type="text" id="schMemo" maxlength="40" placeholder="' + esc(MEMO_PH[curType] || "메모를 입력하세요") + '" value="' + esc(editing ? editing.memo : "") + '"></div>' +
+        '<div class="field"><label>메모 (선택)</label><input type="text" id="schMemo" maxlength="40" placeholder="' + esc(MEMO_PH[curType] || "메모를 입력하세요") + '" value="' + esc(baseEntry ? (baseEntry.memo || "") : "") + '"></div>' +
         (isDuty ? '<div class="hint" style="margin:-4px 2px 8px">팀원끼리 상의해 담당자를 바꿀 수 있어요. 담당자를 바꾸면 누가·언제 바꿨는지 이력이 남습니다.</div>' : "") +
         '<div class="notice-bar">여기서 등록한 일정은 ' + (isDuty ? "<b>🛡️ 당직 달력</b>" : "<b>⛴️ 섬·교육 달력</b>") + "에 바로 표시됩니다.</div>";
 
@@ -1866,7 +1886,9 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       '<div id="dayList">' + listHtml + "</div>" +
       eventBlock +
       formHtml,
-    footer: (isDuty && dayEv && !editing) ? "" : '<button class="btn" id="schSave">' + (editing ? "수정 저장" : (isDuty ? "당직 등록" : "일정 등록")) + "</button>",
+    footer: (isDuty && dayEv && !editing && !replacing) ? "" : '<button class="btn" id="schSave">' + (isDuty
+      ? (baseEntry ? "담당자 변경 저장" : "당직 등록")
+      : (editing ? "수정 저장" : "일정 등록")) + "</button>",
     onMount: root => {
       let picked = typeKeys.indexOf(curType) >= 0 ? curType : (isDuty ? "duty" : "");
       const endWrap = $("#endWrap", root);
@@ -1929,10 +1951,13 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         };
         $("#schSave", root).disabled = true;
         try {
-          await dbSaveEntry(body, editing ? editing.id : null, editing || null);
+          await dbSaveEntry(body, baseEntry ? baseEntry.id : null, baseEntry);
+          const swapped = isDuty && baseEntry && baseEntry.memberId !== body.memberId;
           closeSheet();
           if (S.tab === "duty") renderDuty();
-          toast((mm ? mm.name : "팀원") + " · " + STATUS[picked].label + " 일정을 저장했어요");
+          toast(swapped
+            ? prevName + " → " + (mm ? mm.name : "팀원") + " 님으로 담당자를 바꿨어요"
+            : (mm ? mm.name : "팀원") + " · " + STATUS[picked].label + " 일정을 저장했어요");
         } catch (e) { saveBtn.disabled = false; toast(fbErrMsg(e)); }
       });
     }
@@ -1956,14 +1981,24 @@ async function dbSaveEntry(data, existingId, prevEntry) {
     };
   }
   const payload = Object.assign({}, data, extra);
+  /* 🛡️ 당직은 하루 1명 — 같은 날짜에 남아 있는 다른 당직 항목도 함께 정리 */
+  const dupIds = [];
+  if (data.type === "duty") {
+    (S.duty || []).forEach(x => {
+      if (!x || x.type !== "duty") return;
+      if (x.id === newId || x.id === existingId) return;
+      if (entryStart(x) === data.startDate) dupIds.push(x.id);
+    });
+  }
   if (S.mode === "demo") {
     demoMutate(d => {
-      d.duty = (d.duty || []).filter(x => x.id !== existingId && x.id !== newId);
+      d.duty = (d.duty || []).filter(x => x.id !== existingId && x.id !== newId && dupIds.indexOf(x.id) < 0);
       d.duty.push(Object.assign({ id: newId, createdAt: Date.now() }, payload));
     });
   } else {
     const { doc, setDoc, deleteDoc, serverTimestamp } = FB.f;
     if (existingId && existingId !== newId) { try { await deleteDoc(doc(FB.db, "duty_schedules", existingId)); } catch (e) {} }
+    for (const id of dupIds) { try { await deleteDoc(doc(FB.db, "duty_schedules", id)); } catch (e) {} }
     await setDoc(doc(FB.db, "duty_schedules", newId), Object.assign({}, payload, { createdBy: myUid(), createdAt: serverTimestamp() }));
   }
 }
@@ -2918,7 +2953,7 @@ function openGuideSheet() {
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🛡️ 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🛡️ 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날은 당직을 건너뜁니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 담당자는 팀원끼리 상의해 날짜를 눌러 바꿀 수 있습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직은 <b>한 날짜에 1명</b>입니다. 이미 당직자가 있는 날짜를 열면 [당직 등록]이 아니라 <b>당직자 변경</b> 폼이 열리고, 새 담당자를 골라 저장하면 기존 담당자는 빠지고 새 담당자 1명만 남습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
         '<div class="sc duty" style="align-self:flex-start"><span class="em">🛡️</span><span class="nm">당직</span></div>' +
