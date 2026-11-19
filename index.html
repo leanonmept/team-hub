@@ -923,6 +923,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 function ymd(d) { const x = new Date(d); return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate()); }
 /* 사번 → 가상 이메일. Firebase Auth 는 이메일만 받으므로 사번을 내부에서만 변환합니다. */
 const VIRTUAL_DOMAIN = "teamhub.local";
+/* 첫 관리자 사번 — 이 사번으로 가입하면 처음부터 관리자(admin)·승인(approved)이 됩니다.
+   (보안 규칙의 isBootstrap() 과 같은 주소를 씁니다. 한쪽만 바꾸면 동작하지 않습니다.) */
+const BOOTSTRAP_EMAIL = "250620@teamhub.local";
+function isBootstrapEmail(email) { return String(email || "").trim().toLowerCase() === BOOTSTRAP_EMAIL; }
+/* 가입 시 users/{uid} 문서 — 부트스트랩 사번만 곧바로 admin/approved */
+function newUserDoc(empId, email, name, position) {
+  const boot = isBootstrapEmail(email);
+  return { empId: empId, email: email, name: name, position: position,
+    role: boot ? "admin" : "member", canManageDuty: boot, status: boot ? "approved" : "pending" };
+}
 function normEmp(v) { return String(v == null ? "" : v).trim().toUpperCase(); }
 function empToEmail(empId) { return String(empId == null ? "" : empId).trim().toLowerCase() + "@" + VIRTUAL_DOMAIN; }
 function emailToEmp(email) {
@@ -3323,10 +3333,9 @@ async function doSignup(name, empId, pos, pw) {
     const ref = doc(FB.db, "users", cred.user.uid);
     const existing = await getDoc(ref);   // trigger 가 먼저 만들었을 수 있음
     if (!existing.exists()) {
-      await setDoc(ref, {
-        empId: empId, email: email, name: name, position: pos, role: "member", canManageDuty: false, status: "pending",
+      await setDoc(ref, Object.assign(newUserDoc(empId, email, name, pos), {
         workStatus: "", statusNote: "", statusUpdatedAt: serverTimestamp(), createdAt: serverTimestamp()
-      });
+      }));
     }
     signingUp = false;
     await loadProfile(cred.user);
@@ -3337,11 +3346,11 @@ async function loadProfile(fbUser) {
   const ref = doc(FB.db, "users", fbUser.uid);
   let snap = await getDoc(ref);
   if (!snap.exists()) {
-    await setDoc(ref, {
-      empId: emailToEmp(fbUser.email), email: fbUser.email || "", name: fbUser.displayName || String(fbUser.email || "").split("@")[0],
-      position: "", role: "member", canManageDuty: false, status: "pending", workStatus: "", statusNote: "",
-      statusUpdatedAt: serverTimestamp(), createdAt: serverTimestamp()
-    });
+    await setDoc(ref, Object.assign(newUserDoc(
+      emailToEmp(fbUser.email), fbUser.email || "",
+      fbUser.displayName || String(fbUser.email || "").split("@")[0], ""), {
+      workStatus: "", statusNote: "", statusUpdatedAt: serverTimestamp(), createdAt: serverTimestamp()
+    }));
     snap = await getDoc(ref);
   }
   S.user = Object.assign({ uid: fbUser.uid }, snap.data());
