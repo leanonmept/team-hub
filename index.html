@@ -762,9 +762,9 @@ input,textarea,select{outline:none}
           <div id="signupErr" class="field hint" style="color:var(--danger);text-align:center;margin-top:8px"></div>
         </form>
 
-        <div class="demo-box" id="demoBox">
-          <h4>⚡ 미리보기 모드 <span class="badge" style="margin-left:auto">DB 연결 전</span></h4>
-          <p>지금은 이 폰에만 저장되는 체험 모드예요. 버튼 한 번으로 화면과 승인 흐름을 모두 볼 수 있어요.</p>
+        <div class="demo-box hidden" id="demoBox">
+          <h4>⚡ 체험(미리보기) 모드 <span class="badge" style="margin-left:auto">둘러보기용</span></h4>
+          <p>실제 팀 데이터와는 별개로, 이 폰에만 저장되는 둘러보기 모드예요. 버튼 한 번으로 화면과 승인 흐름을 모두 볼 수 있어요.</p>
           <div class="demo-btns">
             <button type="button" data-demo="admin"><span>👑</span>관리자 체험</button>
             <button type="button" data-demo="member"><span>🙋</span>팀원 체험</button>
@@ -772,10 +772,10 @@ input,textarea,select{outline:none}
           </div>
         </div>
 
-        <button class="btn-link" id="openCfgFromAuth" type="button">Firebase 연결 설정</button>
+        <button class="btn-link hidden" id="openCfgFromAuth" type="button">Firebase 연결 설정</button>
       </div>
 
-      <div class="auth-foot">
+      <div class="auth-foot" id="authFoot">
         실제 팀원끼리 실시간으로 함께 쓰려면<br>Firebase 무료 프로젝트를 연결하면 됩니다.
       </div>
     </div>
@@ -867,12 +867,12 @@ input,textarea,select{outline:none}
 
 /* ---------- 1. Firebase 설정 (여기에 붙여넣으면 바로 라이브 모드) ---------- */
 const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyAsk0MwJBiAwl5Agmkxh-2Smq2lH1T2oBA",
+  authDomain: "team-hub-8d819.firebaseapp.com",
+  projectId: "team-hub-8d819",
+  storageBucket: "team-hub-8d819.firebasestorage.app",
+  messagingSenderId: "42956962587",
+  appId: "1:42956962587:web:05b3bb5a402ef65ba131be"
 };
 const FIREBASE_SDK = "10.14.1";
 const CFG_KEY = "teamhub.fbconfig";
@@ -993,14 +993,30 @@ const ICON = {
 };
 
 /* ---------- 4. 설정 ---------- */
+/* 기본(내장) 설정이 완전할 때는 저장값이 비어 있어도 이 설정으로 연결합니다.
+   예전에 미리보기 모드로 열어 둔 브라우저에 빈 설정이 남아 있어도
+   데모에 갇히지 않고 실시간 로그인 화면으로 바로 이어지도록 하기 위함입니다. */
+const CFG_FIELDS = ["apiKey", "authDomain", "projectId", "storageBucket", "messagingSenderId", "appId"];
+const DEMO_TRY_KEY = "teamhub.trydemo";   /* '1' 이면 이번 탭에서만 체험 모드 */
+function cfgComplete(c) {
+  if (!c) return false;
+  return CFG_FIELDS.every(k => String(c[k] == null ? "" : c[k]).trim().length > 0);
+}
 function loadConfig() {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "{}") || {}; } catch (e) { saved = {}; }
-  const cfg = Object.assign({}, FIREBASE_CONFIG, saved);
-  const live = !!(cfg.apiKey && cfg.projectId && String(cfg.apiKey).length > 12 && String(cfg.projectId).length > 2);
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || "null"); } catch (e) { saved = null; }
+  let cfg;
+  if (cfgComplete(saved)) cfg = Object.assign({}, FIREBASE_CONFIG, saved);   /* 직접 저장한 완전한 설정 */
+  else {
+    cfg = Object.assign({}, FIREBASE_CONFIG);
+    if (saved) { try { localStorage.removeItem(CFG_KEY); } catch (e) {} }   /* 지난 빈/데모 설정 청소 */
+  }
+  let wantDemo = false;
+  try { wantDemo = sessionStorage.getItem(DEMO_TRY_KEY) === "1"; } catch (e) {}
+  const live = cfgComplete(cfg) && !wantDemo;
   let team = "행정지원팀";
   try { team = localStorage.getItem(TEAM_KEY) || team; } catch (e) {}
-  return { cfg: cfg, live: live, team: team };
+  return { cfg: cfg, live: live, team: team, demoOverride: wantDemo };
 }
 function saveConfig(cfg, team) {
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
@@ -1229,11 +1245,13 @@ function fbErrMsg(e) {
     "auth/email-already-in-use": "이미 가입된 사번입니다. 로그인해 주세요.",
     "auth/weak-password": "비밀번호는 6자 이상이어야 합니다.",
     "auth/operation-not-allowed": "Firebase 콘솔에서 이메일/비밀번호 로그인을 사용 설정해 주세요.",
+    "auth/configuration-not-found": "이 Firebase 프로젝트에 로그인(Authentication)이 아직 설정되지 않았습니다. 콘솔 → Authentication → 이메일/비밀번호 사용 설정이 필요합니다.",
     "auth/network-request-failed": "네트워크 연결을 확인해 주세요.",
     "auth/too-many-requests": "시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
     "auth/invalid-api-key": "Firebase 설정(apiKey)이 올바르지 않습니다.",
     "auth/api-key-not-valid": "Firebase 설정(apiKey)이 올바르지 않습니다.",
     "permission-denied": "권한이 없습니다. (Firestore 보안 규칙을 확인하세요)",
+    "not-found": "Firestore 데이터베이스가 아직 만들어지지 않았습니다. Firebase 콘솔에서 데이터베이스를 만들고 규칙을 게시해 주세요.",
     "unavailable": "서버에 연결할 수 없습니다. 네트워크를 확인해 주세요."
   };
   if (map[c]) return map[c];
@@ -3105,7 +3123,7 @@ function openCfgSheet() {
   openSheet({
     title: "Firebase 연결",
     body:
-      '<div class="notice-bar">Firebase 콘솔 → 프로젝트 설정 → 내 앱(웹)에서 <b>구성</b> 값을 복사해 붙여넣으세요. 비워두면 미리보기 모드로 동작합니다.</div>' +
+      '<div class="notice-bar">기본으로 <b>' + esc((FIREBASE_CONFIG.projectId || "")) + '</b> 프로젝트가 이미 연결되어 있습니다. 다른 프로젝트를 쓸 때만 값을 바꿔 저장하세요.</div>' +
       F("apiKey", "apiKey", "AIza...") +
       F("authDomain", "authDomain", "myteam.firebaseapp.com") +
       F("projectId", "projectId", "myteam") +
@@ -3113,8 +3131,8 @@ function openCfgSheet() {
       F("messagingSenderId", "messagingSenderId", "1234567890") +
       F("appId", "appId", "1:1234:web:abcd") +
       '<div class="field"><label>팀 이름</label><input type="text" id="cfgTeam" value="' + esc(S.team) + '"></div>' +
-      '<div class="notice-bar">저장하면 새로고침되며 라이브 모드로 연결됩니다.<br>Firestore 보안 규칙은 <b>team-hub-firebase-rules.txt</b> 내용을 콘솔에 붙여넣으세요.</div>',
-    footer: '<button class="btn ghost" id="cfgClear" style="flex:0 0 30%">초기화</button><button class="btn" id="cfgSave">저장</button>',
+      '<div class="notice-bar">저장하면 새로고침되며 해당 프로젝트로 연결됩니다.<br>Firestore 보안 규칙은 <b>firebase-rules.txt</b> 내용을 콘솔에 붙여넣으세요.</div>',
+    footer: '<button class="btn ghost" id="cfgClear" style="flex:0 0 30%">기본값으로</button><button class="btn" id="cfgSave">저장</button>',
     onMount: root => {
       $("#cfgSave", root).addEventListener("click", () => {
         const out = {};
@@ -3124,7 +3142,7 @@ function openCfgSheet() {
         setTimeout(() => location.reload(), 500);
       });
       $("#cfgClear", root).addEventListener("click", () => {
-        if (!confirm("Firebase 설정을 지우고 미리보기 모드로 돌아갈까요?")) return;
+        if (!confirm("직접 저장한 설정을 지우고 기본 연결(" + (FIREBASE_CONFIG.projectId || "기본") + ")로 돌아갈까요?")) return;
         localStorage.removeItem(CFG_KEY); location.reload();
       });
     }
@@ -3568,6 +3586,31 @@ function bindGlobal() {
   window.addEventListener("keydown", e => { if (e.key === "Escape") { closeSheet(); $("#layer").innerHTML = ""; } });
 }
 
+function applyModeUI() {
+  const live = S.mode === "live";
+  const box = $("#demoBox"); if (box) box.classList.toggle("hidden", live);
+  const cfgLink = $("#openCfgFromAuth"); if (cfgLink) cfgLink.classList.toggle("hidden", live);
+  const foot = $("#authFoot");
+  if (!foot) return;
+  foot.innerHTML = live
+    ? "실시간 연결 중 · <b style=\"color:var(--brand-d)\">" + esc(S.cfg.projectId || "") + "</b><br>팀원끼리 같은 데이터를 함께 봅니다.<br>" +
+      '<a href="#" id="authTryDemo" style="color:var(--ink3);font-size:11px;text-decoration:underline">체험 모드로 둘러보기</a>'
+    : "지금은 <b>체험 모드</b>입니다 · 이 폰에만 저장돼요<br>" +
+      '<a href="#" id="authBackLive" style="font-size:11px;color:var(--brand-d);text-decoration:underline">실시간 연결로 돌아가기</a>';
+  const td = $("#authTryDemo");
+  if (td) td.addEventListener("click", e => {
+    e.preventDefault();
+    try { sessionStorage.setItem(DEMO_TRY_KEY, "1"); } catch (err) {}
+    location.reload();
+  });
+  const bl = $("#authBackLive");
+  if (bl) bl.addEventListener("click", e => {
+    e.preventDefault();
+    try { sessionStorage.removeItem(DEMO_TRY_KEY); } catch (err) {}
+    location.reload();
+  });
+}
+
 async function boot() {
   holApplyCache(holCacheRead());
   const c = loadConfig();
@@ -3575,6 +3618,7 @@ async function boot() {
   $("#hdrSub").textContent = S.team;
 
   bindGlobal();
+  applyModeUI();
 
   if (S.mode === "demo") {
     syncDemo();
@@ -3591,7 +3635,7 @@ async function boot() {
   try {
     await initFirebase(S.cfg);
   } catch (e) {
-    S.mode = "demo"; syncDemo();
+    S.mode = "demo"; syncDemo(); applyModeUI();
     toast("Firebase 연결 실패 — 미리보기 모드로 실행합니다");
     show("scr-auth");
   }
