@@ -28,6 +28,11 @@
      duty_schedules/{id}    { startDate:'YYYY-MM-DD', endDate:'YYYY-MM-DD',
                               type:'day_island'|'overnight_island'|'duty'|'edu',
                               memberId, memberName, memo, createdBy, createdAt }
+     duty_roster_config/config
+                            { excluded:[uid,...], updatedBy, updatedAt }
+                              → 당직 명단(가나다순)에서 제외한 팀원 목록
+     team_events/{date}     { date:'YYYY-MM-DD', title, createdBy, createdAt }
+                              → 행사일(당직 없음). 문서 id = 날짜
      photos/{id}            { imageData(Data URL), caption, author_id, author_name,
                               likes:[uid], comments:[{...}], createdAt }
      chat_messages/{id}     { author_id, author_name, body, createdAt }
@@ -188,6 +193,37 @@ service cloud.firestore {
 
       allow delete: if isApproved()
         && (resource.data.memberId == request.auth.uid || isAdmin());
+    }
+
+    /* =====================================================================
+       duty_roster_config — 당직 명단 설정
+       · 승인된 팀원이 가나다순으로 순번을 이루고, excluded 의 uid 는 명단에서 뺍니다.
+       · 명단 변경은 관리자만 (달력의 [🛡️ 명단] 시트)
+       ===================================================================== */
+    match /duty_roster_config/{docId} {
+      allow read: if isApproved();
+      allow create, update: if isAdmin()
+        && request.resource.data.excluded is list
+        && request.resource.data.excluded.size() <= 20;
+      allow delete: if isAdmin();
+    }
+
+    /* =====================================================================
+       team_events — 행사일(당직 없음). 문서 id = 'YYYY-MM-DD'
+       · 배정 전에 등록하면 자동 배정에서 건너뜁니다.
+       · 배정 후에 등록하면 그날 당직만 취소됩니다(앱에서 자동 처리).
+       ===================================================================== */
+    match /team_events/{dateId} {
+      allow read: if isApproved();
+      allow create, update: if isApproved()
+        && request.resource.data.date == dateId
+        && request.resource.data.date is string
+        && request.resource.data.date.size() == 10
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 30;
+      allow delete: if isApproved()
+        && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     /* =====================================================================
