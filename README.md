@@ -17,14 +17,14 @@
 
 ## 처음 설정하기
 
-처음에는 **미리보기 모드**(내 기기에만 저장)로 열립니다. 실제로 팀과 함께 쓰려면 Firebase를 연결하세요.
+앱에는 Firebase 프로젝트 **`team-hub-8d819`** 의 웹 앱 설정값이 이미 들어 있습니다. 아래 콘솔 설정만 끝나면 별도 입력 없이 실시간 모드로 연결됩니다. (설정이 끝나기 전에는 로그인 화면 맨 아래 **체험 모드로 둘러보기**로 화면만 미리 볼 수 있습니다. 체험 모드는 이 기기에만 저장됩니다.)
 
-1. Firebase 콘솔에서 새 프로젝트를 만들고, Authentication에서 **이메일/비밀번호** 로그인을 켭니다. (앱은 로그인에 쓰는 사번을 `사번@teamhub.local` 가상 이메일로 바꿔서 씁니다 — 사용자에게는 이메일이 보이지 않습니다.)
+1. Firebase 콘솔에서 Authentication을 시작하고 **이메일/비밀번호** 로그인을 켭니다. (앱은 로그인에 쓰는 사번을 `사번@teamhub.local` 가상 이메일로 바꿔서 씁니다 — 사용자에게는 이메일이 보이지 않습니다.)
 2. Authentication → Settings → **승인된 도메인**에 `leanonmept.github.io`를 추가합니다.
-3. Firestore Database를 만듭니다(위치: `asia-northeast3` 서울 권장).
+3. Firestore Database를 만듭니다. 데이터베이스 ID는 기본값 **`(default)`** 그대로, 위치는 `asia-northeast3` 서울 권장.
 4. 이 저장소의 [`firebase-rules.txt`](firebase-rules.txt) 내용을 Firestore 규칙 탭에 붙여넣고 게시합니다.
-5. 앱의 설정 화면에서 Firebase 웹 앱 설정값(`apiKey`, `authDomain`, `projectId`, `appId` 등)을 입력합니다.
-6. 첫 관리자 지정 방법은 `firebase-rules.txt` 맨 위 주석을 참고하세요.
+5. 첫 관리자 지정 — 규칙의 `isBootstrap()` 이메일을 본인 사번(`사번@teamhub.local`)으로 채워 게시한 뒤 그 사번으로 가입하면 처음부터 관리자/승인 상태가 됩니다. 이미 가입했다면 콘솔 Firestore의 `users/{uid}` 문서에서 `role='admin'`, `status='approved'`로 고칩니다. (현재 규칙은 첫 가입자를 자동으로 관리자로 만들지 않습니다.)
+6. 다른 Firebase 프로젝트로 바꾸려면 앱 → 팀원·설정 → **Firebase 연결 설정**에서 값을 바꿔 저장합니다. 비우고 저장하면 기본(`team-hub-8d819`) 연결로 돌아갑니다.
 
 ## 참고
 
