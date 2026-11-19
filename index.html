@@ -136,6 +136,7 @@ input,textarea,select{outline:none}
 .btn.ghost{background:#f2f5fb;color:var(--ink);box-shadow:none}
 .btn.ghost-line{background:transparent;color:var(--ink2);border:1px solid var(--line);box-shadow:none}
 .btn.danger{background:var(--danger-soft);color:var(--danger);box-shadow:none}
+.btn.event{background:#f3f0ff;color:#5b46c9;border:1px solid #ddd5ff;box-shadow:none}
 .btn.ok{background:var(--ok-soft);color:var(--ok);box-shadow:none}
 .btn[disabled]{opacity:.55;pointer-events:none}
 .btn-link{display:block;width:100%;text-align:center;font-size:12.5px;color:var(--ink3);margin-top:14px;padding:6px;text-decoration:underline;text-underline-offset:3px}
@@ -1867,7 +1868,8 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       '<span class="avatar" style="background:' + colorOf(mm ? mm.name : e.memberName) + '">' + esc(initial(mm ? mm.name : e.memberName)) + "</span>" +
       '<div class="di"><b>' + esc(mm ? mm.name : e.memberName) + ' <span class="type-badge" style="background:' + (s.cls === "island-night" ? "#333a9e" : s.cls === "island-day" ? "#0ea5e9" : s.cls === "duty" ? "#e07a00" : "#059669") + '">' + s.em + " " + s.label + "</span>" + span + "</b>" +
       (e.memo ? "<p>" + esc(e.memo) + "</p>" : "") + histHtml + "</div>" +
-      (editable ? '<button class="btn sm ghost" data-edit="' + e.id + '">' + ICON.pencil + "</button>" : "") +
+      /* 🛡️ 당직 카드는 아래 '당직자 변경' 폼에서만 바꾸므로 ✏️ 를 두지 않습니다(중복 제거). ⛴️ 섬·교육은 ✏️ 유지 */
+      (editable && !isDuty ? '<button class="btn sm ghost" data-edit="' + e.id + '">' + ICON.pencil + "</button>" : "") +
       (editable ? '<button class="btn sm danger" data-del="' + e.id + '">' + ICON.trash + "</button>" : "") +
     "</div>";
   }).join("") : '<div style="font-size:12.5px;color:var(--ink3);padding:4px 2px 12px">아직 등록된 ' + (isDuty ? "당직" : "섬·교육") + " 일정이 없습니다.</div>";
@@ -1898,14 +1900,19 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       }).join("") + "</div></div>";
 
   const dayEv = isDuty ? eventOf(ds) : null;
-  const eventBlock = (!isDuty || !canManageDuty()) ? "" :
+  const evCan = canManageDuty();
+  const eventBlock = !isDuty ? "" :
     '<div class="hr"></div><div class="sec-title" style="margin-top:0">🎈 행사일 (당직 없음)</div>' +
     (dayEv
-      ? '<div class="ev-box"><span>🎈</span><span class="t">' + esc(dayEv.title) + '</span><button class="btn sm danger" id="evDel">삭제</button></div>' +
+      ? '<div class="ev-box"><span>🎈</span><span class="t">' + esc(dayEv.title) + '</span>' +
+        (evCan ? '<button class="btn sm danger" id="evDel">삭제</button>' : "") + '</div>' +
         '<div class="hint" style="margin:-4px 2px 0">이 날은 당직을 배정하지 않습니다.</div>'
-      : '<div class="field" style="margin-bottom:8px"><input type="text" id="evTitle" maxlength="30" placeholder="예: 체육대회 · 송년회"></div>' +
-        '<button class="btn ghost sm" id="evSave" style="width:100%">이 날을 행사일로 등록 (당직 없음)</button>' +
-        '<div class="hint" style="margin:6px 2px 0">배정 전에 등록하면 다음 달 자동 배정에서 건너뜁니다. 배정 후에 등록하면 그날 당직만 취소됩니다.</div>');
+      : evCan
+        ? '<div class="field" style="margin-bottom:8px"><label>행사명</label>' +
+          '<input type="text" id="evTitle" maxlength="30" placeholder="예: 체육대회 · 송년회" enterkeyhint="done" autocomplete="off"></div>' +
+          '<button class="btn event sm" id="evSave" style="width:100%">🎈 이 날을 행사일로 등록' + (dayDuty.length ? " (당직 취소)" : "") + "</button>" +
+          '<div class="hint" style="margin:6px 2px 0">행사명을 쓰고 <b>Enter</b> 또는 위 버튼을 누르면 바로 저장됩니다. 배정 전에 등록하면 다음 달 자동 배정에서 건너뛰고, 배정 후에 등록하면 그날 당직만 취소됩니다.</div>'
+        : '<div class="hint" style="margin:2px 2px 0">행사일 등록은 <b>관리자·당직 관리 권한자</b>만 할 수 있어요.</div>');
 
   const msBlock = !isDuty ? "" :
     '<div class="sec-title" style="margin-top:14px">📋 등판 · 💬 의소기한 · 📝 조사기한</div>' +
@@ -1947,6 +1954,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       (editing ? '<div class="notice-bar" style="margin-bottom:12px">✏️ 기존 일정을 수정하고 있어요.</div>' : "") +
       '<div class="sec-title" style="margin-top:0">이 날의 ' + (isDuty ? "당직" : "섬·교육 일정") + " " + dutyItems.length + "건</div>" +
       '<div id="dayList">' + listHtml + "</div>" +
+      (isDuty && dutyItems.length && !dayEv ? '<div class="hint" style="margin:-2px 2px 2px">담당자를 바꾸려면 아래 <b>당직자 변경</b>에서 새 담당자를 골라 저장하세요.</div>' : "") +
       msBlock +
       eventBlock +
       formHtml,
@@ -1988,18 +1996,36 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         if (e) { closeSheet(); setTimeout(() => openScheduleSheet(ds, e.memberId, e), 100); }
       }));
       const evSave = $("#evSave", root);
-      if (evSave) evSave.addEventListener("click", async () => {
-        const title = ($("#evTitle", root).value || "").trim();
-        if (!title) return toast("행사 이름을 입력해 주세요");
-        evSave.disabled = true;
+      const evTitleInp = $("#evTitle", root);
+      let evBusy = false;
+      /* 🎈 행사일 등록 — 버튼 · Enter 둘 다 이 함수 하나로 저장합니다 */
+      const saveEvent = async () => {
+        if (evBusy) return;
+        const title = ((evTitleInp && evTitleInp.value) || "").trim();
+        if (!title) { if (evTitleInp) evTitleInp.focus(); return toast("행사 이름을 입력해 주세요"); }
+        evBusy = true;
+        if (evSave) evSave.disabled = true;
         try {
           await dbSaveEvent(ds, title);
           const had = entriesOn(ds).filter(e => e.type === "duty");
-          for (const e of had) await dbDeleteEntry(e.id);
+          let failed = 0;
+          for (const e of had) {
+            try { await dbDeleteEntry(e.id); } catch (err) { failed++; }
+          }
           closeSheet();
           if (S.tab === "duty") renderDuty();
-          toast(had.length ? "행사일로 등록하고 그날 당직을 취소했어요" : "행사일로 등록했어요 · 당직 배정에서 제외됩니다");
-        } catch (e) { evSave.disabled = false; toast(fbErrMsg(e)); }
+          toast(failed
+            ? "'" + title + "' 행사일은 등록됐지만 당직 " + failed + "건은 취소하지 못했어요"
+            : (had.length ? "'" + title + "' · 행사일로 등록하고 그날 당직을 취소했어요" : "'" + title + "' · 행사일로 등록했어요"));
+        } catch (e) {
+          evBusy = false;
+          if (evSave) evSave.disabled = false;
+          toast("행사일 저장 실패 — " + fbErrMsg(e));
+        }
+      };
+      if (evSave) evSave.addEventListener("click", saveEvent);
+      if (evTitleInp) evTitleInp.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); saveEvent(); }
       });
       const evDel = $("#evDel", root);
       if (evDel) evDel.addEventListener("click", async () => {
@@ -2014,6 +2040,12 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       });
       const saveBtn = $("#schSave", root);
       if (saveBtn) saveBtn.addEventListener("click", async () => {
+        /* 안전장치 — 행사명을 써 두고 아래 '담당자 변경 저장'을 누른 경우,
+           행사일 등록이 원래 의도일 수 있으므로 한 번 확인합니다(취소하면 당직 변경으로 진행). */
+        const typedEv = evTitleInp ? (evTitleInp.value || "").trim() : "";
+        if (typedEv && isDuty && confirm("'" + typedEv + "' 행사명을 입력하셨어요.\n이 날을 행사일로 등록하고 당직을 취소할까요?\n\n[취소]를 누르면 행사명은 버리고 담당자 변경만 저장합니다.")) {
+          return saveEvent();
+        }
         if (!picked) return toast("일정 종류를 골라주세요");
         const who = canAssign ? ($("#schMember", root).value || myUid()) : myUid();
         const mm = memberOf(who) || rosterMember(who);
