@@ -29,8 +29,9 @@
                               type:'day_island'|'overnight_island'|'duty'|'edu',
                               memberId, memberName, memo, createdBy, createdAt }
      duty_roster_config/config
-                            { excluded:[uid,...], updatedBy, updatedAt }
-                              → 당직 명단(가나다순)에서 제외한 팀원 목록
+                            { excluded:[uid,...], customMembers:[{id,name},...],
+                              updatedBy, updatedAt }
+                              → 당직 명단(가나다순): 제외한 uid + 회원이 아닌 직접 추가 이름
      team_events/{date}     { date:'YYYY-MM-DD', title, createdBy, createdAt }
                               → 행사일(당직 없음). 문서 id = 날짜
      photos/{id}            { imageData(Data URL), caption, author_id, author_name,
@@ -198,13 +199,17 @@ service cloud.firestore {
     /* =====================================================================
        duty_roster_config — 당직 명단 설정
        · 승인된 팀원이 가나다순으로 순번을 이루고, excluded 의 uid 는 명단에서 뺍니다.
+       · customMembers 는 회원 가입을 하지 않은 사람도 당직 순번에 넣기 위한 직접 추가 이름입니다.
        · 명단 변경은 관리자만 (달력의 [🛡️ 명단] 시트)
        ===================================================================== */
     match /duty_roster_config/{docId} {
       allow read: if isApproved();
       allow create, update: if isAdmin()
         && request.resource.data.excluded is list
-        && request.resource.data.excluded.size() <= 20;
+        && request.resource.data.excluded.size() <= 50
+        && (!('customMembers' in request.resource.data) || (
+              request.resource.data.customMembers is list
+              && request.resource.data.customMembers.size() <= 30));
       allow delete: if isAdmin();
     }
 
