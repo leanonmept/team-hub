@@ -219,6 +219,11 @@ input,textarea,select{outline:none}
 .view.chat.active{display:flex;flex-direction:column;padding:0;overflow:hidden}
 
 /* ============ common bits ============ */
+.team-back{
+  display:inline-flex;align-items:center;gap:3px;margin:0 0 10px -6px;padding:5px 8px;border-radius:9px;
+  font-size:12.5px;font-weight:800;color:var(--brand-d);letter-spacing:-.02em;
+}
+.team-back:active{background:rgba(47,107,246,.08)}
 .vhead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:2px 2px 13px}
 .vhead h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-.035em}
 .vhead .sub{font-size:11.5px;color:var(--ink3);margin-top:2px}
@@ -491,7 +496,7 @@ input,textarea,select{outline:none}
 
 /* ============ tabbar ============ */
 .tabbar{
-  flex-shrink:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:rgba(255,255,255,.94);
+  flex-shrink:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.94);
   backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:6px 2px calc(5px + var(--safe-b));
 }
 .tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;color:var(--ink3);position:relative;min-width:0;overflow:visible}
@@ -503,6 +508,15 @@ input,textarea,select{outline:none}
   background:var(--danger);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
   padding:0 4px;border:1.5px solid #fff;
 }
+/* 상단 프로필 아이콘 오른쪽 위 — 승인 대기 알림 */
+#btnProfile{position:relative}
+#avatarPendingDot{
+  position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;border-radius:20px;
+  background:var(--danger);color:#fff;font-size:9.5px;font-weight:800;line-height:1;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+  border:1.5px solid #fff;box-shadow:0 1px 4px rgba(20,26,36,.2);pointer-events:none;
+}
+#avatarPendingDot.hidden{display:none}
 
 /* ============ 🚫 거절된 신청 — 왼쪽 스와이프 삭제 ============ */
 .swipe{position:relative;border-radius:14px;overflow:hidden;margin-bottom:7px;background:#e5484d}
@@ -1043,8 +1057,9 @@ input,textarea,select{outline:none}
         <span id="hdrSub">행정지원팀</span>
       </div>
       <span class="badge" id="modeBadge">미리보기 모드</span>
-      <button id="btnProfile" aria-label="내 정보" style="display:flex;align-items:center;gap:6px">
+      <button id="btnProfile" aria-label="팀원관리 · 내 프로필" style="display:flex;align-items:center;gap:6px">
         <span class="avatar" id="myAvatar">김</span>
+        <span id="avatarPendingDot" class="hidden">0</span>
       </button>
     </header>
 
@@ -1079,11 +1094,6 @@ input,textarea,select{outline:none}
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.8a8 8 0 0 1-11.7 7.1L4 20.5l1.6-4.7a8 8 0 1 1 14.9-4z"/><path d="M8.6 11.5h.01M12 11.5h.01M15.4 11.5h.01"/></svg>
         <span class="tl">대화</span>
         <span class="dotn hidden" id="dotChat">0</span>
-      </button>
-      <button data-tab="team">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.6a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.4"/><path d="M22 20v-1.6a4 4 0 0 0-3-3.85"/><path d="M16 3.7a3.4 3.4 0 0 1 0 6.6"/></svg>
-        <span class="tl" id="tabTeamLabel">팀원관리</span>
-        <span class="dotn hidden" id="dotTeam">0</span>
       </button>
     </nav>
   </main>
@@ -1135,6 +1145,7 @@ const S = {
   restArea: "all",
   restCat: "all",
   tab: "notices",
+  lastMainTab: "notices",
   noticeFilter: "all",
   cursor: new Date(),
   calMode: "duty",          // 'duty' | 'island'
@@ -4304,6 +4315,8 @@ function renderTeam() {
   const adminOn = isAdmin();
 
   v.innerHTML =
+    '<button class="team-back" id="teamBack">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg> 돌아가기</button>' +
     '<div class="vhead"><div><h2>' + (adminOn ? "팀원 관리" : "팀원") + "</h2><div class=\"sub\">" +
       "승인 " + app.length + "명" + (pend.length ? " · 대기 " + pend.length + "명" : "") + "</div></div></div>" +
 
@@ -4364,6 +4377,9 @@ function renderTeam() {
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브<br>' +
       (S.mode === "live" ? "Firebase 실시간 동기화" : "미리보기 모드 (데이터는 이 기기에만 저장)") + "</div>";
+
+  const backBtn = $("#teamBack", v);
+  if (backBtn) backBtn.addEventListener("click", () => setTab(S.lastMainTab && S.lastMainTab !== "team" ? S.lastMainTab : "notices"));
 
   $$("[data-approve]", v).forEach(b => b.addEventListener("click", async () => {
     try { await dbSetUserStatus(b.dataset.approve, "approved"); toast("승인했습니다. 이제 팀원이 입장할 수 있어요"); } catch (e) { toast(fbErrMsg(e)); }
@@ -4780,8 +4796,8 @@ function openGuideSheet() {
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날 당직은 취소되고, 달력 칸 전체가 <b>연보라색</b>으로 칠해지며 등록한 행사명이 표시됩니다(공휴일의 연분홍과 구분).</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직은 <b>한 날짜에 1명</b>입니다. 이미 당직자가 있는 날짜를 열면 [당직 등록]이 아니라 <b>당직자 변경</b> 폼이 열리고, 새 담당자를 골라 저장하면 기존 담당자는 빠지고 새 담당자 1명만 남습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀 이름은 [팀원관리] 맨 아래 <b>팀 이름</b>에서 <b>관리자만</b> 바꿀 수 있습니다. 저장하면 팀원 모두의 상단·대화방·설정에 바로 적용되고, 팀원은 현재 이름만 볼 수 있습니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, 상단 오른쪽 <b>프로필 아이콘</b>을 눌러 들어간 [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀 이름은 상단 오른쪽 프로필 아이콘으로 들어간 [팀원관리] 맨 아래 <b>팀 이름</b>에서 <b>관리자만</b> 바꿀 수 있습니다. 저장하면 팀원 모두의 상단·대화방·설정에 바로 적용되고, 팀원은 현재 이름만 볼 수 있습니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
         '<div class="sc duty" style="align-self:flex-start"><span class="em">🛡️</span><span class="nm">당직</span></div>' +
         '<div class="sc island-day" style="align-self:flex-start"><span class="em">☀️⛴️</span><span class="nm">당일 섬</span></div>' +
@@ -4816,14 +4832,22 @@ function updateDots() {
   const un = S.announcements.filter(a => !isRead(a.id)).length;
   const dn = $("#dotNotices"); dn.textContent = un > 9 ? "9+" : un; dn.classList.toggle("hidden", !un);
   const pend = S.members.filter(m => m.status === "pending").length;
-  const dt = $("#dotTeam"); dt.textContent = pend > 9 ? "9+" : pend;
-  dt.classList.toggle("hidden", !pend || !isAdmin());
+  /* 팀원관리는 하단 탭에서 빠지고 상단 프로필 아이콘으로 이동 — 대기 인원은 그 위 빨간 배지로 */
+  const dt = $("#dotTeam");
+  if (dt) { dt.textContent = pend > 9 ? "9+" : pend; dt.classList.toggle("hidden", !pend || !isAdmin()); }
+  const ad = $("#avatarPendingDot");
+  if (ad) {
+    ad.textContent = pend > 9 ? "9+" : pend;
+    ad.classList.toggle("hidden", !pend || !isAdmin());
+  }
   const dc = $("#dotChat");
   const unseen = S.messages.filter(m => m.author_id !== myUid() && m.createdAt > (S.seenChatAt || 0)).length;
   dc.textContent = unseen > 9 ? "9+" : unseen;
   dc.classList.toggle("hidden", !unseen || S.tab === "chat");
 }
 function setTab(t) {
+  /* 팀원관리로 들어가기 전에 보던 탭을 기억해 두었다가 ← 돌아가기로 되돌아옵니다 */
+  if (t !== "team" && S.tab !== t) S.lastMainTab = t;
   S.tab = t;
   $$(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t));
   $$("#tabbar button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
@@ -4877,7 +4901,6 @@ function route() {
   renderMyAvatar();
   $("#modeBadge").textContent = S.mode === "live" ? "실시간 연결" : "미리보기 모드";
   $("#modeBadge").className = "badge" + (S.mode === "live" ? " live" : "");
-  $("#tabTeamLabel").textContent = isAdmin() ? "팀원관리" : "팀원";
   if (!S.seenChatAt) S.seenChatAt = Date.now();
   renderAll();
   /* 매월 24일 00:00(KST) 이후 첫 접속이면 다음 달 당직을 자동 배정 */
@@ -5198,8 +5221,8 @@ function bindGlobal() {
 
   $$("#tabbar button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
 
-  /* 상단 프로필 사진을 누르면 바로 프로필 사진·이모티콘 설정 시트가 열립니다 */
-  $("#btnProfile").addEventListener("click", openAvatarSheet);
+  /* 상단 프로필 아이콘 → 팀원관리(내 프로필 · 승인 대기). 프로필 변경은 그 안의 [프로필 변경]에서 */
+  $("#btnProfile").addEventListener("click", () => { setTab("team"); const v = $("#view-team"); if (v) v.scrollTop = 0; });
 
   window.addEventListener("storage", e => {
     if (S.mode === "demo" && (e.key === DEMO_KEY || e.key === SESSION_KEY)) {
