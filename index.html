@@ -940,6 +940,14 @@ input,textarea,select{outline:none}
 .rt-chips button{font-size:12px;font-weight:700;color:var(--ink2);background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:6px 11px}
 .rt-chips button.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-d)}
 .rt-noresult{text-align:center;font-size:11.5px;color:var(--ink3);padding:10px;line-height:1.6}
+.rt-cand{
+  display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:9px 11px;margin-top:6px;line-height:1.45;
+}
+.rt-cand:active{background:#f4f7fc}
+.rt-cand b{display:block;font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+.rt-cand span{display:block;font-size:11px;color:var(--ink2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-cand i{display:block;font-style:normal;font-size:10.5px;color:var(--ink3);margin-top:1px}
 </style>
 </head>
 <body>
@@ -1149,7 +1157,7 @@ const S = {
   noticeFilter: "all",
   cursor: new Date(),
   calMode: "duty",          // 'duty' | 'island'
-  roster: { excluded: [], customMembers: [], teamName: "" }, // 당직 명단 + 팀 이름(관리자가 바꾸면 전원에게 실시간)
+  roster: { excluded: [], customMembers: [], teamName: "", kakaoRestKey: "" }, // 당직 명단 + 팀 이름·카카오 검색 키(관리자가 바꾸면 전원에게 실시간)
   events: [],               // 행사일(당직 없음) [{id,date,title}]
   subs: [],
   commentSubs: {},
@@ -1548,10 +1556,11 @@ function syncDemo() {
   });
   S.restaurants = (d.restaurants || []).map(r => Object.assign({}, r, { likes: Array.isArray(r.likes) ? r.likes : [] }));
   S.duty = (d.duty || []).slice();
-  S.roster = Object.assign({ excluded: [], customMembers: [], teamName: "" }, d.roster || {});
+  S.roster = Object.assign({ excluded: [], customMembers: [], teamName: "", kakaoRestKey: "" }, d.roster || {});
   if (!Array.isArray(S.roster.excluded)) S.roster.excluded = [];
   if (!Array.isArray(S.roster.customMembers)) S.roster.customMembers = [];
   if (typeof S.roster.teamName !== "string") S.roster.teamName = "";
+  if (typeof S.roster.kakaoRestKey !== "string") S.roster.kakaoRestKey = "";
   /* 미리보기 모드에서도 관리자가 바꾼 팀 이름이 이 기기의 모든 화면에 반영되도록 */
   if (S.roster.teamName.trim()) setTeamName(S.roster.teamName);
   S.events = (d.events || []).map(e => ({ id: e.id || e.date, date: e.date || e.id, title: e.title || "", createdAt: e.createdAt || Date.now() }));
@@ -2191,6 +2200,31 @@ async function dbSetTeamName(name) {
   }
   setTeamName(v);
   return true;
+}
+
+/* 🍽️ 맛집 등록의 카카오 장소 검색 키 — duty_roster_config/config.kakaoRestKey
+   필드가 하나 늘어날 뿐이라 firebase-rules.txt 규칙을 다시 게시할 필요는 없습니다.
+   관리자가 저장하면 승인된 팀원 모두가 같은 키로 검색합니다. */
+function kakaoRestKey() {
+  const k = S.roster && S.roster.kakaoRestKey;
+  return typeof k === "string" ? k.trim() : "";
+}
+async function dbSetKakaoRestKey(key) {
+  const v = String(key == null ? "" : key).trim().slice(0, 100);
+  if (S.mode === "demo") {
+    demoMutate(d => { d.roster = Object.assign({}, d.roster || {}, { kakaoRestKey: v, updatedAt: Date.now() }); });
+    S.roster = Object.assign({}, S.roster, { kakaoRestKey: v });
+  } else {
+    const { doc, setDoc, serverTimestamp } = FB.f;
+    const payload = { kakaoRestKey: v, updatedAt: serverTimestamp(), updatedBy: myUid() };
+    /* 이 기기가 설정 문서를 아직 받지 못한 상태에서 저장하면, 새 문서(create)도
+       규칙의 excluded is list 조건을 통과하도록 빈 목록을 함께 넣습니다. */
+    if (!LOADED.roster) payload.excluded = [];
+    await setDoc(doc(FB.db, "duty_roster_config", "config"), payload, { merge: true });
+    S.roster = Object.assign({}, S.roster, { kakaoRestKey: v });
+  }
+  if (S.tab === "team") renderTeam();
+  return v;
 }
 async function dbSetExcluded(uid, off) {
   const cur = excludedList().slice();
@@ -2977,6 +3011,28 @@ const REST_AREAS = {
 };
 const REST_CATS = ["한식", "중식", "일식", "양식", "카페"];
 const REST_CAT_EM = { "한식": "🍚", "중식": "🥟", "일식": "🍣", "양식": "🍝", "카페": "☕" };
+/* 카카오 장소(키워드) 검색 — 상호명·도로명주소·카테고리 후보 최대 8개 */
+async function kakaoKeywordSearch(q, key) {
+  const url = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encodeURIComponent(q) + "&size=8";
+  const rr = await fetch(url, { headers: { Authorization: "KakaoAK " + key } });
+  if (rr.status === 401 || rr.status === 403) { const e = new Error("kakao auth"); e.code = "kakao-auth"; throw e; }
+  if (!rr.ok) { const e = new Error("kakao " + rr.status); e.code = "kakao-http"; throw e; }
+  const js = await rr.json();
+  const docs = (js && Array.isArray(js.documents)) ? js.documents : [];
+  return docs.map(x => Object.assign({}, x, { y: Number(x.y), x: Number(x.x) })).filter(x => x.place_name);
+}
+/* 카카오 카테고리 → 앱의 음식 종류(한식/중식/일식/양식/카페). 모르면 빈 값(기존 선택 유지) */
+function restCatFromKakao(x) {
+  const s = String((x && x.category_name) || "") + " " + String((x && x.category_group_code) || "");
+  if (!s.trim()) return "";
+  const has = arr => arr.some(k => s.indexOf(k) >= 0);
+  if (has(["카페", "CE7", "커피", "디저트", "베이커리", "제과"])) return "카페";
+  if (has(["중식", "중국", "마라", "양꼬치", "딤섬"])) return "중식";
+  if (has(["일식", "초밥", "스시", "라멘", "돈까스", "우동", "사시미", "이자카야", "규동", "덮밥"])) return "일식";
+  if (has(["양식", "이탈리안", "피자", "파스타", "스테이크", "프랑스", "햄버거", "멕시칸", "브런치"])) return "양식";
+  if (has(["한식", "국밥", "분식", "백반", "칼국수", "찜", "구이", "곱창", "냉면", "해장국", "설렁탕", "삼계탕", "김치", "비빔밥", "보쌈", "감자탕", "갈비", "순대", "떡볶이", "한정식", "만두", "해물", "생선", "국수", "두부", "죽"])) return "한식";
+  return "";
+}
 const REST_CENTER = [37.475, 126.63];
 const RT = { map: null, pick: null, pickMark: null, L: null, loading: null, failed: false };
 
@@ -3175,8 +3231,9 @@ function openRestSheet(id) {
         [1, 2, 3, 4, 5].map(n => '<button type="button" data-s="' + n + '" class="' + (n <= rating ? "on" : "") + '" aria-label="' + n + '점">★</button>').join("") +
       '</div><div class="hint" id="rtStarHint">' + (rating ? rating + "점" : "별을 눌러 점수를 고르세요 (선택)") + "</div></div>" +
       '<div class="field" style="margin-bottom:6px"><label>위치 <span style="color:var(--ink3);font-weight:600">(선택)</span></label>' +
-        '<div style="display:flex;gap:6px"><input type="text" id="rtSearch" placeholder="주소 또는 가게명 검색" style="flex:1;border:1px solid var(--line);background:#fafbfe;border-radius:12px;padding:11px 12px;font-size:13px">' +
+        '<div style="display:flex;gap:6px"><input type="text" id="rtSearch" placeholder="' + (kakaoRestKey() ? "가게명·키워드 검색 (예: 신포우리만두)" : "주소 또는 가게명 검색") + '" style="flex:1;border:1px solid var(--line);background:#fafbfe;border-radius:12px;padding:11px 12px;font-size:13px">' +
           '<button type="button" class="btn sm" id="rtSearchBtn" style="flex:0 0 62px;padding:11px 0">검색</button></div>' +
+        (kakaoRestKey() ? "" : '<div class="hint" id="rtKakaoHint" style="margin:7px 2px 0;line-height:1.5">카카오 REST API 키를 연결하면 국내 식당 이름으로 바로 검색됩니다</div>') +
         '<div id="rtSearchRes"></div>' +
         '<div class="rt-pick" id="rtPickMap"></div>' +
         '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;font-size:11px;color:var(--ink3)">' +
@@ -3230,12 +3287,50 @@ function openRestSheet(id) {
         if (box) box.innerHTML = '<div class="mapfall" style="font-size:11px"><span class="em">🚧</span>지도를 불러오지 못했어요.<br>주소·가게명 검색만으로도 등록할 수 있습니다.</div>';
       });
 
-      /* 주소·가게명 검색 (OpenStreetMap Nominatim) */
+      /* 주소·가게명 검색 — 카카오 키가 있으면 상호명 검색(키워드)을 먼저, 없으면 OpenStreetMap Nominatim */
       const doSearch = async () => {
         const q = $("#rtSearch", root).value.trim() || $("#rtName", root).value.trim();
         const res = $("#rtSearchRes", root);
         if (!q) return toast("주소나 가게명을 입력해 주세요");
         res.innerHTML = '<div class="rt-noresult">검색 중…</div>';
+        const key = kakaoRestKey();
+        if (key) {
+          try {
+            const docs = await kakaoKeywordSearch(q, key);
+            if (!docs.length) { res.innerHTML = '<div class="rt-noresult">검색 결과가 없어요. 다른 키워드로 찾아보거나 지도를 직접 눌러 핀을 찍어 주세요.</div>'; return; }
+            res.innerHTML = docs.slice(0, 8).map((x, i) =>
+              '<button type="button" class="rt-cand" data-kpick="' + i + '">' +
+                '<b>🍽️ ' + esc(String(x.place_name || "이름 없음")) + '</b>' +
+                '<span>' + esc(String(x.road_address_name || x.address_name || "주소 없음")) + '</span>' +
+                '<i>' + esc(String(x.category_name || "")) + (x.phone ? " · " + esc(String(x.phone)) : "") + '</i>' +
+              '</button>').join("");
+            try { res.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+            $$("[data-kpick]", res).forEach(b => b.addEventListener("click", () => {
+              const x = docs[Number(b.dataset.kpick)] || {};
+              const nm = String(x.place_name || "").trim();
+              if (nm) $("#rtName", root).value = nm.slice(0, 40);
+              const addr = String(x.road_address_name || x.address_name || "").trim();
+              const la = Number(x.y), ln = Number(x.x);
+              if (isFinite(la) && isFinite(ln) && la !== 0 && ln !== 0) setLoc(la, ln, addr.slice(0, 120), true);
+              else if (addr) { loc.address = addr.slice(0, 120); $("#rtLocTx", root).textContent = "📍 " + loc.address; }
+              const mapped = restCatFromKakao(x);
+              if (mapped) {
+                cat = mapped;
+                $$("[data-c]", root).forEach(el => el.classList.toggle("on", el.dataset.c === mapped));
+              }
+              res.innerHTML = "";
+              $("#rtSearch", root).value = "";
+              toast(mapped ? "가게 정보를 채웠어요 · " + mapped : "가게 정보를 채웠어요");
+            }));
+            return;
+          } catch (e) {
+            const auth = e && e.code === "kakao-auth";
+            res.innerHTML = '<div class="rt-noresult">' + (auth
+              ? "카카오 키가 올바르지 않거나 사용할 수 없어요. 관리자가 [팀원관리 → 관리 → 카카오 장소 검색 키]에서 확인해 주세요."
+              : "카카오 검색에 연결하지 못했어요. 잠시 후 다시 해보거나 지도를 직접 눌러 주세요.") + "</div>";
+            return;
+          }
+        }
         try {
           const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=4&accept-language=ko&q=" + encodeURIComponent(q);
           const rr = await fetch(url, { headers: { "Accept": "application/json" } });
@@ -4373,6 +4468,11 @@ function renderTeam() {
       : '<div class="set-item" style="cursor:default"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + ' · 관리자만 바꿀 수 있어요</p></div>' +
         '<span style="color:var(--ink3);display:flex;align-items:center">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg></span></div>') +
+    (adminOn
+      ? '<button class="set-item" id="setKakao"><div class="si"><b>카카오 장소 검색 키</b><p>' +
+        (kakaoRestKey() ? "연결됨 · 맛집 등록에서 상호명으로 바로 검색" : "미연결 · 주소 검색은 OpenStreetMap으로 동작") + '</p></div>' +
+        '<span style="font-size:11.5px;font-weight:800;color:var(--brand-d)">' + (kakaoRestKey() ? "변경" : "설정") + '</span></button>'
+      : "") +
     (isAdmin() && S.mode === "demo" ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브<br>' +
@@ -4445,6 +4545,8 @@ function renderTeam() {
   $("#setFb").addEventListener("click", openCfgSheet);
   const setTeamBtn = $("#setTeam");
   if (setTeamBtn) setTeamBtn.addEventListener("click", openTeamNameSheet);   /* 관리자에게만 있는 항목 */
+  const setKakaoBtn = $("#setKakao");
+  if (setKakaoBtn) setKakaoBtn.addEventListener("click", openKakaoKeySheet); /* 관리자에게만 있는 항목 */
   $("#setGuide").addEventListener("click", openGuideSheet);
   $("#setLogout").addEventListener("click", doLogout);
   const rs = $("#setReset");
@@ -4784,6 +4886,46 @@ function openTeamNameSheet() {
     }
   });
 }
+function openKakaoKeySheet() {
+  if (!isAdmin()) { toast("카카오 검색 키는 관리자만 설정할 수 있어요"); return; }
+  const cur = kakaoRestKey();
+  openSheet({
+    title: "카카오 장소 검색 키",
+    body:
+      '<div class="field"><label>REST API 키</label><input type="text" id="kkIn" maxlength="100" autocomplete="off" spellcheck="false" placeholder="카카오 developers → 내 애플리케이션 → REST API 키" value="' + esc(cur) + '"></div>' +
+      '<div class="hint" style="margin:9px 2px 10px;line-height:1.6">키를 넣으면 맛집 등록의 검색창에서 <b>가게명(예: 신포우리만두)</b>으로 찾아 상호명·주소·지도 좌표·음식 종류를 한 번에 채웁니다. 비워 두면 기존처럼 OpenStreetMap 주소 검색으로 동작합니다.</div>' +
+      '<div class="hint" style="margin:0 2px 0;line-height:1.6;color:var(--ink3)">저장하면 팀 설정 문서(<b>duty_roster_config</b>)에 들어가 승인된 팀원 모두가 바로 씁니다. 보안 규칙은 그대로라 다시 게시하지 않아도 됩니다.</div>',
+    footer: (cur ? '<button class="btn ghost-line" id="kkClear">키 삭제</button>' : "") +
+      '<button class="btn" id="kkSave">저장</button>',
+    onMount: root => {
+      const inp = $("#kkIn", root);
+      const btn = $("#kkSave", root);
+      const save = async () => {
+        const v = String(inp.value || "").replace(/\s+/g, "").trim().slice(0, 100);
+        if (!v) { toast("REST API 키를 입력해 주세요 (키 없이 쓰려면 [키 삭제])"); return; }
+        btn.disabled = true; btn.textContent = "저장 중…";
+        try {
+          await dbSetKakaoRestKey(v);
+          closeSheet(); toast("카카오 장소 검색 키를 저장했습니다");
+        } catch (e) {
+          btn.disabled = false; btn.textContent = "저장";
+          toast(fbErrMsg(e));
+        }
+      };
+      btn.addEventListener("click", save);
+      if (inp) inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
+      const cl = $("#kkClear", root);
+      if (cl) cl.addEventListener("click", async () => {
+        if (!confirm("카카오 검색 키를 지우고 OpenStreetMap 검색으로 돌아갈까요?")) return;
+        cl.disabled = true;
+        try {
+          await dbSetKakaoRestKey("");
+          closeSheet(); toast("카카오 검색 키를 지웠습니다");
+        } catch (e) { cl.disabled = false; toast(fbErrMsg(e)); }
+      });
+    }
+  });
+}
 function openGuideSheet() {
   openSheet({
     title: "사용 안내",
@@ -4806,6 +4948,8 @@ function openGuideSheet() {
       "</div>" +
       '<div class="sec-title">3. 사진</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">사진은 올릴 때 가로 960px·JPEG 0.72로 자동 압축되어 Firestore 문서에 저장됩니다. (Firebase 무료 Spark 요금제에서 Storage 없이도 동작)</p>' +
+      '<div class="sec-title">🍽️ 맛집</div>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 14px">맛집 등록에서 가게명·키워드로 검색하면 상호명·주소·지도 좌표·음식 종류가 한 번에 채워집니다. 관리자가 상단 오른쪽 프로필 아이콘 → [팀원관리] → 관리 → <b>카카오 장소 검색 키</b>에 REST API 키를 넣으면 카카오 장소 검색으로, 비어 있으면 OpenStreetMap 주소 검색으로 동작합니다.</p>' +
       '<div class="sec-title">4. 실시간</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0">Firebase를 연결하면 공지·당직·사진·대화·승인 상태가 팀원 모두에게 실시간으로 반영됩니다.</p>'
   });
@@ -5107,12 +5251,14 @@ function applyRosterDoc(v) {
     excluded: Array.isArray(d.excluded) ? d.excluded : [],
     customMembers: Array.isArray(d.customMembers) ? d.customMembers : [],
     msOff: Array.isArray(d.msOff) ? d.msOff : [],
-    teamName: typeof d.teamName === "string" ? d.teamName.trim().slice(0, 20) : ""
+    teamName: typeof d.teamName === "string" ? d.teamName.trim().slice(0, 20) : "",
+    kakaoRestKey: typeof d.kakaoRestKey === "string" ? d.kakaoRestKey.trim().slice(0, 100) : ""
   };
   LOADED.roster = true;
   /* 관리자가 바꾼 팀 이름이 오면 상단 헤더·설정·대화방을 바로 갱신 */
   if (S.roster.teamName) setTeamName(S.roster.teamName);
   if (S.tab === "duty") renderDuty();
+  if (S.tab === "team") renderTeam();
   autoAssignNextMonth();
 }
 
