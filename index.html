@@ -3383,7 +3383,12 @@ function openAvatarSheet() {
           await saveAvatar(pick);
           closeSheet();
           toast(pick ? "프로필 사진을 바꿨어요" : "기본 글자로 되돌렸어요");
-        } catch (e) { btn.disabled = false; toast(fbErrMsg(e)); }
+        } catch (e) {
+          btn.disabled = false;
+          toast(e && e.code === "permission-denied"
+            ? "아바타 저장이 막혔습니다 — Firebase 콘솔에 보안 규칙(firebase-rules.txt)을 게시해 주세요"
+            : fbErrMsg(e));
+        }
       });
       $("#avProfile", root).addEventListener("click", () => { closeSheet(); setTimeout(openProfileSheet, 120); });
     }
