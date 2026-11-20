@@ -67,10 +67,12 @@
      photos/{id}            { imageData(Data URL), caption, author_id, author_name,
                               likes:[uid], comments:[{...}], createdAt }
      chat_messages/{id}     { author_id, author_name, body, createdAt }
-     restaurants/{id}       { name, area:'office'|'island'|'dinner', cat, menu, review,
-                              rating:1~5, lat, lng, address,
+     restaurants/{id}       { name, category('한식'|'분식'|'중식'|'일식'|'양식'|'카페'|'기타'),
+                              cat(예전 필드), menu(예전 필드), review,
+                              rating:0.5~5 (0.5 단위), lat, lng, address,
                               author_id, author_name, likes:[uid], createdAt }
                               → 🍽️ 맛집 공유 지도. 좋아요는 승인 팀원 누구나 토글
+                              ※ rating 타입 검사(규칙)는 없어 소수점 3.5 저장 가능 — 규칙 재게시 불필요
 
    ▶ 원칙
      - 승인(status == 'approved')된 팀원만 공지·일정·사진·대화를 읽고 쓸 수 있습니다.

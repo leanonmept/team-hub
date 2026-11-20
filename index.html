@@ -894,38 +894,37 @@ input,textarea,select{outline:none}
   background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(20,26,36,.03);
   padding:13px 14px;margin-bottom:10px;
 }
-.rt-card h3{margin:0;font-size:15px;font-weight:800;letter-spacing:-.03em;flex:1;min-width:0}
-.rt-card .rt-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.rt-rate{font-size:11.5px;font-weight:800;color:#e08a00;flex-shrink:0;letter-spacing:-.02em}
-.rt-rate .off{color:#d8dde8}
-.rt-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
-.rtbg{font-size:10px;font-weight:800;padding:3px 7px;border-radius:7px;background:#f1f3f8;color:var(--ink2)}
-.rtbg.office{background:#eaf1ff;color:var(--brand-d)}
-.rtbg.island{background:#ecf9ff;color:#0b7fa8}
-.rtbg.dinner{background:#fdf0f6;color:#b03a72}
-.rt-menu{margin:0 0 4px;font-size:12px;font-weight:700;color:var(--ink2);line-height:1.5}
-.rt-menu span{color:#c2410c}
-.rt-rev{margin:0 0 9px;font-size:12.5px;color:var(--ink2);line-height:1.6}
-.rt-addr{font-size:10.5px;color:var(--ink3);margin:0 0 8px;line-height:1.5}
-.rt-ft{display:flex;align-items:center;gap:7px;padding-top:8px;border-top:1px solid var(--line2);font-size:11px;color:var(--ink3);flex-wrap:wrap}
-.rt-ft .who{display:flex;align-items:center;gap:5px;min-width:0}
-.rt-ft .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92px}
+.rt-card h3{margin:0;font-size:15px;font-weight:800;letter-spacing:-.03em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-card .rt-top{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.rt-cat{flex-shrink:0;font-size:10px;font-weight:800;color:var(--brand-d);background:#eef3ff;border-radius:7px;padding:3px 7px;letter-spacing:-.02em}
+.rt-cat.c-분식{background:#fff4e8;color:#b45309}
+.rt-cat.c-중식{background:#fdeef0;color:#b4232c}
+.rt-cat.c-일식{background:#eef4ff;color:#1e4fa8}
+.rt-cat.c-양식{background:#f0fbf3;color:#186d3b}
+.rt-cat.c-카페{background:#f6f0fd;color:#6b3fa0}
+.rt-rate{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:#e08a00;flex-shrink:0;letter-spacing:-.02em}
+.rt-addr{margin:0 0 8px;font-size:11px;color:var(--ink3);line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt-quote{display:flex;gap:6px;margin:0 0 9px;padding:8px 10px;background:#f7f9fd;border-radius:11px;font-size:12px;color:var(--ink2);line-height:1.55}
+.rt-quote .em{flex-shrink:0;opacity:.85}
+.rt-quote .tx{min-width:0;word-break:break-word}
+.rt-meta{display:flex;align-items:center;gap:6px;padding-top:9px;border-top:1px solid var(--line2);font-size:11px;color:var(--ink3)}
+.rt-meta .who{display:flex;align-items:center;gap:5px;min-width:0;flex:1}
+.rt-meta .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:84px}
 .rt-like{
-  display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:var(--ink2);
-  background:#f6f7fb;border:1px solid var(--line);border-radius:20px;padding:5px 9px;
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:var(--ink2);
+  background:#f7f8fc;border:1px solid var(--line);border-radius:20px;padding:4px 9px;flex-shrink:0;
 }
 .rt-like.on{background:#fdeff2;border-color:#f8d3da;color:#d6336c}
-.rt-ft .sp{flex:1}
-.rt-ft .links{display:flex;gap:6px;width:100%;margin-top:8px}
-.rt-ft .links .naver{flex:1;justify-content:center;text-align:center}
+.rt-edit{width:27px;height:27px;border-radius:9px;background:#f4f6fb;color:var(--ink3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rt-links2{display:flex;gap:6px;margin-top:9px}
+.rt-links2 .rt-lnk{flex:1;justify-content:center;text-align:center;font-size:11px;padding:7px 0;border-radius:10px}
 .rt-lnk{
   display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;border-radius:9px;padding:5px 7px;
   border:1px solid var(--line);color:var(--ink2);background:#fff;white-space:nowrap;text-decoration:none;
 }
-.rt-lnk.naver{background:#03c75a;border-color:#03c75a;color:#fff;font-size:11px;padding:6px 10px;box-shadow:0 3px 9px -5px rgba(3,199,90,.9)}
+.rt-lnk.naver{background:#e9f9f0;border-color:#cbebd9;color:#07864a}
 .rt-lnk.naver.big{font-size:11.5px;padding:7px 11px}
-.rt-lnk.kakao{background:#fdf7e3;border-color:#f0e2b4;color:#7a5b00;font-size:10px;padding:5px 7px;opacity:.9}
-.rt-edit{width:28px;height:28px;border-radius:9px;background:#f4f6fb;color:var(--ink3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rt-lnk.kakao{background:#fdf8e6;border-color:#f0e4bd;color:#7a5b00}
 .rt-pick{height:190px;border-radius:13px;overflow:hidden;background:#e9eef8;border:1px solid var(--line);margin-top:7px}
 .rt-pick.shake,.rt-starbtn.shake,#rtName.shake{animation:shake .42s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
@@ -936,9 +935,18 @@ input,textarea,select{outline:none}
 .rt-locrow span{flex:1;min-width:0;line-height:1.5;overflow:hidden;text-overflow:ellipsis}
 .field label .req{font-size:9.5px;font-weight:800;color:#d6336c;background:#fdf0f4;border-radius:6px;padding:2px 5px;margin-left:3px;vertical-align:1px}
 .field label .opt{font-size:9.5px;font-weight:800;color:var(--ink3);background:#f2f4f9;border-radius:6px;padding:2px 5px;margin-left:3px;vertical-align:1px}
-.rt-starbtn{display:flex;gap:5px}
-.rt-starbtn button{font-size:28px;line-height:1;color:#dde1ea;padding:0 1px}
-.rt-starbtn button.on{color:#f5a524}
+.rt-starbtn{display:flex;gap:2px;align-items:center;margin-top:2px}
+.rt-star{position:relative;flex:1;height:46px;display:flex;align-items:center;justify-content:center;font-size:33px;line-height:1;color:#dde1ea}
+.rt-star .g{position:relative;display:inline-block;pointer-events:none}
+.rt-star .gf{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;color:#f5a524}
+.rt-half{position:absolute;top:0;bottom:0;width:50%;background:transparent;border:0;padding:0;-webkit-tap-highlight-color:transparent}
+.rt-half.l{left:0;border-radius:10px 0 0 10px}
+.rt-half.r{right:0;border-radius:0 10px 10px 0}
+.rt-half:active{background:rgba(47,107,246,.07)}
+#rtStarHint{font-size:12px;font-weight:800;color:var(--ink2)}
+/* 반 별 — 채움 비율만큼 잘라 보여줍니다 */
+.st5{position:relative;display:inline-block;white-space:nowrap;line-height:1;color:#d8dde8;letter-spacing:.4px;vertical-align:-1px}
+.st5-fg{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;color:#f5a524}
 .rt-noresult{text-align:center;font-size:11.5px;color:var(--ink3);padding:10px;line-height:1.6}
 .rt-h2ico{display:inline-flex;align-items:center;color:var(--brand);vertical-align:-3px;margin-right:6px}
 .rt-filter{display:flex;gap:6px;overflow-x:auto;padding:1px 1px 9px;margin:0 -1px;scrollbar-width:none}
@@ -1105,7 +1113,7 @@ input,textarea,select{outline:none}
         <span class="tl">사진</span>
       </button>
       <button data-tab="rest">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+        <svg width="23" height="23" viewBox="-1.5 -1.5 27 27" fill="currentColor" stroke="none" overflow="visible"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
         <span class="tl">맛집</span>
       </button>
       <button data-tab="chat">
@@ -3086,7 +3094,9 @@ function restCatOf(r) {
 /* 포크·나이프 — 21px에서도 또렷하게 보이는 솔리드 글리프(2~22 영역, 위아래·좌우 여백 확보) */
 const REST_ICON_PATHS = '<path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>';
 function restGlyph(size, color) {
-  return '<svg width="' + (size || 14) + '" height="' + (size || 14) + '" viewBox="0 0 24 24" fill="' + (color || "currentColor") + '" stroke="none">' + REST_ICON_PATHS + "</svg>";
+  /* viewBox 를 넉넉히 잡아(주변 1.5 여백) 위아래·좌우가 잘리지 않게 */
+  const s = size || 14;
+  return '<svg width="' + s + '" height="' + s + '" viewBox="-1.5 -1.5 27 27" fill="' + (color || "currentColor") + '" stroke="none" overflow="visible">' + REST_ICON_PATHS + "</svg>";
 }
 /* 카카오 장소(키워드) 검색 — 상호명·도로명주소·카테고리 후보 최대 8개 */
 async function kakaoKeywordSearch(q, key) {
@@ -3208,15 +3218,16 @@ function restFiltered() {
     .slice()
     .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0) || (b.createdAt || 0) - (a.createdAt || 0));
 }
+/* 별점 — 0.5점 단위까지 정확히. (글자를 채움 비율만큼 잘라 반 별을 그림) */
 function starsHtml(n) {
-  const v = Math.round(Number(n) || 0);
-  let s = "";
-  for (let i = 1; i <= 5; i++) s += i <= v ? "★" : '<span class="off">☆</span>';
-  return s;
+  const v = Math.max(0, Math.min(5, Number(n) || 0));
+  const pct = (v / 5) * 100;
+  return '<span class="st5"><span class="st5-bg">★★★★★</span>' +
+    '<span class="st5-fg" style="width:' + pct.toFixed(2) + '%">★★★★★</span></span>';
 }
 function restMapLinks(r, big) {
   const q = encodeURIComponent(r.name + (r.address ? " " + r.address.split(" ").slice(0, 2).join(" ") : ""));
-  return '<a class="rt-lnk naver' + (big ? " big" : "") + '" href="https://map.naver.com/p/search/' + q + '" target="_blank" rel="noopener">🗺️ 네이버지도</a>' +
+  return '<a class="rt-lnk naver' + (big ? " big" : "") + '" href="https://map.naver.com/p/search/' + q + '" target="_blank" rel="noopener">네이버지도</a>' +
     '<a class="rt-lnk kakao" href="https://map.kakao.com/link/search/' + q + '" target="_blank" rel="noopener">카카오맵</a>';
 }
 function restPopupHtml(r, kakao) {
@@ -3238,23 +3249,22 @@ function restCard(r) {
   const liked = (r.likes || []).indexOf(myUid()) >= 0;
   const canEdit = r.author_id === myUid() || isAdmin();
   const cat = restCatOf(r);
-  const badges =
-    (r.area && REST_AREAS[r.area] ? '<span class="rtbg ' + REST_AREAS[r.area].cls + '">' + REST_AREAS[r.area].em + " " + REST_AREAS[r.area].label + '</span>' : "") +
-    (cat ? '<span class="rtbg">' + (REST_CAT_EM[cat] || "🍽️") + " " + esc(cat) + '</span>' : "");
+  const score = (Number(r.rating) || 0).toFixed(1);
+  const quote = r.review ? r.review : (r.menu ? "추천 " + r.menu : "");
   return '<article class="rt-card" data-rest="' + r.id + '">' +
-    '<div class="rt-hd"><h3>' + esc(r.name) + '</h3><span class="rt-rate">' + starsHtml(r.rating) + " " + (Number(r.rating) || 0).toFixed(1) + "</span></div>" +
-    (badges ? '<div class="rt-badges">' + badges + '</div>' : "") +
-    (r.menu ? '<p class="rt-menu">추천 <span>' + esc(r.menu) + "</span></p>" : "") +
-    (r.review ? '<p class="rt-rev">' + esc(r.review) + "</p>" : "") +
-    (r.address ? '<p class="rt-addr">📍 ' + esc(r.address) + "</p>" : "") +
-    '<div class="rt-ft">' + avatarHtml(r.author_name, "xs", r.author_id) +
+    '<div class="rt-top"><h3>' + esc(r.name) + '</h3>' +
+      (cat ? '<span class="rt-cat c-' + esc(cat) + '">' + esc(cat) + '</span>' : "") +
+      '<span class="rt-rate">' + starsHtml(r.rating) + score + '</span></div>' +
+    (r.address ? '<p class="rt-addr">📍 ' + esc(r.address) + '</p>' : "") +
+    (quote ? '<div class="rt-quote"><span class="em">' + (r.review ? "💬" : "🍽️") + '</span><span class="tx">' + esc(quote) + '</span></div>' : "") +
+    '<div class="rt-meta">' + avatarHtml(r.author_name, "xs", r.author_id) +
       '<div class="who"><span>' + esc(r.author_name || "팀원") + '</span></div>' +
       '<button class="rt-like' + (liked ? " on" : "") + '" data-like="' + r.id + '">' + (liked ? ICON.heart : ICON.heartO) + " 좋아요 " + (r.likes || []).length + "</button>" +
-      '<span class="sp"></span>' +
       (canEdit ? '<button class="rt-edit" data-editrest="' + r.id + '" aria-label="수정">' + ICON.pencil + '</button>' +
         '<button class="rt-edit" data-delrest="' + r.id + '" aria-label="삭제">' + ICON.trash + "</button>" : "") +
-      '<div class="links">' + restMapLinks(r) + "</div>" +
-    "</div></article>";
+    "</div>" +
+    '<div class="rt-links2">' + restMapLinks(r) + "</div>" +
+    "</article>";
 }
 
 function renderRest() {
@@ -3465,8 +3475,13 @@ function openRestSheet(id) {
       '<div class="field"><label>가게명</label><input type="text" id="rtName" maxlength="40" placeholder="검색하면 자동으로 채워져요" value="' + esc(r ? r.name : "") + '"></div>' +
       '<div class="field"><label>주소</label><input type="text" id="rtAddress" maxlength="120" placeholder="검색하면 자동으로 채워져요" value="' + esc(r ? r.address || "" : "") + '"></div>' +
       '<div class="field"><label>별점 <span class="req">필수</span></label><div class="rt-starbtn" id="rtStars">' +
-        [1, 2, 3, 4, 5].map(n => '<button type="button" data-s="' + n + '" class="' + (n <= rating ? "on" : "") + '" aria-label="' + n + '점">★</button>').join("") +
-      '</div><div class="hint" id="rtStarHint">' + (rating ? rating + "점" : "별을 눌러 점수를 골라 주세요 (필수)") + "</div></div>" +
+        [1, 2, 3, 4, 5].map(n =>
+          '<div class="rt-star" data-i="' + n + '">' +
+            '<span class="g"></span>' +
+            '<button type="button" class="rt-half l" data-s="' + (n - 0.5) + '" aria-label="' + (n - 0.5) + '점"></button>' +
+            '<button type="button" class="rt-half r" data-s="' + n + '" aria-label="' + n + '점"></button>' +
+          "</div>").join("") +
+      '</div><div class="hint" id="rtStarHint"></div></div>' +
       '<div class="field"><label>한줄평 및 추천메뉴 <span class="opt">선택</span></label><textarea id="rtReview" rows="3" maxlength="200" placeholder="예: 쫄면이랑 비빔만두 추천! 분위기 좋고 깔끔함">' + esc(r ? r.review || "" : "") + "</textarea></div>",
     footer: '<button class="btn" id="rtSave">' + (r ? "수정 저장" : "맛집 등록") + "</button>",
     onMount: root => {
@@ -3480,12 +3495,25 @@ function openRestSheet(id) {
       };
       locTx();
 
-      /* 별점(필수) */
+      /* 별점(필수) — 별 하나를 왼쪽/오른쪽 반으로 나눠 0.5점 단위로 고릅니다 */
+      const starWrap = $("#rtStars", root);
+      const paintStars = () => {
+        $$(".rt-star", starWrap).forEach(el => {
+          const n = Number(el.dataset.i);
+          const g = $(".g", el);
+          if (rating >= n) g.innerHTML = '<span style="color:#f5a524">★</span>';
+          else if (rating >= n - 0.5) g.innerHTML = '<span class="gf" style="width:50%">★</span><span style="color:#dde1ea">★</span>';
+          else g.innerHTML = '<span style="color:#dde1ea">★</span>';
+        });
+        const h = $("#rtStarHint", root);
+        if (h) h.innerHTML = rating
+          ? '<b style="color:#e08a00">★ ' + rating.toFixed(1) + '</b> <span style="color:var(--ink3);font-weight:600">/ 5.0</span>'
+          : "별을 눌러 점수를 골라 주세요 (필수) — 반 별까지 고를 수 있어요";
+      };
+      paintStars();
       $$("[data-s]", root).forEach(b => b.addEventListener("click", () => {
         rating = Number(b.dataset.s);
-        $$("[data-s]", root).forEach(x => x.classList.toggle("on", Number(x.dataset.s) <= rating));
-        const h = $("#rtStarHint", root);
-        if (h) { h.textContent = rating + "점"; h.style.color = ""; }
+        paintStars();
       }));
 
       const setLoc = (la, ln, addr, fly) => {
