@@ -752,6 +752,21 @@ input,textarea,select{outline:none}
 #printSheet .ps-wk{text-align:right}
 #printSheet .ps-wk b{font-weight:800;color:#4b5565}
 
+/* ============ 🖨️ 당직표 인쇄·저장 시트 ============ */
+.dsp{display:flex;flex-direction:column;gap:10px}
+.dsp-cap{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink3);padding:0 2px}
+.dsp-cap b{color:var(--ink2);font-size:11.5px}
+.dsp-prev{background:#e7ebf3;border:1px solid var(--line);border-radius:14px;padding:9px}
+.dsp-prev img{display:block;width:100%;height:auto;border-radius:9px;background:#fff;box-shadow:0 8px 20px -10px rgba(10,16,30,.42)}
+.dsp-note{font-size:11px;line-height:1.6;color:var(--ink2);background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.dsp-note b{color:var(--ink);font-weight:800}
+.dsp-ft{display:flex;flex-direction:column;gap:8px;width:100%}
+.dsp-ft .row{display:flex;gap:8px}
+.dsp-ft .row .btn{flex:1;min-width:0}
+.dsp-ft .btn{font-size:13.5px;padding:13px 10px}
+/* 재배정 — 시작 담당자 고르기(select)에 펼침 표시 */
+#rbWho{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235c6577' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center;background-size:16px 16px;padding-right:40px;font-weight:700;text-overflow:ellipsis}
+
 @media print{
   @page{size:A4 landscape; margin:10mm}
   html,body{background:#fff !important;display:block !important;min-height:0 !important;height:auto !important;margin:0 !important;padding:0 !important}
@@ -1608,12 +1623,15 @@ function lastDutyBefore(ds) {
   return list[0] || null;
 }
 /* fromDs~toDs 평일 배정 계획.
-   12월 1일은 명단 처음부터, 그 외에는 직전 당직자 다음 사람부터 이어서 배정 */
-function buildDutyPlan(fromDs, toDs) {
+   startUid 를 주면 그 사람부터, 안 주면 12월 1일은 명단 처음부터·그 외에는 직전 당직자 다음 사람부터 */
+function buildDutyPlan(fromDs, toDs, startUid) {
   const roster = rosterMembers();
   if (!roster.length) return { rows: [], roster: roster };
   let idx = 0;
-  if (fromDs.slice(5) !== "12-01") {
+  const si = startUid ? roster.findIndex(m => m.uid === startUid) : -1;
+  if (si >= 0) {
+    idx = si;
+  } else if (fromDs.slice(5) !== "12-01") {
     const last = lastDutyBefore(fromDs);
     if (last) {
       const i = roster.findIndex(m => m.uid === last.memberId);
@@ -1631,6 +1649,20 @@ function buildDutyPlan(fromDs, toDs) {
     ds = addDays(ds, 1);
   }
   return { rows: rows, roster: roster };
+}
+
+/* 재배정 기본 시작 담당자 — 그날 기존 당직자 → 직전 당직 다음 사람 → 명단 첫 사람 */
+function defaultStartUid(fromDs) {
+  const roster = rosterMembers();
+  if (!roster.length) return "";
+  const on = S.duty.filter(e => e.type === "duty" && entryStart(e) === fromDs)[0];
+  if (on && roster.some(m => m.uid === on.memberId)) return on.memberId;
+  const last = lastDutyBefore(fromDs);
+  if (last) {
+    const i = roster.findIndex(m => m.uid === last.memberId);
+    if (i >= 0) return roster[(i + 1) % roster.length].uid;
+  }
+  return roster[0].uid;
 }
 
 /* 계획 적용 — onlyEmpty: 이미 등록된 날짜는 건드리지 않음(다음 달 생성) */
@@ -1818,9 +1850,17 @@ function openRebalanceSheet() {
   const endOfMonth = ds => { const d = new Date(ds + "T00:00:00"); return ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0)); };
   let start = info.from;
   let end = (lastDutyDs && lastDutyDs > start) ? endOfMonth(lastDutyDs) : info.to;
+  let startUid = defaultStartUid(start);
+
+  const whoOptions = () => {
+    const roster = rosterMembers();
+    if (!roster.length) return '<option value="">당직 명단 없음</option>';
+    return roster.map(m => '<option value="' + esc(m.uid) + '"' + (m.uid === startUid ? " selected" : "") + ">" +
+      esc(m.name) + (m.position ? " · " + esc(m.position) : "") + "</option>").join("");
+  };
 
   const build = () => {
-    const plan = buildDutyPlan(start, end);
+    const plan = buildDutyPlan(start, end, startUid);
     const changes = [];
     plan.rows.forEach(r => {
       const cur = S.duty.filter(e => e.type === "duty" && entryStart(e) === r.ds)[0];
@@ -1842,17 +1882,20 @@ function openRebalanceSheet() {
   openSheet({
     title: "당직 재배정",
     body:
-      '<div class="notice-bar">시작일을 고르면 그날부터 순번을 다시 돌린 결과를 <b>기존 담당자와 비교</b>해 보여줍니다. [적용]을 눌러야 반영됩니다.</div>' +
+      '<div class="notice-bar">시작일과 시작 담당자를 고르면 그날부터 순번을 다시 돌린 결과를 <b>기존 담당자와 비교</b>해 보여줍니다. [적용]을 눌러야 반영됩니다.</div>' +
       '<div class="field"><label>시작 날짜</label><input type="date" id="rbStart" value="' + start + '"></div>' +
+      '<div class="field"><label>시작 담당자 (이 사람부터 순서대로 배정)</label><select id="rbWho">' + whoOptions() + "</select></div>" +
       '<div class="sec-title" style="margin-top:0" id="rbSum"></div>' +
       '<div id="rbBox">' + preview() + "</div>" +
-      '<div class="notice-bar" style="margin-top:10px;background:#f2f5fb;border-color:#e3e9f4;color:var(--ink2)">주말·공휴일·행사일은 건너뛰고 명단 ' + rosterMembers().length + '명 순번대로 배정합니다. 12월은 명단 처음부터, 1월부터는 전달 마지막 담당자 다음 사람부터 이어서 배정합니다.</div>',
+      '<div class="notice-bar" style="margin-top:10px;background:#f2f5fb;border-color:#e3e9f4;color:var(--ink2)">주말·공휴일·행사일은 건너뛰고, 고른 담당자부터 명단 ' + rosterMembers().length + '명 순번대로 배정합니다.</div>',
     footer: '<button class="btn" id="rbApply">적용</button>',
     onMount: root => {
-      const sum = $("#rbSum", root), box = $("#rbBox", root), btn = $("#rbApply", root);
+      const sum = $("#rbSum", root), box = $("#rbBox", root), btn = $("#rbApply", root), who = $("#rbWho", root);
+      const whoName = () => { const m = rosterMember(startUid); return m ? m.name : ""; };
       const sync = () => {
         const n = cur.changes.length;
-        sum.textContent = "변경 " + n + "건 · " + (start.slice(5).replace("-", "/")) + " ~ " + (end.slice(5).replace("-", "/"));
+        sum.textContent = "변경 " + n + "건 · " + (start.slice(5).replace("-", "/")) + " ~ " + (end.slice(5).replace("-", "/")) +
+          (whoName() ? " · " + whoName() + "부터" : "");
         box.innerHTML = preview();
         btn.disabled = !n;
         btn.textContent = n ? n + "건 적용" : "변경 없음";
@@ -1861,6 +1904,13 @@ function openRebalanceSheet() {
       $("#rbStart", root).addEventListener("change", e => {
         start = e.target.value || start;
         end = (lastDutyDs && lastDutyDs > start) ? endOfMonth(lastDutyDs) : endOfMonth(start);
+        startUid = defaultStartUid(start);   /* 날짜를 바꾸면 그날 기준 기본 담당자로 */
+        if (who) who.innerHTML = whoOptions();
+        cur = build();
+        sync();
+      });
+      if (who) who.addEventListener("change", e => {
+        startUid = e.target.value;
         cur = build();
         sync();
       });
@@ -2782,7 +2832,7 @@ function renderDuty() {
     opsHtml +
     '<div class="cal' + (isDuty ? " fivecol" : "") + '" style="margin-top:11px">' +
       '<div class="cal-head"><b>' + y + "년 " + (m + 1) + "월</b><div class=\"nav\">" +
-        (isDuty ? '<button class="prn" id="calPrint" title="이번 달 당직표 인쇄">🖨️ 인쇄</button>' : "") +
+        (isDuty ? '<button class="prn" id="calPrint" title="이번 달 당직표 인쇄 · 저장">🖨️ 인쇄</button>' : "") +
         '<button class="today-btn" id="calToday">오늘</button>' +
         '<button id="calPrev" aria-label="이전 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m14 6-6 6 6 6"/></svg></button>' +
         '<button id="calNext" aria-label="다음 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m10 6 6 6-6 6"/></svg></button>' +
@@ -2816,7 +2866,14 @@ function renderDuty() {
    · 인쇄에는 당직자 · 공휴일 · 행사일 · 등판만 넣습니다.
    · 의소기한 · 조사기한은 인쇄에서 빼고 앱 화면에서만 보여줍니다.
    ===================================================================== */
-function dutyPrintHtml() {
+/* =====================================================================
+   🖨️ 당직표 — 인쇄 · PNG 저장 (아이폰 홈 화면 앱 포함)
+   · 인쇄와 이미지 모두 당직자 · 공휴일 · 행사일 · 등판만 넣습니다.
+   · 의소기한 · 조사기한은 빼고 앱 화면에서만 보여줍니다.
+   · iOS 홈 화면 앱(Standalone)은 window.print()가 막히므로,
+     Canvas PNG 미리보기 → '공유 / 아이폰 인쇄'(프린트 · 파일에 저장)로 안내합니다.
+   ===================================================================== */
+function dutyPrintData() {
   const cur = (S.cursor instanceof Date) ? S.cursor : new Date();
   const y = cur.getFullYear(), m = cur.getMonth();
   ensureHolidays(y);
@@ -2824,54 +2881,69 @@ function dutyPrintHtml() {
   const todayStr = ymd(now);
   const team = String(S.team || "우리팀").trim() || "우리팀";
   const first = new Date(y, m, 1);
-  const back = first.getDay() === 0 ? 6 : first.getDay() - 1;
   const lastD = new Date(y, m + 1, 0);
+  const back = first.getDay() === 0 ? 6 : first.getDay() - 1;
   const ld = lastD.getDay();
   const fwd = (ld === 0 || ld === 6) ? 0 : 5 - ld;
   const start = new Date(y, m, 1 - back);
   const end = new Date(y, m, lastD.getDate() + fwd);
-  const days = [];
+
+  const cells = [];
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     if (d.getDay() === 0 || d.getDay() === 6) continue;
-    days.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
-  }
-  const rows = Math.max(1, Math.ceil(days.length / 5));
-  const rowH = (rows <= 5 ? 31 : 26) + "mm";   /* 월별 5~6줄 모두 같은 높이로 A4 한 장에 */
-
-  const cell = d => {
-    const ds = ymd(d), inM = d.getMonth() === m;
-    const hol = inM ? holidayName(ds) : "";
-    const ev = inM ? eventOf(ds) : null;
-    const names = inM ? entriesOn(ds).filter(e => e.type === "duty").map(e => e.memberName).filter(Boolean) : [];
-    const board = inM && msOn(ds).some(x => x.type === "board_meeting");
-    const cls = "psd" + (inM ? "" : " out") + (hol ? " hol" : "") + (ev ? " ev" : "") + (ds === todayStr ? " today" : "");
-    return '<td class="' + cls + '">' +
-      '<div class="psd-top"><span class="psd-num' + (inM ? "" : " dim") + '">' + d.getDate() + "</span>" +
-        '<span class="psd-wd">' + DAYS[d.getDay()] + "</span></div>" +
-      (hol ? '<div class="psd-hol">' + esc(hol) + "</div>" : "") +
-      (ev ? '<div class="psd-ev">🎈 ' + esc(ev.title) + "</div>" : "") +
-      (names.length ? '<div class="psd-name">' + esc(names.join(" · ")) + "</div>"
-                    : (inM ? '<div class="psd-name none">당직 없음</div>' : "")) +
-      (board ? '<div class="psd-badge">📋 등판</div>' : "") +
-      "</td>";
-  };
-
-  let tbody = "";
-  for (let i = 0; i < days.length; i += 5) {
-    tbody += '<tr style="height:' + rowH + '">' + days.slice(i, i + 5).map(cell).join("") + "</tr>";
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const ds = ymd(day), inM = day.getMonth() === m;
+    cells.push({
+      day: day, ds: ds, inM: inM,
+      holiday: inM ? holidayName(ds) : "",
+      event: inM ? eventOf(ds) : null,
+      names: inM ? entriesOn(ds).filter(e => e.type === "duty").map(e => e.memberName).filter(Boolean) : [],
+      board: inM && msOn(ds).some(x => x.type === "board_meeting"),
+      today: ds === todayStr
+    });
   }
 
   /* 달력 칸이 없는 주말 당직은 아래 한 줄로 */
   const from = ymd(first), to = ymd(lastD);
   const wk = S.duty.filter(e => e.type === "duty" && isWeekendDs(entryStart(e)) && entryStart(e) >= from && entryStart(e) <= to)
     .sort((a, b) => entryStart(a) < entryStart(b) ? -1 : 1);
-  const wkTxt = wk.length
-    ? "주말 당직 " + wk.map(e => shortDate(entryStart(e)) + "(" + DAYS[new Date(entryStart(e) + "T00:00:00").getDay()] + ") " + e.memberName).join(" · ")
-    : "";
+
+  return {
+    y: y, m: m, team: team, todayStr: todayStr, cells: cells,
+    rows: Math.max(1, Math.ceil(cells.length / 5)),
+    wkText: wk.length
+      ? "주말 당직 " + wk.map(e => shortDate(entryStart(e)) + "(" + DAYS[new Date(entryStart(e) + "T00:00:00").getDay()] + ") " + e.memberName).join(" · ")
+      : "",
+    printDate: todayStr + " (" + DAYS[now.getDay()] + ")",
+    fileBase: y + "-" + pad2(m + 1) + "-당직표"
+  };
+}
+
+function dutyPrintHtml() {
+  const P = dutyPrintData();
+  const rowH = (P.rows <= 5 ? 31 : 26) + "mm";   /* 월별 5~6줄 모두 같은 높이로 A4 한 장에 */
+
+  const cell = c => {
+    const cls = "psd" + (c.inM ? "" : " out") + (c.holiday ? " hol" : "") + (c.event ? " ev" : "") + (c.today ? " today" : "");
+    return '<td class="' + cls + '">' +
+      '<div class="psd-top"><span class="psd-num' + (c.inM ? "" : " dim") + '">' + c.day.getDate() + "</span>" +
+        '<span class="psd-wd">' + DAYS[c.day.getDay()] + "</span></div>" +
+      (c.holiday ? '<div class="psd-hol">' + esc(c.holiday) + "</div>" : "") +
+      (c.event ? '<div class="psd-ev">🎈 ' + esc(c.event.title) + "</div>" : "") +
+      (c.names.length ? '<div class="psd-name">' + esc(c.names.join(" · ")) + "</div>"
+                      : (c.inM ? '<div class="psd-name none">당직 없음</div>' : "")) +
+      (c.board ? '<div class="psd-badge">📋 등판</div>' : "") +
+      "</td>";
+  };
+
+  let tbody = "";
+  for (let i = 0; i < P.cells.length; i += 5) {
+    tbody += '<tr style="height:' + rowH + '">' + P.cells.slice(i, i + 5).map(cell).join("") + "</tr>";
+  }
 
   return '<div class="ps-page">' +
-    '<div class="ps-hd"><h1>' + esc(team) + " · " + y + "년 " + (m + 1) + "월 당직표</h1>" +
-      '<div class="ps-meta">출력일 ' + todayStr + " (" + DAYS[now.getDay()] + ")</div></div>" +
+    '<div class="ps-hd"><h1>' + esc(P.team) + " · " + P.y + "년 " + (P.m + 1) + "월 당직표</h1>" +
+      '<div class="ps-meta">출력일 ' + P.printDate + "</div></div>" +
     '<table class="ps-cal"><thead><tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th></tr></thead><tbody>' +
       tbody + "</tbody></table>" +
     '<div class="ps-foot">' +
@@ -2879,15 +2951,286 @@ function dutyPrintHtml() {
         '<span><i style="background:#dc2626"></i>등판</span>' +
         '<span><i style="background:#c4b5fd"></i>행사일</span>' +
         '<span><i style="background:#fbe0e0"></i>공휴일</span></div>' +
-      (wkTxt ? '<div class="ps-wk"><b>' + esc(wkTxt) + "</b></div>" : "") +
+      (P.wkText ? '<div class="ps-wk"><b>' + esc(P.wkText) + "</b></div>" : "") +
     "</div></div>";
 }
 
+/* ---------------- Canvas PNG (A4 가로 비율 2200 × 1554) ---------------- */
+const DUTY_PNG_W = 2200, DUTY_PNG_H = 1554;
+const DUTY_FF = "-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR','Segoe UI',sans-serif";
+
+function dutyPrintCanvas() {
+  const P = dutyPrintData();
+  const W = DUTY_PNG_W, H = DUTY_PNG_H;
+  const cvs = document.createElement("canvas");
+  cvs.width = W; cvs.height = H;
+  const ctx = cvs.getContext("2d");
+  const font = (size, weight) => (weight || 700) + " " + Math.round(size) + "px " + DUTY_FF;
+
+  const rr = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  };
+  const clip = (text, maxW) => {
+    if (ctx.measureText(text).width <= maxW) return text;
+    let t = text;
+    while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
+    return t + "…";
+  };
+  const wrap = (text, maxW, maxLines) => {
+    const out = [];
+    let line = "";
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ctx.measureText(line + ch).width > maxW && line) {
+        out.push(line);
+        line = ch;
+        if (out.length === maxLines) return out.slice(0, maxLines - 1).concat(clip(out[maxLines - 1] + line + text.slice(i + 1), maxW));
+      } else line += ch;
+    }
+    if (line) out.push(line);
+    return out;
+  };
+
+  const M = 76, innerW = W - M * 2;
+  const hdBase = M + 54;
+  const ruleY = hdBase + 34;
+  const tableTop = ruleY + 24;
+  const footRuleY = H - M - 84;
+  const tableBottom = footRuleY - 26;
+  const cw = innerW / 5;
+  const headH = 56;
+  const bodyTop = tableTop + headH;
+  const rh = (tableBottom - bodyTop) / P.rows;
+
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = "alphabetic";
+
+  /* ---- 머리 : 팀 · 연월 + 출력일 ---- */
+  ctx.textAlign = "left"; ctx.fillStyle = "#141a24"; ctx.font = font(56, 800);
+  ctx.fillText(P.team + " · " + P.y + "년 " + (P.m + 1) + "월 당직표", M, hdBase);
+  ctx.textAlign = "right"; ctx.fillStyle = "#5c6577"; ctx.font = font(26, 600);
+  ctx.fillText("출력일 " + P.printDate, W - M, hdBase);
+  ctx.strokeStyle = "#e58a09"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(M, ruleY); ctx.lineTo(W - M, ruleY); ctx.stroke();
+
+  /* ---- 표 머리 ---- */
+  ctx.fillStyle = "#f2f5fa"; ctx.fillRect(M, tableTop, innerW, headH);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#4b5565"; ctx.font = font(27, 800);
+  ["월", "화", "수", "목", "금"].forEach((t, i) => ctx.fillText(t, M + cw * (i + 0.5), tableTop + headH / 2 + 1));
+
+  /* ---- 표 본문 ---- */
+  const drawCell = (x, y, c, h) => {
+    const bg = !c ? "#ffffff" : c.event ? "#f6f2ff" : c.holiday ? "#fff7f7" : (c.inM ? "#ffffff" : "#fbfcfe");
+    ctx.fillStyle = bg; ctx.fillRect(x, y, cw, h);
+    ctx.strokeStyle = "#cfd6e2"; ctx.lineWidth = 1.6;
+    ctx.strokeRect(x + 0.8, y + 0.8, cw - 1.6, h - 1.6);
+    if (!c) return;
+
+    const px = x + 20, pTop = y + 15, maxW = cw - 40;
+    const fNum = Math.max(30, Math.min(46, h * 0.205));
+    const fWd = Math.max(19, Math.min(25, h * 0.112));
+    const fMeta = Math.max(18.5, Math.min(24.5, h * 0.108));
+    const lineH = fMeta * 1.3;
+
+    /* 날짜 + 요일 */
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.font = font(fNum, 800);
+    const numTxt = String(c.day.getDate());
+    const numW = ctx.measureText(numTxt).width;
+    ctx.fillStyle = c.inM ? (c.today ? "#1f52cf" : "#141a24") : "#c3cad8";
+    ctx.fillText(numTxt, px, pTop + fNum * 0.94);
+    ctx.font = font(fWd, 700); ctx.fillStyle = c.inM ? "#8a93a6" : "#c9d0dd";
+    ctx.fillText(DAYS[c.day.getDay()], px + numW + 10, pTop + fNum * 0.94);
+
+    /* 이름은 칸 아래쪽에 맞춰 이름끼리 줄이 서도록 */
+    const badgeH = Math.max(27, Math.min(34, h * 0.142));
+    const bottom = y + h - 14;
+    const nameBottom = c.board ? bottom - badgeH - 7 : bottom;
+    let fName = Math.max(30, Math.min(58, h * 0.245));
+    const nameTxt = c.names.length ? c.names.join(" · ") : "";
+    if (nameTxt) {
+      ctx.font = font(fName, 800);
+      while (fName > 23 && ctx.measureText(nameTxt).width > maxW) { fName -= 1; ctx.font = font(fName, 800); }
+    }
+    const nameTop = nameBottom - fName;
+
+    /* 공휴일 · 행사일 */
+    ctx.textBaseline = "top";
+    let my = pTop + fNum * 0.94 + 9;
+    const metaLimit = nameTop - 6;
+    if (c.holiday && my + fMeta <= metaLimit) {
+      ctx.font = font(fMeta, 800); ctx.fillStyle = "#c8323a";
+      ctx.fillText(clip(c.holiday, maxW), px, my); my += lineH;
+    }
+    if (c.event) {
+      ctx.font = font(fMeta, 800); ctx.fillStyle = "#5b46c9";
+      const lines = wrap("🎈 " + c.event.title, maxW, 2);
+      for (let i = 0; i < lines.length; i++) {
+        if (my + fMeta > metaLimit) break;
+        ctx.fillText(lines[i], px, my); my += lineH;
+      }
+    }
+
+    /* 당직자 이름 */
+    ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+    if (c.names.length) {
+      ctx.font = font(fName, 800); ctx.fillStyle = "#0f1722";
+      ctx.fillText(clip(nameTxt, maxW), px, nameBottom - fName * 0.17);
+    } else if (c.inM) {
+      ctx.font = font(Math.max(18, fName * 0.40), 700); ctx.fillStyle = "#b6bdc9";
+      ctx.fillText("당직 없음", px, nameBottom - 3);
+    }
+
+    /* 📋 등판 */
+    if (c.board) {
+      const label = "📋 등판";
+      const fB = Math.max(18, badgeH * 0.60);
+      ctx.font = font(fB, 800);
+      const bw = ctx.measureText(label).width + 24;
+      const bt = bottom - badgeH;
+      rr(px, bt, bw, badgeH, 7);
+      ctx.fillStyle = "#fee2e2"; ctx.fill();
+      ctx.strokeStyle = "#fecaca"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillStyle = "#b91c1c";
+      ctx.fillText(label, px + 12, bt + badgeH / 2 + 1);
+    }
+  };
+
+  for (let r = 0; r < P.rows; r++) {
+    for (let cix = 0; cix < 5; cix++) {
+      const idx = r * 5 + cix;
+      drawCell(M + cw * cix, bodyTop + rh * r, P.cells[idx] || null, rh);
+    }
+  }
+
+  /* ---- 하단 : 범례 + 주말 당직 ---- */
+  ctx.strokeStyle = "#cfd6e2"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(M, footRuleY); ctx.lineTo(W - M, footRuleY); ctx.stroke();
+
+  const lgY = footRuleY + 34;
+  let lx = M;
+  ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = font(24, 700);
+  [["#e58a09", "당직"], ["#dc2626", "등판"], ["#c4b5fd", "행사일"], ["#fbe0e0", "공휴일"]].forEach(it => {
+    ctx.fillStyle = it[0]; rr(lx, lgY - 10, 18, 18, 4); ctx.fill();
+    ctx.strokeStyle = "rgba(20,26,36,.12)"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#4b5565"; ctx.font = font(24, 700);
+    const tW = ctx.measureText(it[1]).width;
+    ctx.fillText(it[1], lx + 26, lgY + 1);
+    lx += 26 + tW + 34;
+  });
+
+  if (P.wkText) {
+    ctx.textAlign = "right"; ctx.fillStyle = "#4b5565"; ctx.font = font(23, 700);
+    const lines = wrap(P.wkText, Math.max(400, W - M - lx - 30), 2);
+    lines.forEach((ln, i) => ctx.fillText(ln, W - M, lgY + i * 30));
+  }
+
+  return cvs;
+}
+
+function isStandaloneApp() {
+  try {
+    return (window.navigator.standalone === true) ||
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches;
+  } catch (e) { return false; }
+}
+
 function printDutySheet() {
-  const box = $("#printSheet");
-  if (!box) { window.print(); return; }
-  box.innerHTML = dutyPrintHtml();
-  try { window.print(); } catch (e) { toast("이 기기에서는 인쇄 창을 열 수 없어요"); }
+  const P = dutyPrintData();
+  const cvs = dutyPrintCanvas();
+  const dataUrl = cvs.toDataURL("image/png");
+  const fname = P.fileBase + ".png";
+  const title = P.team + " " + P.y + "년 " + (P.m + 1) + "월 당직표";
+  const standalone = isStandaloneApp();
+
+  /* 공유 시트에 바로 넘길 File 을 미리 만들어 둡니다(아이폰은 클릭 순간의 사용자 동작이 필요). */
+  let shareFile = null, shareBlob = null;
+  if (typeof cvs.toBlob === "function") {
+    try {
+      cvs.toBlob(blob => {
+        if (!blob) return;
+        shareBlob = blob;
+        try { shareFile = new File([blob], fname, { type: "image/png" }); } catch (e) { shareFile = null; }
+      }, "image/png");
+    } catch (e) { /* Blob 미지원 — dataURL 로 대체 */ }
+  }
+
+  const body =
+    '<div class="dsp">' +
+      '<div class="dsp-cap"><b>A4 가로 미리보기</b><span>PNG ' + DUTY_PNG_W + "×" + DUTY_PNG_H + "</span></div>" +
+      '<div class="dsp-prev"><img id="dspImg" src="' + dataUrl + '" alt="' + esc(title) + ' 미리보기"></div>' +
+      '<div class="dsp-note">' +
+        (standalone
+          ? "홈 화면 앱에서는 <b>🖨️ 바로 인쇄</b>가 열리지 않아요. <b>공유 / 아이폰 인쇄</b>를 누른 뒤 <b>프린트</b> 또는 <b>파일에 저장</b>을 골라 주세요."
+          : "미리보기를 길게 누르면 사진에 저장할 수 있어요. 인쇄는 <b>바로 인쇄</b> 또는 <b>공유</b>에서 프린트를 고르세요.") +
+      "</div>" +
+    "</div>";
+
+  const footer =
+    '<div class="dsp-ft">' +
+      '<button class="btn" id="dspShare">📤 공유 / 아이폰 인쇄</button>' +
+      '<div class="row">' +
+        '<button class="btn ghost" id="dspSave">🖼️ 이미지 저장</button>' +
+        '<button class="btn ghost-line" id="dspPrint">🖨️ 바로 인쇄</button>' +
+      "</div>" +
+    "</div>";
+
+  openSheet({
+    title: "🖨️ 당직표 인쇄 · 저장",
+    body: body,
+    footer: footer,
+    onMount: () => {
+      /* 1) 공유 / 아이폰 인쇄 — 네이티브 공유 시트(프린트 · 파일에 저장 · 카톡) */
+      $("#dspShare").addEventListener("click", () => {
+        const file = shareFile;
+        if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          navigator.share({ files: [file], title: title }).catch(err => {
+            if (err && err.name === "AbortError") return;
+            openPngTab();
+          });
+          return;
+        }
+        if (!file) { toast("이미지를 준비하고 있어요. 잠시 뒤 다시 눌러 주세요."); return; }
+        openPngTab();
+      });
+
+      /* 2) 이미지 저장 — PNG 다운로드 */
+      $("#dspSave").addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = dataUrl; a.download = fname; a.rel = "noopener";
+        document.body.appendChild(a); a.click(); a.remove();
+        toast("PNG로 저장했어요 · 안 되면 미리보기를 길게 눌러 저장해 주세요");
+      });
+
+      /* 3) 바로 인쇄 — 일반 브라우저 · PC */
+      $("#dspPrint").addEventListener("click", () => {
+        const box = $("#printSheet");
+        if (!box) { toast("이 기기에서는 인쇄 창을 열 수 없어요"); return; }
+        box.innerHTML = dutyPrintHtml();
+        try { window.print(); } catch (e) { /* 아래 안내로 대신 */ }
+        if (standalone) toast("홈 화면 앱에서는 위 '공유 / 아이폰 인쇄'로 프린트해 주세요");
+      });
+    }
+  });
+
+  function openPngTab() {
+    try {
+      if (shareBlob) {
+        const url = URL.createObjectURL(shareBlob);
+        const w = window.open(url, "_blank");
+        if (w) { setTimeout(() => URL.revokeObjectURL(url), 60000); toast("새 탭에서 이미지를 길게 눌러 저장·공유하세요"); return; }
+      }
+    } catch (e) { /* 아래 안내 */ }
+    toast("공유를 열 수 없어요. 미리보기를 길게 눌러 저장해 주세요");
+  }
 }
 
 function monthList(rows, isDuty, events) {
