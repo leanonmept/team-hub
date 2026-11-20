@@ -22,7 +22,9 @@
      users/{uid}            { empId, email(=사번@teamhub.local), name, position,
                               role:'admin'|'member', canManageDuty,
                               status:'pending'|'approved'|'rejected',
-                              workStatus, statusNote, statusUpdatedAt, createdAt }
+                              avatarData, workStatus, statusNote, statusUpdatedAt, createdAt }
+                            → avatarData: '' (기본·이름 첫 글자) | 'emoji:😊' | 'data:image/jpeg;base64,…'(160×160, 80KB 미만)
+                              본인만 바꿀 수 있고, 길이 12만 자 미만만 허용합니다.
                             → 로그인은 사번 + 비밀번호. 사번은 내부에서만
                               사번@teamhub.local 가상 이메일로 변환해 Auth 에 넘깁니다.
                             → position(직책: 팀장·주무관·주임…)과 앱 권한은 별개
@@ -121,6 +123,11 @@ service cloud.firestore {
     function validStatus(s) {
       return s in ['', 'day_island', 'overnight_island', 'duty', 'edu'];
     }
+    /* 프로필 아바타 — 없거나, 이모티콘/사진 문자열이면 통과. 길이 상한 12만 자(160×160 JPEG 80KB 이하) */
+    function validAvatar(d) {
+      return !('avatarData' in d)
+        || (d.avatarData is string && d.avatarData.size() < 120000);
+    }
     function validEntryType(t) {
       return t in ['day_island', 'overnight_island', 'duty', 'edu',
                    'board_meeting', 'opinion_due', 'survey_due'];
@@ -148,7 +155,7 @@ service cloud.firestore {
          (BOOTSTRAP 이메일은 예외적으로 admin/approved 생성 허용) */
       allow create: if isSelf(uid)
         && request.resource.data.keys().hasOnly(
-             ['empId','email','name','position','role','status','canManageDuty','workStatus','statusNote','statusUpdatedAt','createdAt'])
+             ['empId','email','name','position','role','status','canManageDuty','avatarData','workStatus','statusNote','statusUpdatedAt','createdAt'])
         && (
              (request.resource.data.status == 'pending' && request.resource.data.role == 'member'
                 && (!('canManageDuty' in request.resource.data) || request.resource.data.canManageDuty == false))
@@ -161,20 +168,23 @@ service cloud.firestore {
             || request.resource.data.position in ['주임','대리','과장','팀장','센터장','부장'])
         && request.resource.data.email is string
         && request.resource.data.name is string
-        && request.resource.data.name.size() <= 30;
+        && request.resource.data.name.size() <= 30
+        && validAvatar(request.resource.data);
 
       /* 관리자: 누구든 role/status/canManageDuty 변경 가능 (권한 부여·해제)
-         본인: 이름·직책·근무상태만 변경 가능 (사번/role/status/canManageDuty 는 절대 못 바꿈) */
+         본인: 이름·직책·근무상태·avatarData 만 변경 가능 (사번/role/status/canManageDuty 는 절대 못 바꿈)
+         avatarData 는 본인이 직접 고른 프로필 사진(160×160 JPEG) 또는 이모티콘 문자열 — 12만 자 미만만 허용 */
       allow update: if isAdmin()
         || (isSelf(uid)
-            && onlyChanged(['name','position','workStatus','statusNote','statusUpdatedAt'])
+            && onlyChanged(['name','position','workStatus','statusNote','statusUpdatedAt','avatarData'])
             && request.resource.data.role == resource.data.role
             && request.resource.data.status == resource.data.status
             && (!('empId' in request.resource.data) || !('empId' in resource.data)
                 || request.resource.data.empId == resource.data.empId)
             && (!('canManageDuty' in request.resource.data)
                 || request.resource.data.canManageDuty == (('canManageDuty' in resource.data) && resource.data.canManageDuty == true))
-            && validStatus(request.resource.data.workStatus));
+            && validStatus(request.resource.data.workStatus)
+            && validAvatar(request.resource.data));
 
       /* 관리자만 팀원 삭제(내보내기) — 본인 삭제는 불가 */
       allow delete: if isAdmin() && !isSelf(uid);

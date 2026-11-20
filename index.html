@@ -199,9 +199,20 @@ input,textarea,select{outline:none}
 .avatar{
   width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;
+  overflow:hidden;background:#dfe5f2;
 }
 .avatar.lg{width:46px;height:46px;border-radius:15px;font-size:16px}
 .avatar.sm{width:28px;height:28px;border-radius:9px;font-size:11px}
+.avatar.xs{width:20px;height:20px;border-radius:7px;font-size:9.5px}
+/* 사진 아바타 — 정사각 크롭 후 동그랗게 */
+.avatar.photo{background:#e4e8f1;border-radius:50%}
+.avatar.photo img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+/* 이모티콘 아바타 — 깔끔한 배경 원 안에 중앙 정렬 */
+.avatar.emo{background:#eef2fb;color:#26303f;border-radius:50%;font-size:16px;line-height:1}
+.avatar.xs.emo{font-size:11px}
+.avatar.sm.emo{font-size:14px}
+.avatar.av.emo{font-size:15px}
+.avatar.lg.emo{font-size:23px}
 .views{flex:1;position:relative;min-height:0}
 .view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none;padding:16px 16px calc(18px);}
 .view.active{display:block}
@@ -386,6 +397,8 @@ input,textarea,select{outline:none}
   position:absolute;inset:auto 0 0 0;padding:14px 42px 6px 8px;font-size:9.5px;color:#fff;line-height:1.3;
   background:linear-gradient(transparent,rgba(0,0,0,.55));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+.pcell .pav{position:absolute;left:5px;top:5px;display:flex;line-height:0}
+.pcell .pav .avatar{border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,.3);border:1.5px solid rgba(255,255,255,.9)}
 .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
 .phead .cnt{font-size:11.5px;color:var(--ink3)}
 .upbtn{
@@ -450,6 +463,25 @@ input,textarea,select{outline:none}
 .pend-card .pt b{font-size:14px;display:block}
 .pend-card .pt p{margin:2px 0 0;font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pend-acts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+/* ============ 프로필 아바타 ============ */
+.myprof{
+  display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:16px;margin-bottom:10px;
+  background:linear-gradient(135deg,#eef3ff,#f8faff);border:1px solid #e0e8ff;
+}
+.myprof .mi{flex:1;min-width:0}
+.myprof .mi b{display:block;font-size:13.5px;letter-spacing:-.02em}
+.myprof .mi p{margin:2px 0 0;font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avprev{display:flex;flex-direction:column;align-items:center;gap:7px;padding:6px 0 12px}
+.avprev .avatar{width:86px;height:86px;border-radius:50%!important;font-size:30px;box-shadow:0 6px 18px -8px rgba(20,26,36,.4)}
+.avprev .avatar.emo{font-size:42px}
+.avprev b{font-size:14.5px;letter-spacing:-.02em;margin-top:2px}
+.avgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:2px}
+.avcell{
+  aspect-ratio:1/1;border-radius:13px;background:#f4f7fc;border:1.5px solid transparent;
+  display:flex;align-items:center;justify-content:center;font-size:21px;line-height:1;transition:.12s;
+}
+.avcell:active{transform:scale(.94)}
+.avcell.on{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px rgba(47,107,246,.13)}
 .set-item{display:flex;align-items:center;gap:10px;padding:13px 14px;background:#fff;border-radius:13px;margin-bottom:7px;border:1px solid rgba(20,26,36,.03);box-shadow:0 1px 3px rgba(20,26,36,.04);width:100%;text-align:left}
 .set-item .si{flex:1}
 .set-item .si b{font-size:13.5px;display:block;margin-bottom:1px}
@@ -973,8 +1005,53 @@ function colorOf(name) {
   return COLORS[h % COLORS.length];
 }
 function initial(name) { return String(name || "?").trim().slice(0, 1) || "?"; }
-function avatarHtml(name, cls) {
-  return '<span class="avatar ' + (cls || "") + '" style="background:' + colorOf(name) + '">' + esc(initial(name)) + "</span>";
+/* =====================================================================
+   프로필 아바타 — avatarData 한 문자열로 세 가지를 표현합니다.
+     ""                       → 이름 첫 글자 + 이름별 색 (기본)
+     "emoji:😊"              → 깔끔한 배경 원 안의 이모티콘
+     "data:image/jpeg;base64,…" → 정사각 160×160 JPEG (80KB 미만)
+   팀원 목록(S.members)에서 uid(또는 이름)로 찾아 그 사람의 아바타를 그립니다.
+   ===================================================================== */
+const AVATAR_KB_MAX = 80 * 1024;        /* 사진 아바타 목표 용량 */
+const AVATAR_RULE_MAX = 120000;         /* 보안 규칙 상한(문자 수) */
+const AVATAR_EMOJI = [
+  "😊", "😄", "😎", "🥰", "🤗", "😆",
+  "🙂", "😉", "🤔", "😴", "🐶", "🐱",
+  "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+  "🌱", "🌷", "🌞", "🌈", "🍀", "🍎",
+  "📋", "📌", "💼", "🖥️", "✏️", "☕"
+];
+/* 이름 또는 uid 로 팀원을 찾아 avatarData 값을 돌려줍니다. */
+function memberAvatar(id, name) {
+  let m = null;
+  if (id) m = S.members.filter(x => x.uid === id)[0] || null;
+  if (!m && name) m = S.members.filter(x => x.name === name)[0] || null;
+  let v = m ? m.avatarData : "";
+  if (!v && S.user && ((id && S.user.uid === id) || (!id && name && S.user.name === name))) v = S.user.avatarData;
+  return String(v || "");
+}
+function avatarHtml(name, cls, id) {
+  return avatarHtmlValue(memberAvatar(id, name), name, cls);
+}
+/* 값 하나를 그대로 그립니다 — 미리보기(저장 전)에도 씁니다. */
+function avatarHtmlValue(v, name, cls) {
+  const val = String(v || "");
+  const cl = ("avatar " + (cls || "")).trim();
+  if (val.indexOf("data:image") === 0) return '<span class="' + cl + ' photo"><img src="' + esc(val) + '" alt="" loading="lazy"></span>';
+  if (val.indexOf("emoji:") === 0) return '<span class="' + cl + ' emo">' + esc(val.slice(6)) + "</span>";
+  return '<span class="' + cl + '" style="background:' + colorOf(name) + '">' + esc(initial(name)) + "</span>";
+}
+/* 상단 헤더 아바타(#myAvatar)를 현재 아바타로 다시 그립니다. */
+function renderMyAvatar() {
+  const el = $("#myAvatar");
+  if (!el || !S.user) return;
+  const box = document.createElement("span");
+  box.innerHTML = avatarHtml(S.user.name, "", myUid());
+  const fresh = box.firstElementChild;
+  if (!fresh) return;
+  el.className = fresh.className;
+  el.style.background = fresh.style.background || "";
+  el.innerHTML = fresh.innerHTML;
 }
 function toast(msg) {
   const t = $("#toast"); t.textContent = msg; t.classList.add("on");
@@ -1058,16 +1135,16 @@ function seedDemo() {
   const users = [
     /* 직책(position)과 앱 권한(role·canManageDuty)은 별개입니다.
        직책이 팀장이어도 관리자가 아닐 수 있고, 주무관이 관리자일 수 있습니다. */
-    { uid: "u_admin", empId: "1001", email: "1001@teamhub.local", pw: "123456", name: "김영환", position: "과장", role: "admin", canManageDuty: true, status: "approved", createdAt: now - 260 * D },
-    { uid: "u_seoyeon", empId: "1002", email: "1002@teamhub.local", pw: "123456", name: "박서연", position: "팀장", role: "member", canManageDuty: false, status: "approved", createdAt: now - 250 * D },
-    { uid: "u_junho", empId: "1003", email: "1003@teamhub.local", pw: "123456", name: "이준호", position: "대리", role: "member", canManageDuty: true, status: "approved", createdAt: now - 240 * D },
-    { uid: "u_mina", empId: "1004", email: "1004@teamhub.local", pw: "123456", name: "최민아", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 210 * D },
-    { uid: "u_hyunwoo", empId: "1005", email: "1005@teamhub.local", pw: "123456", name: "정현우", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 180 * D },
-    { uid: "u_yerin", empId: "1006", email: "1006@teamhub.local", pw: "123456", name: "강예린", position: "대리", role: "member", canManageDuty: false, status: "approved", createdAt: now - 120 * D },
-    { uid: "u_dohyun", empId: "1007", email: "1007@teamhub.local", pw: "123456", name: "윤도현", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 90 * D },
-    { uid: "u_jisu", empId: "1008", email: "1008@teamhub.local", pw: "123456", name: "한지수", position: "주임", role: "member", canManageDuty: false, status: "approved", createdAt: now - 60 * D },
-    { uid: "u_sehoon", empId: "1009", email: "1009@teamhub.local", pw: "123456", name: "오세훈", position: "주임", role: "member", canManageDuty: false, status: "pending", createdAt: now - 2 * D },
-    { uid: "u_gayoung", empId: "1010", email: "1010@teamhub.local", pw: "123456", name: "문가영", position: "대리", role: "member", canManageDuty: false, status: "pending", createdAt: now - 20 * 3600000 }
+    { uid: "u_admin", empId: "1001", email: "1001@teamhub.local", pw: "123456", name: "김영환", position: "과장", role: "admin", canManageDuty: true, status: "approved", avatarData: "", createdAt: now - 260 * D },
+    { uid: "u_seoyeon", empId: "1002", email: "1002@teamhub.local", pw: "123456", name: "박서연", position: "팀장", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 250 * D },
+    { uid: "u_junho", empId: "1003", email: "1003@teamhub.local", pw: "123456", name: "이준호", position: "대리", role: "member", canManageDuty: true, status: "approved", avatarData: "", createdAt: now - 240 * D },
+    { uid: "u_mina", empId: "1004", email: "1004@teamhub.local", pw: "123456", name: "최민아", position: "주임", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 210 * D },
+    { uid: "u_hyunwoo", empId: "1005", email: "1005@teamhub.local", pw: "123456", name: "정현우", position: "주임", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 180 * D },
+    { uid: "u_yerin", empId: "1006", email: "1006@teamhub.local", pw: "123456", name: "강예린", position: "대리", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 120 * D },
+    { uid: "u_dohyun", empId: "1007", email: "1007@teamhub.local", pw: "123456", name: "윤도현", position: "주임", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 90 * D },
+    { uid: "u_jisu", empId: "1008", email: "1008@teamhub.local", pw: "123456", name: "한지수", position: "주임", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 60 * D },
+    { uid: "u_sehoon", empId: "1009", email: "1009@teamhub.local", pw: "123456", name: "오세훈", position: "주임", role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: now - 2 * D },
+    { uid: "u_gayoung", empId: "1010", email: "1010@teamhub.local", pw: "123456", name: "문가영", position: "대리", role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: now - 20 * 3600000 }
   ];
 
   const announcements = [
@@ -1183,7 +1260,7 @@ function seedDemo() {
   const events = [{ id: ymd(nm), date: ymd(nm), title: "전체 행사 (당직 없음)", createdAt: now - 12 * 3600000 }];
 
   return { users: users, announcements: announcements, duty: duty, photos: photos, messages: messages,
-           roster: { excluded: [], customMembers: [] }, events: events, seededAt: now, v: 3 };
+           roster: { excluded: [], customMembers: [] }, events: events, seededAt: now, v: 4 };
 }
 
 function demoRead() { try { return JSON.parse(localStorage.getItem(DEMO_KEY) || "null"); } catch (e) { return null; } }
@@ -1198,6 +1275,12 @@ function demoGet() {
     d.v = 3;
     demoWrite(d);
   }
+  /* v4: 프로필 아바타(avatarData) 필드 보충 — 기존 미리보기 데이터도 그대로 쓸 수 있게 */
+  if (!d.v || d.v < 4) {
+    (d.users || []).forEach(u => { if (typeof u.avatarData !== "string") u.avatarData = ""; });
+    d.v = 4;
+    demoWrite(d);
+  }
   return d;
 }
 function demoWrite(d) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(d)); } catch (e) { toast("저장 공간이 부족해요"); } }
@@ -1205,7 +1288,7 @@ function demoWrite(d) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(d));
 /* 데모 상태 → S 반영 */
 function syncDemo() {
   const d = demoGet();
-  S.members = d.users.map(u => ({ uid: u.uid, empId: u.empId || emailToEmp(u.email), email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, canManageDuty: u.canManageDuty === true, createdAt: u.createdAt, workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
+  S.members = d.users.map(u => ({ uid: u.uid, empId: u.empId || emailToEmp(u.email), email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, canManageDuty: u.canManageDuty === true, createdAt: u.createdAt, avatarData: u.avatarData || "", workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
   S.announcements = (d.announcements || []).map(a => ({
     id: a.id, title: a.title, body: a.body, is_pinned: !!a.is_pinned, is_important: !!a.is_important,
     author_id: a.author_id, author_name: a.author_name, createdAt: a.createdAt
@@ -1627,7 +1710,7 @@ function openRosterSheet(editId) {
     }
     return '<div class="rrow' + (off ? " off" : "") + '">' +
       '<span class="no">' + no + "</span>" +
-      '<span class="avatar sm" style="background:' + colorOf(m.name) + '">' + esc(initial(m.name)) + "</span>" +
+      avatarHtml(m.name, "sm", m.uid) +
       '<div class="nm"><b>' + esc(m.name) + (m.custom ? ' <span class="cf">직접</span>' : "") + "</b><p>" + esc(meta) + "</p></div>" +
       (admin ? '<div class="racts">' +
         (m.custom ? '<button class="ico" data-ren="' + m.uid + '" aria-label="이름 수정">' + ICON.pencil + "</button>" +
@@ -1936,7 +2019,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       : "";
     const span = entryEnd(e) !== entryStart(e) ? ' <span style="font-size:10px;color:var(--ink3)">' + shortDate(entryStart(e)) + "~" + shortDate(entryEnd(e)) + "</span>" : "";
     return '<div class="duty-item">' +
-      '<span class="avatar" style="background:' + colorOf(mm ? mm.name : e.memberName) + '">' + esc(initial(mm ? mm.name : e.memberName)) + "</span>" +
+      avatarHtml(mm ? mm.name : e.memberName, "", mm ? mm.uid : "") +
       '<div class="di"><b>' + esc(mm ? mm.name : e.memberName) + ' <span class="type-badge" style="background:' + (s.cls === "island-night" ? "#333a9e" : s.cls === "island-day" ? "#0ea5e9" : s.cls === "duty" ? "#e07a00" : "#059669") + '">' + s.em + " " + s.label + "</span>" + span + "</b>" +
       (e.memo ? "<p>" + esc(e.memo) + "</p>" : "") + histHtml + "</div>" +
       /* 🛡️ 당직 카드는 아래 '당직자 변경' 폼에서만 바꾸므로 ✏️ 를 두지 않습니다(중복 제거). ⛴️ 섬·교육은 ✏️ 유지 */
@@ -2235,7 +2318,7 @@ function noteCard(a) {
     "</div>" +
     "<h3>" + esc(a.title) + "</h3>" +
     '<p class="prev">' + esc(body) + "</p>" +
-    '<div class="meta"><span>' + esc(a.author_name) + '</span><i class="dot"></i><span>' + fmtRel(a.createdAt) + "</span>" +
+    '<div class="meta">' + avatarHtml(a.author_name, "xs", a.author_id) + '<span>' + esc(a.author_name) + '</span><i class="dot"></i><span>' + fmtRel(a.createdAt) + "</span>" +
       '<span class="right">' + (read ? "" : '<span class="dotread"></span>') +
       "<span>" + rc + "명 읽음</span><span>" + ICON.chat + " " + cc + "</span></span></div>" +
     "</article>";
@@ -2259,7 +2342,7 @@ function openNote(id) {
           (a.is_important ? '<span class="tag imp">필독</span>' : "") +
         "</div>" +
         "<h2>" + esc(a.title) + "</h2>" +
-        '<div class="ameta">' + avatarHtml(a.author_name) +
+        '<div class="ameta">' + avatarHtml(a.author_name, "", a.author_id) +
           '<div class="who"><b>' + esc(a.author_name) + "</b><span>" + fmtDay(a.createdAt) + " " + fmtTime(a.createdAt) + "</span></div>" +
           '<div style="margin-left:auto;display:flex;gap:6px">' +
             (canEdit ? '<button class="btn sm ghost" id="noteEdit">' + ICON.pencil + " 수정</button>" : "") +
@@ -2275,7 +2358,7 @@ function openNote(id) {
       "</div>" +
       '<div class="sec-title" style="margin-top:20px">댓글 ' + comments.length + "</div>" +
       '<div id="cmtList">' + (comments.length ? comments.map(c =>
-        '<div class="cmt">' + avatarHtml(c.author_name, "sm") +
+        '<div class="cmt">' + avatarHtml(c.author_name, "sm", c.author_id) +
           '<div class="ct"><div class="cn">' + esc(c.author_name) + "<span>" + fmtRel(c.createdAt) + "</span></div><p>" + esc(c.body) + "</p></div>" +
         "</div>").join("") : '<div style="font-size:12px;color:var(--ink3);padding:10px 2px">첫 댓글을 남겨보세요.</div>') +
       "</div>",
@@ -2714,7 +2797,7 @@ function monthList(rows, isDuty, events) {
     const s = STATUS[e.type] || STATUS.duty;
     const mm = memberOf(e.memberId);
     const span = entryEnd(e) !== entryStart(e) ? shortDate(entryStart(e)) + "~" + shortDate(entryEnd(e)) : shortDate(entryStart(e));
-    return '<div class="mem"><span class="avatar" style="background:' + colorOf(mm ? mm.name : e.memberName) + '">' + esc(initial(mm ? mm.name : e.memberName)) + "</span>" +
+    return '<div class="mem">' + avatarHtml(mm ? mm.name : e.memberName, "", mm ? mm.uid : "") +
       '<div class="mi"><b>' + esc(mm ? mm.name : e.memberName) + ' <span class="pill ' + (s.cls === "island-night" ? "admin" : "approved") + '" style="background:' + (s.cls === "island-night" ? "#e8eafc;color:#2f3391" : s.cls === "island-day" ? "#e4f7fd;color:#0b6d8f" : s.cls === "duty" ? "#fff3dd;color:#96590a" : "#e8f8f1;color:#0d7a55") + '">' + s.label + "</span></b>" +
       "<p>" + span + (e.memo ? " · " + esc(e.memo) : "") + "</p></div></div>";
   }).join("");
@@ -2735,6 +2818,7 @@ function renderPhotos() {
       ? '<div class="pgrid">' + list.map(p =>
           '<button class="pcell" data-photo="' + p.id + '">' +
             '<img src="' + p.imageData + '" alt="' + esc(p.caption || "사진") + '" loading="lazy">' +
+            '<span class="pav">' + avatarHtml(p.author_name, "xs", p.author_id) + "</span>" +
             (p.caption ? '<span class="pcap">' + esc(p.caption) + "</span>" : "") +
             '<span class="plike">' + ICON.heart + " " + (p.likes || []).length + "</span>" +
           "</button>").join("") + "</div>"
@@ -2823,7 +2907,7 @@ function openPhoto(id) {
   layer.innerHTML =
     '<div class="lightbox" id="lb">' +
       '<div style="display:flex;align-items:center;gap:9px;padding:14px 16px;color:#fff;flex-shrink:0">' +
-        avatarHtml(p.author_name, "sm") +
+        avatarHtml(p.author_name, "sm", p.author_id) +
         '<div style="flex:1;min-width:0"><b style="font-size:13px;display:block">' + esc(p.author_name) + "</b>" +
         '<span style="font-size:10.5px;color:rgba(255,255,255,.6)">' + fmtDay(p.createdAt) + " " + fmtTime(p.createdAt) + "</span></div>" +
         (mine || isAdmin() ? '<button id="phDel" style="color:rgba(255,255,255,.75);padding:6px">' + ICON.trash + "</button>" : "") +
@@ -2840,7 +2924,7 @@ function openPhoto(id) {
           '<span style="font-size:12px;color:var(--ink3)">💬 ' + comments.length + "</span>" +
         "</div>" +
         '<div id="phCmts">' + (comments.length ? comments.map(c =>
-          '<div class="cmt">' + avatarHtml(c.author_name, "sm") +
+          '<div class="cmt">' + avatarHtml(c.author_name, "sm", c.author_id) +
             '<div class="ct"><div class="cn">' + esc(c.author_name) + "<span>" + fmtRel(c.createdAt) + "</span></div><p>" + esc(c.body) + "</p></div></div>"
           ).join("") : '<div style="font-size:12px;color:var(--ink3);padding:4px 0 8px">첫 댓글을 남겨보세요.</div>') + "</div>" +
         '<div class="cmt-input"><input type="text" id="phCmtIn" placeholder="댓글 달기" maxlength="120">' +
@@ -2960,7 +3044,7 @@ function renderMessages() {
     if (day !== lastDay) { html += '<div class="mday"><span>' + fmtDay(m.createdAt) + "</span></div>"; lastDay = day; }
     const me = m.author_id === myUid();
     html += '<div class="mrow' + (me ? " me" : "") + '">' +
-      (me ? "" : avatarHtml(m.author_name, "av")) +
+      (me ? "" : avatarHtml(m.author_name, "av", m.author_id)) +
       '<div class="mbody">' +
         (me ? "" : '<span class="mwho">' + esc(m.author_name) + "</span>") +
         '<div class="bubble">' + esc(m.body) + "</div>" +
@@ -2995,9 +3079,17 @@ function renderTeam() {
     '<div class="vhead"><div><h2>' + (adminOn ? "팀원 관리" : "팀원") + "</h2><div class=\"sub\">" +
       "승인 " + app.length + "명" + (pend.length ? " · 대기 " + pend.length + "명" : "") + "</div></div></div>" +
 
+    /* 내 프로필 — 아바타(사진·이모티콘) 바꾸는 입구 */
+    '<div class="myprof" id="myProfCard">' +
+      avatarHtml(S.user.name, "lg", myUid()) +
+      '<div class="mi"><b>' + esc(S.user.name) + '</b><p>' + esc(S.user.position || "") +
+        (S.user.empId ? " · 사번 " + esc(S.user.empId) : "") + "</p></div>" +
+      '<button class="btn sm ghost" id="btnMyAvatar" style="flex-shrink:0">아바타 변경</button>' +
+    "</div>" +
+
     (adminOn && pend.length ? '<div class="sec-title" style="margin-top:2px">⏳ 승인 대기 ' + pend.length + "명</div>" +
       pend.map(m => '<div class="pend-card" data-pend="' + m.uid + '">' +
-        '<div class="pt">' + avatarHtml(m.name) +
+        '<div class="pt">' + avatarHtml(m.name, "", m.uid) +
           '<div class="pi"><b>' + esc(m.name) + "</b><p>" + esc(m.position || "-") + " · 사번 " + esc(m.empId || "-") + "</p></div>" +
           '<span class="pill pending">' + fmtRel(m.createdAt) + " 신청</span>" +
         "</div>" +
@@ -3008,7 +3100,7 @@ function renderTeam() {
     '<div class="sec-title">' + (pend.length ? "👥 " : "👥 ") + "팀원 " + app.length + "명</div>" +
     (app.length ? app.map(m => {
       return '<button class="mem" data-member="' + m.uid + '">' +
-        avatarHtml(m.name) +
+        avatarHtml(m.name, "", m.uid) +
         '<div class="mi"><b>' + esc(m.name) +
           ' <span class="pill ' + (m.role === "admin" ? "admin" : "approved") + '">' + (m.role === "admin" ? "관리자" : "팀원") + "</span>" +
           (m.role !== "admin" && m.canManageDuty ? ' <span class="pill" style="background:#fff3dd;color:#96590a">당직 관리</span>' : "") +
@@ -3033,7 +3125,7 @@ function renderTeam() {
       : '<div class="set-item" style="cursor:default"><div class="si"><b>팀 이름</b><p>' + esc(S.team) + ' · 관리자만 바꿀 수 있어요</p></div>' +
         '<span style="color:var(--ink3);display:flex;align-items:center">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg></span></div>') +
-    (isAdmin() ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
+    (isAdmin() && S.mode === "demo" ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브<br>' +
       (S.mode === "live" ? "Firebase 실시간 동기화" : "미리보기 모드 (데이터는 이 기기에만 저장)") + "</div>";
@@ -3046,6 +3138,7 @@ function renderTeam() {
     try { await dbSetUserStatus(b.dataset.reject, "rejected"); toast("거절 처리했습니다"); } catch (e) { toast(fbErrMsg(e)); }
   }));
   $$("[data-member]", v).forEach(b => b.addEventListener("click", () => openMemberSheet(b.dataset.member)));
+  $("#btnMyAvatar").addEventListener("click", openAvatarSheet);
   $("#setFb").addEventListener("click", openCfgSheet);
   const setTeamBtn = $("#setTeam");
   if (setTeamBtn) setTeamBtn.addEventListener("click", openTeamNameSheet);   /* 관리자에게만 있는 항목 */
@@ -3069,7 +3162,7 @@ function openMemberSheet(id) {
     title: m.name,
     body:
       '<div style="text-align:center;padding:2px 0 16px">' +
-        '<span class="avatar lg" style="background:' + colorOf(m.name) + ';margin:0 auto 10px">' + esc(initial(m.name)) + "</span>" +
+        '<div style="display:flex;justify-content:center;margin-bottom:10px">' + avatarHtml(m.name, "lg", m.uid) + "</div>" +
         "<div style=\"font-size:17px;font-weight:800\">" + esc(m.name) + " <span style=\"font-size:12px;font-weight:600;color:var(--ink3)\">" + esc(m.position || "") + "</span></div>" +
         '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(m.empId || "-") + "</div>" +
         '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center">' +
@@ -3176,6 +3269,151 @@ async function dbRemoveMember(id) {
 }
 
 /* ---------- 설정 시트들 ---------- */
+/* =====================================================================
+   프로필 아바타 설정 — 사진(가운데 정사각 크롭 → 160×160 JPEG) 또는 이모티콘
+   ===================================================================== */
+/* 고른 사진을 가운데 정사각으로 잘라 160×160 JPEG 로 압축 (80KB 미만 목표) */
+function avatarFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const side = Math.min(img.width, img.height);
+        const sx = Math.round((img.width - side) / 2);
+        const sy = Math.round((img.height - side) / 2);
+        const c = document.createElement("canvas");
+        c.width = 160; c.height = 160;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 160, 160);
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, 160, 160);
+        let q = 0.82;
+        let data = c.toDataURL("image/jpeg", q);
+        while (data.length * 0.75 > AVATAR_KB_MAX && q > 0.3) { q -= 0.07; data = c.toDataURL("image/jpeg", q); }
+        URL.revokeObjectURL(url);
+        if (data.length > AVATAR_RULE_MAX) { reject(new Error("사진이 너무 커서 저장할 수 없습니다. 다른 사진을 골라주세요")); return; }
+        resolve({ data: data, kb: Math.round((data.length * 0.75) / 1024), q: Math.round(q * 100), src: img.width + "×" + img.height });
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("이미지를 읽을 수 없습니다")); };
+    img.src = url;
+  });
+}
+
+/* 아바타 저장 — LIVE: users/{uid}.avatarData · DEMO: localStorage */
+async function saveAvatar(v) {
+  const val = String(v || "");
+  if (S.mode === "demo") {
+    const d = demoGet();
+    const u = (d.users || []).filter(x => x.uid === myUid())[0];
+    if (u) { u.avatarData = val; demoWrite(d); }
+    syncDemo();
+    renderAll();
+    return;
+  }
+  const { doc, setDoc } = FB.f;
+  await setDoc(doc(FB.db, "users", myUid()), { avatarData: val }, { merge: true });
+  S.user = Object.assign({}, S.user, { avatarData: val });
+  const me = memberOf(myUid());
+  if (me) me.avatarData = val;
+  renderAll();
+}
+
+function openAvatarSheet() {
+  if (!S.user) return;
+  let pick = String(S.user.avatarData || "");
+  const myName = S.user.name;
+  const emoOf = v => (v.indexOf("emoji:") === 0 ? v.slice(6) : "");
+
+  openSheet({
+    title: "프로필 사진",
+    body:
+      '<div class="avprev">' +
+        '<span id="avPrev">' + avatarHtmlValue(pick, myName) + "</span>" +
+        "<b>" + esc(myName) + "</b>" +
+        '<span style="font-size:11px;color:var(--ink3)">팀원 목록·공지·대화에 함께 표시됩니다</span>' +
+      "</div>" +
+      '<input type="file" id="avFile" accept="image/*" style="display:none">' +
+      '<button class="btn ghost" id="avPick">📷 사진 선택</button>' +
+      '<div class="hint" id="avInfo" style="font-size:11px;color:var(--ink3);margin:7px 0 0;text-align:center">가운데 정사각으로 잘라 160×160 JPEG로 압축합니다 (80KB 이하)</div>' +
+      '<div class="sec-title" style="margin-top:16px">😊 이모티콘</div>' +
+      '<div class="avgrid" id="avGrid">' +
+        AVATAR_EMOJI.map((e, i) => '<button class="avcell' + (emoOf(pick) === e ? " on" : "") + '" data-emo="' + i + '">' + e + "</button>").join("") +
+      "</div>" +
+      '<button class="set-item" id="avReset" style="margin-top:16px"><div class="si"><b>기본 글자로 되돌리기</b><p>이름 첫 글자를 동그라미로 표시합니다</p></div></button>' +
+      '<button class="set-item" id="avProfile"><div class="si"><b>내 정보 · 설정</b><p>오늘 일정 · Firebase 설정 · 로그아웃</p></div></button>',
+    footer: '<button class="btn" id="avSave">저장</button>',
+    onMount: root => {
+      const pv = $("#avPrev", root);
+      const repaint = () => {
+        if (pv) pv.innerHTML = avatarHtmlValue(pick, myName);
+        $$("[data-emo]", root).forEach(b => b.classList.toggle("on", pick === "emoji:" + AVATAR_EMOJI[Number(b.dataset.emo)]));
+      };
+      const info = $("#avInfo", root);
+      const fi = $("#avFile", root);
+      $("#avPick", root).addEventListener("click", () => fi.click());
+      fi.addEventListener("change", async () => {
+        const f = fi.files && fi.files[0];
+        if (!f) return;
+        if (info) info.innerHTML = '<span class="spin"></span> 사진을 자르고 압축하는 중…';
+        try {
+          const r = await avatarFromFile(f);
+          pick = r.data;
+          repaint();
+          if (info) info.textContent = "사진 · 160×160 · 약 " + r.kb + "KB (원본 " + r.src + ")";
+        } catch (e) {
+          if (info) info.innerHTML = '<span style="color:var(--danger)">' + esc(e.message) + "</span>";
+        }
+      });
+      $$("[data-emo]", root).forEach(b => b.addEventListener("click", () => {
+        pick = "emoji:" + AVATAR_EMOJI[Number(b.dataset.emo)];
+        repaint();
+        if (info) info.textContent = "이모티콘 아바타를 고릅니다 · 저장을 누르면 적용됩니다";
+      }));
+      $("#avReset", root).addEventListener("click", async () => {
+        pick = "";
+        repaint();
+        if (info) info.textContent = "기본 글자 아바타를 고릅니다 · 저장을 누르면 적용됩니다";
+      });
+      const btn = $("#avSave", root);
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await saveAvatar(pick);
+          closeSheet();
+          toast(pick ? "프로필 사진을 바꿨어요" : "기본 글자로 되돌렸어요");
+        } catch (e) { btn.disabled = false; toast(fbErrMsg(e)); }
+      });
+      $("#avProfile", root).addEventListener("click", () => { closeSheet(); setTimeout(openProfileSheet, 120); });
+    }
+  });
+}
+
+function openProfileSheet() {
+  if (!S.user) return;
+  openSheet({
+    title: "내 정보",
+    body:
+      '<div style="text-align:center;padding:4px 0 16px">' +
+        '<div style="display:flex;justify-content:center;margin-bottom:10px">' + avatarHtml(S.user.name, "lg", myUid()) + "</div>" +
+        '<div style="font-size:18px;font-weight:800">' + esc(S.user.name) + ' <span style="font-size:12px;font-weight:600;color:var(--ink3)">' + esc(S.user.position || "") + "</span></div>" +
+        '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(S.user.empId || "-") + "</div>" +
+        '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자" : (S.user.canManageDuty ? "팀원 · 당직 관리" : "팀원")) + "</span></div>" +
+      "</div>" +
+      '<button class="btn ghost" id="pfAvatar" style="margin-bottom:8px">프로필 사진 · 이모티콘 바꾸기</button>' +
+      '<button class="btn ghost" id="pfStatus" style="margin-bottom:8px">오늘 일정 관리</button>' +
+      '<button class="btn ghost-line" id="pfCfg" style="margin-bottom:8px">Firebase 연결 설정</button>' +
+      '<button class="btn danger" id="pfOut">로그아웃</button>',
+    onMount: root => {
+      $("#pfAvatar", root).addEventListener("click", () => { closeSheet(); setTimeout(openAvatarSheet, 120); });
+      $("#pfStatus", root).addEventListener("click", () => { closeSheet(); setTimeout(() => openScheduleSheet(ymd(new Date()), myUid()), 120); });
+      $("#pfCfg", root).addEventListener("click", () => { closeSheet(); setTimeout(openCfgSheet, 120); });
+      $("#pfOut", root).addEventListener("click", () => { closeSheet(); doLogout(); });
+    }
+  });
+}
+
 function openCfgSheet() {
   const c = S.cfg || {};
   const F = (k, label, ph) => '<div class="field"><label>' + label + '</label><input type="text" data-cfg="' + k + '" value="' + esc(c[k] || "") + '" placeholder="' + ph + '"></div>';
@@ -3269,6 +3507,7 @@ function openGuideSheet() {
    14. 탭 · 렌더 · 라우팅
    ===================================================================== */
 function renderAll() {
+  renderMyAvatar();
   renderCurrent();
   updateDots();
 }
@@ -3342,8 +3581,7 @@ function route() {
   if (S.user.status !== "approved") { showPending(); return; }
   show("scr-main");
   $("#hdrSub").textContent = S.team;
-  $("#myAvatar").textContent = initial(S.user.name);
-  $("#myAvatar").style.background = colorOf(S.user.name);
+  renderMyAvatar();
   $("#modeBadge").textContent = S.mode === "live" ? "실시간 연결" : "미리보기 모드";
   $("#modeBadge").className = "badge" + (S.mode === "live" ? " live" : "");
   $("#tabTeamLabel").textContent = isAdmin() ? "팀원관리" : "팀원";
@@ -3372,7 +3610,7 @@ function demoSignup(name, empId, pos, pw) {
   const d = demoGet();
   const key = normEmp(empId);
   if (d.users.some(x => normEmp(x.empId) === key || String(x.email || "").toLowerCase() === empToEmail(empId))) throw new Error("이미 가입된 사번입니다.");
-  const u = { uid: "u_" + uid(), empId: empId, email: empToEmail(empId), pw: pw, name: name, position: pos, role: "member", canManageDuty: false, status: "pending", createdAt: Date.now(), workStatus: "", statusNote: "", statusUpdatedAt: Date.now() };
+  const u = { uid: "u_" + uid(), empId: empId, email: empToEmail(empId), pw: pw, name: name, position: pos, role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: Date.now(), workStatus: "", statusNote: "", statusUpdatedAt: Date.now() };
   d.users.push(u); demoWrite(d);
   localStorage.setItem(SESSION_KEY, u.uid);
   S.user = Object.assign({}, u);
@@ -3419,6 +3657,7 @@ async function loadProfile(fbUser) {
     snap = await getDoc(ref);
   }
   S.user = Object.assign({ uid: fbUser.uid }, snap.data());
+  if (typeof S.user.avatarData !== "string") S.user.avatarData = "";
   if (S.user.status === "approved") { startSubs(); route(); }
   else { showPending(); }
 }
@@ -3460,10 +3699,11 @@ function startSubs() {
       const v = d.data() || {};
       return { uid: d.id, empId: v.empId || emailToEmp(v.email), email: v.email || "", name: v.name || "(이름 없음)", position: v.position || "",
         role: v.role || "member", status: v.status || "pending", canManageDuty: v.canManageDuty === true, createdAt: toMs(v.createdAt),
+        avatarData: v.avatarData || "",
         workStatus: v.workStatus || "", statusNote: v.statusNote || "", statusUpdatedAt: toMs(v.statusUpdatedAt) };
     });
     const me = memberOf(myUid());
-    if (me) { S.user = Object.assign({}, S.user, { name: me.name, position: me.position, role: me.role, status: me.status, canManageDuty: me.canManageDuty, workStatus: me.workStatus, statusNote: me.statusNote }); }
+    if (me) { S.user = Object.assign({}, S.user, { name: me.name, position: me.position, role: me.role, status: me.status, canManageDuty: me.canManageDuty, avatarData: me.avatarData, workStatus: me.workStatus, statusNote: me.statusNote }); }
     LOADED.members = true;
     if (S.user && S.user.status === "approved") renderAll();
     else if (S.user && S.user.status === "pending" && $("#scr-pending").classList.contains("active")) { route(); }
@@ -3636,26 +3876,8 @@ function bindGlobal() {
 
   $$("#tabbar button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
 
-  $("#btnProfile").addEventListener("click", () => {
-    openSheet({
-      title: "내 정보",
-      body:
-        '<div style="text-align:center;padding:4px 0 16px">' +
-          '<span class="avatar lg" style="background:' + colorOf(S.user.name) + ';margin:0 auto 10px">' + esc(initial(S.user.name)) + "</span>" +
-          '<div style="font-size:18px;font-weight:800">' + esc(S.user.name) + ' <span style="font-size:12px;font-weight:600;color:var(--ink3)">' + esc(S.user.position || "") + "</span></div>" +
-          '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(S.user.empId || "-") + "</div>" +
-          '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자" : (S.user.canManageDuty ? "팀원 · 당직 관리" : "팀원")) + "</span></div>" +
-        "</div>" +
-        '<button class="btn ghost" id="pfStatus" style="margin-bottom:8px">오늘 일정 관리</button>' +
-        '<button class="btn ghost-line" id="pfCfg" style="margin-bottom:8px">Firebase 연결 설정</button>' +
-        '<button class="btn danger" id="pfOut">로그아웃</button>',
-      onMount: root => {
-        $("#pfStatus", root).addEventListener("click", () => { closeSheet(); setTimeout(() => openScheduleSheet(ymd(new Date()), myUid()), 120); });
-        $("#pfCfg", root).addEventListener("click", () => { closeSheet(); setTimeout(openCfgSheet, 120); });
-        $("#pfOut", root).addEventListener("click", () => { closeSheet(); doLogout(); });
-      }
-    });
-  });
+  /* 상단 아바타를 누르면 바로 프로필 사진·이모티콘 설정 시트가 열립니다 */
+  $("#btnProfile").addEventListener("click", openAvatarSheet);
 
   window.addEventListener("storage", e => {
     if (S.mode === "demo" && (e.key === DEMO_KEY || e.key === SESSION_KEY)) {
