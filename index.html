@@ -941,6 +941,13 @@ input,textarea,select{outline:none}
 .rt-starbtn button.on{color:#f5a524}
 .rt-noresult{text-align:center;font-size:11.5px;color:var(--ink3);padding:10px;line-height:1.6}
 .rt-h2ico{display:inline-flex;align-items:center;color:var(--brand);vertical-align:-3px;margin-right:6px}
+.rt-filter{display:flex;gap:6px;overflow-x:auto;padding:1px 1px 9px;margin:0 -1px;scrollbar-width:none}
+.rt-filter::-webkit-scrollbar{display:none}
+.rt-filter button{
+  flex-shrink:0;font-size:11.5px;font-weight:700;color:var(--ink2);background:#fff;border:1px solid var(--line);
+  border-radius:20px;padding:6px 10px;white-space:nowrap;
+}
+.rt-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .rt-map .leaflet-container,.rt-pick .leaflet-container{border-radius:12px}
 .kakao-pop{padding:2px 4px 2px 2px}
 .rt-cand{
@@ -1153,6 +1160,7 @@ const S = {
   votes: {},               // annId -> { uid: { choices:[i], name } }
   restaurants: [],         // 맛집 공유 지도
   restView: "map",          // 'map' | 'list'
+  restCat: "all",           // 지도·목록 음식 종류 필터
   tab: "notices",
   lastMainTab: "notices",
   noticeFilter: "all",
@@ -3050,7 +3058,31 @@ const REST_AREAS = {
   island: { label: "섬/출장지", em: "⛴️", cls: "island" },
   dinner: { label: "회식/모임", em: "🍻", cls: "dinner" }
 };
-const REST_CAT_EM = { "한식": "🍚", "중식": "🥟", "일식": "🍣", "양식": "🍝", "카페": "☕" };
+const REST_CAT_EM = { "한식": "🍚", "분식": "🍢", "중식": "🥟", "일식": "🍣", "양식": "🍝", "카페": "☕", "기타": "🍽️" };
+/* 필터 칩에 쓰는 종류 — 등록 시트에는 고르는 칸이 없고, 카카오 장소 검색 결과의
+   category_name 에서 자동으로 정해집니다. (직접 고르지 않습니다) */
+const REST_CATS = ["한식", "분식", "중식", "일식", "양식", "카페"];
+/* 카카오 category_name → 앱의 음식 종류. 예: "음식점 > 한식 > 순대" → 한식 */
+function restCatFromKakao(x) {
+  const raw = String((x && x.category_name) || "").trim();
+  if (!raw) return "기타";
+  const segs = raw.split(">").map(s => s.trim());
+  for (const c of ["카페", "한식", "분식", "중식", "일식", "양식"]) {
+    if (segs.indexOf(c) >= 0) return c;
+  }
+  const has = ks => ks.some(k => raw.indexOf(k) >= 0);
+  if (has(["카페", "커피", "디저트", "베이커리", "제과", "제빵", "아이스크림", "CE7"])) return "카페";
+  if (has(["중식", "중국", "마라", "양꼬치", "딤섬"])) return "중식";
+  if (has(["일식", "초밥", "스시", "라멘", "돈까스", "우동", "사시미", "이자카야", "규동", "덮밥", "회"])) return "일식";
+  if (has(["양식", "이탈리안", "피자", "파스타", "스테이크", "프랑스", "햄버거", "멕시칸", "브런치", "샌드위치"])) return "양식";
+  if (has(["분식", "김밥", "떡볶이", "튀김", "어묵", "만두"])) return "분식";
+  if (has(["한식", "국밥", "백반", "칼국수", "찜", "구이", "곱창", "냉면", "해장국", "설렁탕", "삼계탕", "김치", "비빔밥", "보쌈", "감자탕", "갈비", "순대", "한정식", "해물", "생선", "국수", "두부", "죽"])) return "한식";
+  return "기타";
+}
+/* 저장된 종류 — 새 데이터는 category, 예전 데이터는 cat */
+function restCatOf(r) {
+  return String((r && (r.category || r.cat)) || "").trim();
+}
 /* 포크·나이프 — 21px에서도 또렷하게 보이는 솔리드 글리프(2~22 영역, 위아래·좌우 여백 확보) */
 const REST_ICON_PATHS = '<path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>';
 function restGlyph(size, color) {
@@ -3171,7 +3203,9 @@ function loadLeaflet() {
   return RT.loading;
 }
 function restFiltered() {
-  return S.restaurants.slice()
+  return S.restaurants
+    .filter(r => S.restCat === "all" || (restCatOf(r) || "기타") === S.restCat)
+    .slice()
     .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0) || (b.createdAt || 0) - (a.createdAt || 0));
 }
 function starsHtml(n) {
@@ -3187,8 +3221,9 @@ function restMapLinks(r, big) {
 }
 function restPopupHtml(r, kakao) {
   const badges = [];
+  const cat = restCatOf(r);
   if (r.area && REST_AREAS[r.area]) badges.push(REST_AREAS[r.area].em + " " + REST_AREAS[r.area].label);
-  if (r.cat) badges.push(esc(r.cat));
+  if (cat) badges.push(esc(cat));
   return '<div class="' + (kakao ? "kakao-pop" : "") + '" style="' + (kakao ? "width:228px;" : "min-width:170px;") + 'padding:2px 0;line-height:1.45">' +
       '<div style="font-size:13px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px">' + esc(r.name) + '</div>' +
       (badges.length ? '<div style="font-size:10.5px;color:#8a93a6;margin-bottom:4px">' + badges.join(" · ") + '</div>' : "") +
@@ -3202,9 +3237,10 @@ function restPopupHtml(r, kakao) {
 function restCard(r) {
   const liked = (r.likes || []).indexOf(myUid()) >= 0;
   const canEdit = r.author_id === myUid() || isAdmin();
+  const cat = restCatOf(r);
   const badges =
     (r.area && REST_AREAS[r.area] ? '<span class="rtbg ' + REST_AREAS[r.area].cls + '">' + REST_AREAS[r.area].em + " " + REST_AREAS[r.area].label + '</span>' : "") +
-    (r.cat ? '<span class="rtbg">' + (REST_CAT_EM[r.cat] || "🍽️") + " " + esc(r.cat) + '</span>' : "");
+    (cat ? '<span class="rtbg">' + (REST_CAT_EM[cat] || "🍽️") + " " + esc(cat) + '</span>' : "");
   return '<article class="rt-card" data-rest="' + r.id + '">' +
     '<div class="rt-hd"><h3>' + esc(r.name) + '</h3><span class="rt-rate">' + starsHtml(r.rating) + " " + (Number(r.rating) || 0).toFixed(1) + "</span></div>" +
     (badges ? '<div class="rt-badges">' + badges + '</div>' : "") +
@@ -3225,9 +3261,23 @@ function renderRest() {
   const v = $("#view-rest");
   if (!v) return;
   destroyRestMap();
+  const all = S.restaurants.slice();
   const list = restFiltered();
   const avg = list.length ? list.reduce((s, r) => s + (Number(r.rating) || 0), 0) / list.length : 0;
+  /* 종류 칩 — 기본 6종을 항상 보여주고, 종류가 비어 있는 예전 데이터가 있으면 기타도 */
+  const cats = REST_CATS.slice();
+  if (all.some(r => !restCatOf(r) || restCatOf(r) === "기타")) cats.push("기타");
+  if (S.restCat !== "all" && cats.indexOf(S.restCat) < 0) cats.push(S.restCat);
+  const chipHtml = ["all:전체"].concat(cats.map(c => c + ":" + (REST_CAT_EM[c] || "") + " " + c)).map(x => {
+    const i = x.indexOf(":");
+    const k = x.slice(0, i), lb = x.slice(i + 1);
+    return '<button type="button" data-rcat="' + k + '" class="' + (S.restCat === k ? "on" : "") + '">' + lb + "</button>";
+  }).join("");
   const mapInner = '<div class="mapfall"><span class="em">🗺️</span>지도를 불러오는 중…</div>';
+  RT.note = list.length
+    ? "핀을 누르면 별점·한줄평과 지도 열기 버튼이 뜹니다."
+    : (S.restCat === "all" ? "아직 등록된 맛집이 없어요. 오른쪽 위 <b>＋ 등록</b>으로 첫 맛집을 추가해 보세요."
+      : "‘" + esc(S.restCat) + "’ 맛집이 아직 없어요. 다른 종류를 골라 보거나 <b>＋ 등록</b>해 보세요.");
   v.innerHTML =
     '<div class="vhead"><div><h2><span class="rt-h2ico">' + restGlyph(19) + '</span>맛집 공유 지도</h2><div class="sub">' + list.length + "곳" +
       (list.length ? " · 평균 ★" + avg.toFixed(1) : "") + " · 우리 팀이 직접 고른 곳</div></div>" +
@@ -3236,14 +3286,16 @@ function renderRest() {
       '<button data-rview="map" class="' + (S.restView === "map" ? "on" : "") + '">🗺️ 지도</button>' +
       '<button data-rview="list" class="' + (S.restView === "list" ? "on" : "") + '">📋 목록</button>' +
     "</div>" +
+    '<div class="rt-filter" id="rtCats">' + chipHtml + "</div>" +
     (S.restView === "map"
       ? '<div class="rt-map" id="rtMap">' + mapInner + "</div>" +
-        '<p class="rt-noresult" id="rtMapNote">핀을 누르면 별점·한줄평과 지도 열기 버튼이 뜹니다. 가게를 등록하려면 오른쪽 위 <b>＋ 등록</b>을 누르세요.</p>'
+        '<p class="rt-noresult" id="rtMapNote">' + RT.note + "</p>"
       : (list.length ? list.map(restCard).join("")
-        : '<div class="empty"><span>🍽️</span>아직 등록된 맛집이 없습니다.<br>첫 맛집을 등록해 보세요!</div>'));
+        : '<div class="empty"><span>🍽️</span>' + (S.restCat === "all" ? "아직 등록된 맛집이 없습니다." : "‘" + esc(S.restCat) + "’ 맛집이 아직 없습니다.") + "<br>첫 맛집을 등록해 보세요!</div>"));
 
   $("#btnAddRest").addEventListener("click", () => openRestSheet(null));
   $$("[data-rview]", v).forEach(b => b.addEventListener("click", () => { S.restView = b.dataset.rview; renderRest(); }));
+  $$("[data-rcat]", v).forEach(b => b.addEventListener("click", () => { S.restCat = b.dataset.rcat; renderRest(); }));
   $$("[data-like]", v).forEach(b => b.addEventListener("click", async e => {
     e.stopPropagation();
     try { await dbRestLike(b.dataset.like); } catch (err) { toast(fbErrMsg(err)); }
@@ -3291,9 +3343,10 @@ async function mountRestMap() {
 function setMapNote(engine) {
   const el = $("#rtMapNote");
   if (!el) return;
-  el.innerHTML = engine === "kakao"
-    ? "핀을 누르면 별점·한줄평과 지도 열기 버튼이 뜹니다." + (isAdmin() ? " <span style=\"color:#9aa3b2\">(지도: 카카오맵)</span>" : "")
-    : "핀을 누르면 별점·한줄평과 지도 열기 버튼이 뜹니다." + (isAdmin() ? " <span style=\"color:#9aa3b2\">(지도: 기본 지도 — 카카오맵 Web 도메인 등록 필요)</span>" : "");
+  const base = RT.note || "핀을 누르면 별점·한줄평과 지도 열기 버튼이 뜹니다.";
+  el.innerHTML = base + (isAdmin()
+    ? ' <span style="color:#9aa3b2">(지도: ' + (engine === "kakao" ? "카카오맵" : "기본 지도 — 카카오맵 Web 도메인 등록 필요") + ')</span>'
+    : "");
 }
 function mountRestMapKakao(M, box, list) {
   box.innerHTML = "";
@@ -3389,6 +3442,7 @@ async function mountRestMapLeaflet(list) {
 function openRestSheet(id) {
   const r = id ? S.restaurants.find(x => x.id === id) : null;
   let rating = r ? Number(r.rating) || 0 : 0;
+  let cat = r ? restCatOf(r) : "";   /* 검색 결과의 카카오 category_name 에서 자동으로 정해짐 */
   let loc = { lat: r && hasCoord(r) ? Number(r.lat) : null,
               lng: r && hasCoord(r) ? Number(r.lng) : null,
               address: (r && r.address) || "" };
@@ -3497,6 +3551,7 @@ function openRestSheet(id) {
               const nm = String(x.place_name || "").trim();
               const addr = String(x.road_address_name || x.address_name || "").trim();
               if (nm) $("#rtName", root).value = nm.slice(0, 40);
+              cat = restCatFromKakao(x);
               const la = Number(x.y), ln = Number(x.x);
               if (isFinite(la) && isFinite(ln) && la !== 0 && ln !== 0) setLoc(la, ln, addr.slice(0, 120), true);
               else if (addr) { loc.address = addr.slice(0, 120); const ai = $("#rtAddress", root); if (ai) ai.value = loc.address; locTx(); }
@@ -3504,7 +3559,7 @@ function openRestSheet(id) {
               $("#rtSearch", root).value = "";
               const nmEl = $("#rtName", root);
               try { nmEl.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
-              toast(hasCoord(loc) ? "가게 정보를 채웠어요 · 별점만 고르면 등록돼요" : "가게 정보를 채웠어요");
+              toast(hasCoord(loc) ? "가게 정보를 채웠어요" + (cat ? " · " + cat : "") + " · 별점만 고르면 등록돼요" : "가게 정보를 채웠어요");
             }));
             return;
           } catch (e) {
@@ -3562,6 +3617,7 @@ function openRestSheet(id) {
           review: $("#rtReview", root).value.trim().slice(0, 200),
           rating: rating
         };
+        if (cat) data.category = cat;   /* 검색으로 정해진 음식 종류 — 칩 필터에 쓰입니다 */
         const btn = $("#rtSave", root);
         btn.disabled = true;
         try {
@@ -5255,7 +5311,7 @@ function openGuideSheet() {
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">사진은 올릴 때 가로 960px·JPEG 0.72로 자동 압축되어 Firestore 문서에 저장됩니다. (Firebase 무료 Spark 요금제에서 Storage 없이도 동작)</p>' +
       '<div class="sec-title">🍽️ 맛집</div>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">맛집 등록은 <b>가게 검색 → 지도 → 가게명·주소 → 별점 → 한줄평 및 추천메뉴</b> 순서입니다. 가게 이름으로 검색해 후보를 누르면 가게명·주소·지도 위치가 한 번에 채워지고, <b>지도(핀)와 별점은 필수</b>·<b>한줄평 및 추천메뉴는 선택</b>입니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 14px">앱에 <b>기본 키</b>가 내장되어 있어 따로 설정하지 않아도 <b>카카오 장소 검색·카카오맵</b>으로 동작합니다. 관리자는 상단 오른쪽 프로필 아이콘 → [팀원관리] → 관리에서 <b>카카오 장소 검색 키</b>·<b>카카오맵 화면 키(JS 키)</b>를 바꿀 수 있고, 지우면 다시 기본 키로 돌아갑니다. 카카오맵이 안 뜨면 카카오에 Web 도메인(leanonmept.github.io)이 등록됐는지 확인해 주세요.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 14px">가게 이름으로 검색해 후보를 누르면 가게명·주소·지도 위치와 함께 <b>음식 종류(한식·분식·중식·일식·양식·카페)</b>가 자동으로 정해집니다. 맛집 탭 지도·목록 위의 <b>종류 칩</b>으로 골라 볼 수 있습니다. 앱에 <b>기본 키</b>가 내장되어 있어 따로 설정하지 않아도 <b>카카오 장소 검색·카카오맵</b>으로 동작합니다. 관리자는 상단 오른쪽 프로필 아이콘 → [팀원관리] → 관리에서 <b>카카오 장소 검색 키</b>·<b>카카오맵 화면 키(JS 키)</b>를 바꿀 수 있고, 지우면 다시 기본 키로 돌아갑니다. 카카오맵이 안 뜨면 카카오에 Web 도메인(leanonmept.github.io)이 등록됐는지 확인해 주세요.</p>' +
       '<div class="sec-title">4. 실시간</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0">Firebase를 연결하면 공지·당직·사진·대화·승인 상태가 팀원 모두에게 실시간으로 반영됩니다.</p>'
   });
@@ -5532,7 +5588,7 @@ function startSubs() {
   S.subs.push(onSnapshot(query(collection(FB.db, "restaurants"), orderBy("createdAt", "desc"), limit(100)), snap => {
     S.restaurants = snap.docs.map(d => {
       const v = d.data() || {};
-      return { id: d.id, name: v.name || "", area: v.area || "", cat: v.cat || "", menu: v.menu || "",
+      return { id: d.id, name: v.name || "", area: v.area || "", cat: v.cat || "", category: v.category || "", menu: v.menu || "",
         review: v.review || "", rating: Number(v.rating) || 0,
         lat: (v.lat == null || v.lat === "") ? null : Number(v.lat),
         lng: (v.lng == null || v.lng === "") ? null : Number(v.lng),
