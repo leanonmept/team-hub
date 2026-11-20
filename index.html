@@ -3189,7 +3189,7 @@ function restPopupHtml(r, kakao) {
   const badges = [];
   if (r.area && REST_AREAS[r.area]) badges.push(REST_AREAS[r.area].em + " " + REST_AREAS[r.area].label);
   if (r.cat) badges.push(esc(r.cat));
-  return '<div class="' + (kakao ? "kakao-pop" : "") + '" style="min-width:170px">' +
+  return '<div class="' + (kakao ? "kakao-pop" : "") + '" style="' + (kakao ? "width:228px;" : "min-width:170px;") + 'padding:2px 0;line-height:1.45">' +
       '<div style="font-size:13px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px">' + esc(r.name) + '</div>' +
       (badges.length ? '<div style="font-size:10.5px;color:#8a93a6;margin-bottom:4px">' + badges.join(" · ") + '</div>' : "") +
       '<div style="font-size:11px;color:#e08a00;font-weight:800;margin-bottom:4px">' + starsHtml(r.rating) + ' <span style="color:#5c6577">' + (Number(r.rating) || 0).toFixed(1) + '</span></div>' +
@@ -3300,10 +3300,10 @@ function mountRestMapKakao(M, box, list) {
   const center = new M.LatLng(REST_CENTER[0], REST_CENTER[1]);
   const map = new M.Map(box, { center: center, level: 9 });
   RT.map = map; RT.engine = "kakao"; RT.markers = [];
-  try { map.addControl(new M.ZoomControl(), M.ControlPosition.RIGHT); } catch (e) {}
   const iw = new M.InfoWindow({ removable: false, zIndex: 5 });
   const bounds = new M.LatLngBounds();
-  const img = new M.MarkerImage(kakaoPinSrc("#2f6bf6"), new M.Size(34, 42), { offset: new M.Point(17, 42) });
+  const boxH = box.clientHeight || 380;
+  const img = new M.MarkerImage(kakaoPinSrc("#2f6bf6"), new M.Size(30, 37), { offset: new M.Point(15, 37) });
   list.forEach(r => {
     const pos = new M.LatLng(Number(r.lat), Number(r.lng));
     let mk = null;
@@ -3312,8 +3312,16 @@ function mountRestMapKakao(M, box, list) {
     RT.markers.push(mk);
     M.event.addListener(mk, "click", () => {
       iw.setContent(restPopupHtml(r, true));
-      iw.open(map, mk);
-      map.panTo(pos);
+      /* 인포윈도우가 지도 위쪽으로 잘리지 않게, 핀이 화면 아래쪽(70%)에 오도록 먼저 이동한 뒤 엽니다 */
+      let moved = false;
+      try {
+        const cp = map.getProjection().containerPointFromCoords(pos);
+        const want = Math.round(boxH * 0.7);
+        const dy = want - cp.y;
+        if (Math.abs(dy) > 24) { map.panBy(0, -dy); moved = true; }
+      } catch (e) {}
+      if (moved) setTimeout(() => { try { iw.open(map, mk); } catch (e) {} }, 380);
+      else iw.open(map, mk);
     });
     bounds.extend(pos);
   });
@@ -3573,7 +3581,7 @@ function mountPickKakao(M, box, loc, onTap) {
     center: has ? new M.LatLng(Number(loc.lat), Number(loc.lng)) : new M.LatLng(REST_CENTER[0], REST_CENTER[1]),
     level: has ? 4 : 8
   });
-  const img = new M.MarkerImage(kakaoPinSrc("#2f6bf6"), new M.Size(34, 42), { offset: new M.Point(17, 42) });
+  const img = new M.MarkerImage(kakaoPinSrc("#2f6bf6"), new M.Size(30, 37), { offset: new M.Point(15, 37) });
   let mark = null;
   const place = (la, ln, fly) => {
     const pos = new M.LatLng(Number(la), Number(ln));
