@@ -4900,10 +4900,9 @@ function openKakaoKeySheet() {
   openSheet({
     title: "카카오 장소 검색 키",
     body:
-      '<div class="field"><label>REST API 키</label><input type="text" id="kkIn" maxlength="100" autocomplete="off" spellcheck="false" placeholder="' + (cur ? "카카오 developers → 내 애플리케이션 → REST API 키" : "다른 키를 쓰려면 입력 (지금은 기본 키 사용 중)") + '" value="' + esc(cur) + '"></div>' +
-      (cur ? "" : '<div class="hint" style="margin:9px 2px 10px;line-height:1.6">지금은 앱에 내장된 <b>기본 키</b>가 연결돼 있어, 맛집 등록의 검색창에서 <b>가게명(예: 신포우리만두)</b>으로 바로 찾습니다. 다른 REST API 키를 넣으면 그 키로 바뀝니다.</div>') +
-      (cur ? '<div class="hint" style="margin:9px 2px 10px;line-height:1.6">지금은 직접 넣은 키를 쓰고 있습니다. 지우면 앱에 내장된 기본 키로 돌아갑니다.</div>' : "") +
-      '<div class="hint" style="margin:0 2px 8px;line-height:1.6">키를 넣으면 맛집 등록의 검색창에서 <b>가게명(예: 신포우리만두)</b>으로 찾아 상호명·주소·지도 좌표·음식 종류를 한 번에 채웁니다.</div>' +
+      '<div class="field"><label>REST API 키</label><input type="text" id="kkIn" maxlength="100" autocomplete="off" spellcheck="false" placeholder="카카오 developers → 내 애플리케이션 → REST API 키" value="' + esc(cur) + '"></div>' +
+      (cur ? '<div class="hint" style="margin:9px 2px 10px;line-height:1.6">지금은 직접 넣은 키를 쓰고 있습니다. 지우면 앱에 내장된 기본 키로 돌아갑니다.</div>' : '<div class="hint" style="margin:9px 2px 10px;line-height:1.6">지금은 앱에 내장된 <b>기본 키</b>가 연결돼 있어, 맛집 등록의 검색창에서 <b>가게명(예: 신포우리만두)</b>으로 바로 찾습니다. 다른 키를 넣으면 그 키로 바뀝니다.</div>') +
+      '<div class="hint" style="margin:0 2px 8px;line-height:1.6">키를 넣으면 검색 후보를 고를 때 상호명·주소·지도 좌표·음식 종류가 한 번에 채워집니다.</div>' +
       '<div class="hint" style="margin:0 2px 0;line-height:1.6;color:var(--ink3)">저장하면 팀 설정 문서(<b>duty_roster_config</b>)에 들어가 승인된 팀원 모두가 바로 씁니다. 보안 규칙은 그대로라 다시 게시하지 않아도 됩니다.</div>',
     footer: (cur ? '<button class="btn ghost-line" id="kkClear">키 삭제</button>' : "") +
       '<button class="btn" id="kkSave">저장</button>',
