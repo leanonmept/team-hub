@@ -294,6 +294,8 @@ input,textarea,select{outline:none}
 .cal-head .nav button{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--ink2)}
 .cal-head .nav button:active{background:var(--line2)}
 .cal-head .today-btn{font-size:11.5px;font-weight:700;color:var(--brand);padding:6px 9px;border-radius:9px;background:var(--brand-soft);margin-right:2px;white-space:nowrap}
+.cal-head .nav button.prn{width:auto;height:28px;padding:0 8px;gap:3px;font-size:11px;font-weight:800;color:#8a4b00;background:#fff4e0;border:1px solid #ffdfa4;border-radius:9px;margin-right:4px;white-space:nowrap;letter-spacing:-.03em}
+.cal-head .nav button.prn:active{background:#ffe9c7}
 .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
 .dow span{text-align:center;font-size:10.5px;font-weight:700;color:var(--ink3);padding:4px 0}
 .dow span.sun{color:#e04b4b}.dow span.sat{color:#2f6bf6}
@@ -721,6 +723,43 @@ input,textarea,select{outline:none}
   .sheet.full{height:calc(100dvh - 44px);max-height:calc(100dvh - 44px)}
   .sheet .grab{display:none}
 }
+/* ============ 🖨️ 인쇄 전용 — 당직표 (화면에서는 숨김) ============ */
+#printSheet{display:none}
+#printSheet .ps-page{color:#111;font-family:var(--font);letter-spacing:-.01em;width:277mm;height:190mm;display:flex;flex-direction:column}
+#printSheet .ps-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:10mm;border-bottom:1.6pt solid #e58a09;padding-bottom:2mm;margin-bottom:2.6mm}
+#printSheet .ps-hd h1{margin:0;font-size:16pt;font-weight:800;letter-spacing:-.03em;color:#141a24;line-height:1.2}
+#printSheet .ps-meta{font-size:8.5pt;font-weight:600;color:#5c6577;text-align:right;white-space:nowrap;line-height:1.5}
+#printSheet table.ps-cal{width:100%;flex:0 0 auto;border-collapse:collapse;table-layout:fixed;page-break-inside:avoid}
+#printSheet table.ps-cal th{font-size:9pt;font-weight:800;color:#4b5565;letter-spacing:.12em;background:#f2f5fa;border:.6pt solid #cfd6e2;padding:1.6mm 0;text-align:center}
+#printSheet table.ps-cal td{border:.6pt solid #cfd6e2;vertical-align:top;padding:1.3mm 1.5mm}
+#printSheet td.psd.out{background:#fbfcfe}
+#printSheet td.psd.hol{background:#fff7f7}
+#printSheet td.psd.ev{background:#f6f2ff}
+#printSheet .psd-top{display:flex;align-items:baseline;gap:1.2mm}
+#printSheet .psd-num{font-size:12.5pt;font-weight:800;color:#141a24;line-height:1}
+#printSheet .psd-num.dim{color:#c3cad8}
+#printSheet td.psd.today .psd-num{color:#1f52cf}
+#printSheet .psd-wd{font-size:7.6pt;font-weight:700;color:#8a93a6}
+#printSheet .psd-hol{font-size:7.8pt;font-weight:800;color:#c8323a;margin-top:.9mm;line-height:1.25}
+#printSheet .psd-ev{font-size:8pt;font-weight:800;color:#5b46c9;margin-top:.9mm;line-height:1.25}
+#printSheet .psd-name{font-size:18pt;font-weight:800;color:#0f1722;letter-spacing:-.04em;line-height:1.15;margin-top:2mm}
+#printSheet .psd-name.none{font-size:8pt;font-weight:700;color:#b6bdc9;letter-spacing:0}
+#printSheet .psd-badge{display:inline-block;font-size:7.6pt;font-weight:800;color:#b91c1c;background:#fee2e2;border:.6pt solid #fecaca;border-radius:1.4mm;padding:.5mm 1.6mm;margin-top:1.2mm}
+#printSheet .ps-foot{display:flex;align-items:flex-start;justify-content:space-between;gap:8mm;margin-top:2.4mm;padding-top:1.6mm;border-top:.6pt solid #cfd6e2;font-size:7.8pt;color:#5c6577;line-height:1.55}
+#printSheet .ps-legend{display:flex;flex-wrap:wrap;gap:0 4mm;align-items:center}
+#printSheet .ps-legend span{display:inline-flex;align-items:center;gap:1.2mm;font-weight:700;color:#4b5565}
+#printSheet .ps-legend i{display:inline-block;width:2.6mm;height:2.6mm;border-radius:.6mm}
+#printSheet .ps-wk{text-align:right}
+#printSheet .ps-wk b{font-weight:800;color:#4b5565}
+
+@media print{
+  @page{size:A4 landscape; margin:10mm}
+  html,body{background:#fff !important;display:block !important;min-height:0 !important;height:auto !important;margin:0 !important;padding:0 !important}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body > *{display:none !important}
+  #printSheet{display:block !important}
+  #printSheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -775,18 +814,6 @@ input,textarea,select{outline:none}
               <label>사번</label>
               <input type="text" id="suEmp" inputmode="numeric" autocomplete="off" placeholder="예: 1001">
             </div>
-          </div>
-          <div class="field">
-            <label>직책</label>
-            <select id="suPos">
-              <option value="">직책을 선택하세요</option>
-              <option value="주임">주임</option>
-              <option value="대리">대리</option>
-              <option value="과장">과장</option>
-              <option value="팀장">팀장</option>
-              <option value="센터장">센터장</option>
-              <option value="부장">부장</option>
-            </select>
           </div>
           <div class="field">
             <label>비밀번호</label>
@@ -893,6 +920,7 @@ input,textarea,select{outline:none}
 
 <div id="layer"></div>
 <div class="toast" id="toast"></div>
+<div id="printSheet"></div>
 <script>
 /* =====================================================================
    우리팀 허브 — 팀용 모바일 웹앱 (단일 HTML)
@@ -2754,6 +2782,7 @@ function renderDuty() {
     opsHtml +
     '<div class="cal' + (isDuty ? " fivecol" : "") + '" style="margin-top:11px">' +
       '<div class="cal-head"><b>' + y + "년 " + (m + 1) + "월</b><div class=\"nav\">" +
+        (isDuty ? '<button class="prn" id="calPrint" title="이번 달 당직표 인쇄">🖨️ 인쇄</button>' : "") +
         '<button class="today-btn" id="calToday">오늘</button>' +
         '<button id="calPrev" aria-label="이전 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m14 6-6 6 6 6"/></svg></button>' +
         '<button id="calNext" aria-label="다음 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m10 6 6 6-6 6"/></svg></button>' +
@@ -2776,9 +2805,89 @@ function renderDuty() {
   $("#calPrev").addEventListener("click", () => { S.cursor = new Date(y, m - 1, 1); renderDuty(); });
   $("#calNext").addEventListener("click", () => { S.cursor = new Date(y, m + 1, 1); renderDuty(); });
   $("#calToday").addEventListener("click", () => { S.cursor = new Date(); renderDuty(); });
+  const cp = $("#calPrint"); if (cp) cp.addEventListener("click", printDutySheet);
   const oR = $("#opsRoster"); if (oR) oR.addEventListener("click", openRosterSheet);
   const oB = $("#opsRebalance"); if (oB) oB.addEventListener("click", openRebalanceSheet);
   $$("[data-day]", v).forEach(el => el.addEventListener("click", () => openScheduleSheet(el.dataset.day)));
+}
+
+/* =====================================================================
+   🖨️ 인쇄 — 지금 보고 있는 연/월 당직표 (A4 가로 한 장)
+   · 인쇄에는 당직자 · 공휴일 · 행사일 · 등판만 넣습니다.
+   · 의소기한 · 조사기한은 인쇄에서 빼고 앱 화면에서만 보여줍니다.
+   ===================================================================== */
+function dutyPrintHtml() {
+  const cur = (S.cursor instanceof Date) ? S.cursor : new Date();
+  const y = cur.getFullYear(), m = cur.getMonth();
+  ensureHolidays(y);
+  const now = new Date();
+  const todayStr = ymd(now);
+  const team = String(S.team || "우리팀").trim() || "우리팀";
+  const first = new Date(y, m, 1);
+  const back = first.getDay() === 0 ? 6 : first.getDay() - 1;
+  const lastD = new Date(y, m + 1, 0);
+  const ld = lastD.getDay();
+  const fwd = (ld === 0 || ld === 6) ? 0 : 5 - ld;
+  const start = new Date(y, m, 1 - back);
+  const end = new Date(y, m, lastD.getDate() + fwd);
+  const days = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() === 0 || d.getDay() === 6) continue;
+    days.push(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+  const rows = Math.max(1, Math.ceil(days.length / 5));
+  const rowH = (rows <= 5 ? 31 : 26) + "mm";   /* 월별 5~6줄 모두 같은 높이로 A4 한 장에 */
+
+  const cell = d => {
+    const ds = ymd(d), inM = d.getMonth() === m;
+    const hol = inM ? holidayName(ds) : "";
+    const ev = inM ? eventOf(ds) : null;
+    const names = inM ? entriesOn(ds).filter(e => e.type === "duty").map(e => e.memberName).filter(Boolean) : [];
+    const board = inM && msOn(ds).some(x => x.type === "board_meeting");
+    const cls = "psd" + (inM ? "" : " out") + (hol ? " hol" : "") + (ev ? " ev" : "") + (ds === todayStr ? " today" : "");
+    return '<td class="' + cls + '">' +
+      '<div class="psd-top"><span class="psd-num' + (inM ? "" : " dim") + '">' + d.getDate() + "</span>" +
+        '<span class="psd-wd">' + DAYS[d.getDay()] + "</span></div>" +
+      (hol ? '<div class="psd-hol">' + esc(hol) + "</div>" : "") +
+      (ev ? '<div class="psd-ev">🎈 ' + esc(ev.title) + "</div>" : "") +
+      (names.length ? '<div class="psd-name">' + esc(names.join(" · ")) + "</div>"
+                    : (inM ? '<div class="psd-name none">당직 없음</div>' : "")) +
+      (board ? '<div class="psd-badge">📋 등판</div>' : "") +
+      "</td>";
+  };
+
+  let tbody = "";
+  for (let i = 0; i < days.length; i += 5) {
+    tbody += '<tr style="height:' + rowH + '">' + days.slice(i, i + 5).map(cell).join("") + "</tr>";
+  }
+
+  /* 달력 칸이 없는 주말 당직은 아래 한 줄로 */
+  const from = ymd(first), to = ymd(lastD);
+  const wk = S.duty.filter(e => e.type === "duty" && isWeekendDs(entryStart(e)) && entryStart(e) >= from && entryStart(e) <= to)
+    .sort((a, b) => entryStart(a) < entryStart(b) ? -1 : 1);
+  const wkTxt = wk.length
+    ? "주말 당직 " + wk.map(e => shortDate(entryStart(e)) + "(" + DAYS[new Date(entryStart(e) + "T00:00:00").getDay()] + ") " + e.memberName).join(" · ")
+    : "";
+
+  return '<div class="ps-page">' +
+    '<div class="ps-hd"><h1>' + esc(team) + " · " + y + "년 " + (m + 1) + "월 당직표</h1>" +
+      '<div class="ps-meta">출력일 ' + todayStr + " (" + DAYS[now.getDay()] + ")</div></div>" +
+    '<table class="ps-cal"><thead><tr><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th></tr></thead><tbody>' +
+      tbody + "</tbody></table>" +
+    '<div class="ps-foot">' +
+      '<div class="ps-legend"><span><i style="background:#e58a09"></i>당직</span>' +
+        '<span><i style="background:#dc2626"></i>등판</span>' +
+        '<span><i style="background:#c4b5fd"></i>행사일</span>' +
+        '<span><i style="background:#fbe0e0"></i>공휴일</span></div>' +
+      (wkTxt ? '<div class="ps-wk"><b>' + esc(wkTxt) + "</b></div>" : "") +
+    "</div></div>";
+}
+
+function printDutySheet() {
+  const box = $("#printSheet");
+  if (!box) { window.print(); return; }
+  box.innerHTML = dutyPrintHtml();
+  try { window.print(); } catch (e) { toast("이 기기에서는 인쇄 창을 열 수 없어요"); }
 }
 
 function monthList(rows, isDuty, events) {
@@ -3611,11 +3720,11 @@ function demoLogin(empId, pw) {
   route();
 }
 
-function demoSignup(name, empId, pos, pw) {
+function demoSignup(name, empId, pw) {
   const d = demoGet();
   const key = normEmp(empId);
   if (d.users.some(x => normEmp(x.empId) === key || String(x.email || "").toLowerCase() === empToEmail(empId))) throw new Error("이미 가입된 사번입니다.");
-  const u = { uid: "u_" + uid(), empId: empId, email: empToEmail(empId), pw: pw, name: name, position: pos, role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: Date.now(), workStatus: "", statusNote: "", statusUpdatedAt: Date.now() };
+  const u = { uid: "u_" + uid(), empId: empId, email: empToEmail(empId), pw: pw, name: name, position: "", role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: Date.now(), workStatus: "", statusNote: "", statusUpdatedAt: Date.now() };
   d.users.push(u); demoWrite(d);
   localStorage.setItem(SESSION_KEY, u.uid);
   S.user = Object.assign({}, u);
@@ -3629,8 +3738,10 @@ async function doLogin(empId, pw) {
   const { signInWithEmailAndPassword } = FB.a;
   await signInWithEmailAndPassword(FB.auth, empToEmail(empId), pw);
 }
-async function doSignup(name, empId, pos, pw) {
-  if (S.mode === "demo") { demoSignup(name, empId, pos, pw); return; }
+/* 회원가입 — 직책은 받지 않고 빈 값("")으로 저장합니다.
+   직책은 가입 후 [내 정보]·[팀원관리]에서 관리자가 설정합니다. */
+async function doSignup(name, empId, pw) {
+  if (S.mode === "demo") { demoSignup(name, empId, pw); return; }
   signingUp = true;
   try {
     const email = empToEmail(empId);
@@ -3641,7 +3752,7 @@ async function doSignup(name, empId, pos, pw) {
     const ref = doc(FB.db, "users", cred.user.uid);
     const existing = await getDoc(ref);   // trigger 가 먼저 만들었을 수 있음
     if (!existing.exists()) {
-      await setDoc(ref, Object.assign(newUserDoc(empId, email, name, pos), {
+      await setDoc(ref, Object.assign(newUserDoc(empId, email, name, ""), {
         workStatus: "", statusNote: "", statusUpdatedAt: serverTimestamp(), createdAt: serverTimestamp()
       }));
     }
@@ -3838,15 +3949,14 @@ function bindGlobal() {
 
   $("#formSignup").addEventListener("submit", async e => {
     e.preventDefault();
-    const name = $("#suName").value.trim(), pos = $("#suPos").value.trim(), emp = $("#suEmp").value.trim();
+    const name = $("#suName").value.trim(), emp = $("#suEmp").value.trim();
     const pw = $("#suPw").value;
     $("#signupErr").textContent = "";
     if (!name) { $("#signupErr").textContent = "이름을 입력해 주세요."; return; }
-    if (!pos) { $("#signupErr").textContent = "직책을 선택해 주세요."; return; }
     if (!/^[0-9A-Za-z_-]{2,20}$/.test(emp)) { $("#signupErr").textContent = "사번은 영문·숫자 2~20자로 입력해 주세요."; return; }
     if (!pw || pw.length < 6) { $("#signupErr").textContent = "비밀번호는 6자 이상이어야 합니다."; return; }
     const b = $("#btnSignup"); b.disabled = true; b.textContent = "가입 중…";
-    try { await doSignup(name, emp, pos, pw); $("#formSignup").reset(); }
+    try { await doSignup(name, emp, pw); $("#formSignup").reset(); }
     catch (err) { $("#signupErr").textContent = S.mode === "demo" ? err.message : fbErrMsg(err); }
     finally { b.disabled = false; b.textContent = "가입 신청하기"; }
   });
