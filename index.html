@@ -61,62 +61,63 @@ input,textarea,select{outline:none}
 /* ============ auth ============ */
 #scr-auth{overflow-y:auto;display:none}
 #scr-auth.active{display:block}
-.auth-wrap{min-height:100%;display:flex;flex-direction:column;padding:0 22px calc(28px + var(--safe-b))}
+.auth-wrap{min-height:100%;display:flex;flex-direction:column;padding:0 22px calc(26px + var(--safe-b));background:#F4F6FA}
 .auth-hero{
-  margin:0 -22px; padding:44px 26px 28px; position:relative; overflow:hidden;
+  margin:0 -22px; padding:calc(48px + env(safe-area-inset-top, 0px)) 24px 44px; position:relative; overflow:hidden;
   background:
-    radial-gradient(120% 80% at 108% -10%, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 56%),
-    radial-gradient(90% 70% at -10% 110%, rgba(122,75,234,.55) 0%, rgba(122,75,234,0) 60%),
-    linear-gradient(158deg,#1f3ec4 0%,#3b5cf0 46%,#7a4bea 100%);
-  border-radius:0 0 32px 32px; color:#fff;
-  box-shadow:0 22px 44px -30px rgba(31,62,196,.95);
+    radial-gradient(88% 58% at 92% -6%, rgba(96,146,196,.22) 0%, rgba(96,146,196,.09) 40%, rgba(96,146,196,0) 72%),
+    radial-gradient(90% 70% at -12% 116%, rgba(30,58,95,.88) 0%, rgba(30,58,95,.28) 55%, rgba(30,58,95,0) 78%),
+    linear-gradient(163deg,#0F172A 0%,#1E293B 55%,#1E3A5F 100%);
+  border-radius:0 0 30px 30px; color:#fff;
+  box-shadow:0 20px 42px -32px rgba(15,23,42,.9);
 }
-.auth-hero::before{
+.auth-hero::before{  /* 단정한 미세 격자 — 업무 앱의 정돈된 질감 */
   content:""; position:absolute; inset:0; pointer-events:none;
-  background-image:radial-gradient(rgba(255,255,255,.20) 1px, transparent 1px);
-  background-size:17px 17px; opacity:.45;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,0) 78%);
-  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,0) 78%);
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size:28px 28px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 62%,rgba(0,0,0,0) 100%);
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 62%,rgba(0,0,0,0) 100%);
 }
-.auth-hero::after{
-  content:""; position:absolute; width:280px; height:280px; right:-110px; top:-150px; border-radius:50%;
-  background:radial-gradient(circle at 34% 34%, rgba(255,255,255,.5), rgba(255,255,255,0) 60%);
-  filter:blur(2px);
-}
-.hero-top{position:relative;z-index:1;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.hero-top{position:relative;z-index:1;display:flex;align-items:center;margin-bottom:20px}
 .auth-hero .mark{
-  width:54px;height:54px;border-radius:18px;margin:0;
-  background:linear-gradient(160deg,rgba(255,255,255,.34),rgba(255,255,255,.10));
+  width:54px;height:54px;border-radius:16px;margin:0;
+  background:linear-gradient(160deg,#ffffff 0%,#E8EEF7 100%);
   display:flex;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.42); backdrop-filter:blur(10px);
-  box-shadow:0 12px 26px -14px rgba(6,14,44,.85), inset 0 1px 0 rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 12px 26px -16px rgba(2,6,23,.95), inset 0 -1px 0 rgba(15,23,42,.06);
 }
-.hero-chip{
-  font-size:10.5px;font-weight:800;letter-spacing:.01em;color:#fff;
-  padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.16);
-  border:1px solid rgba(255,255,255,.30); backdrop-filter:blur(8px);
-}
+.auth-hero .mark svg{width:27px;height:27px;stroke:#1E3A5F;stroke-width:1.9}
 .auth-hero h1{
-  position:relative;z-index:1;margin:0 0 7px;font-size:31px;line-height:1.16;
-  font-weight:900;letter-spacing:-.05em;text-shadow:0 3px 20px rgba(8,18,58,.30);
+  position:relative;z-index:1;margin:0;font-size:29px;line-height:1.2;
+  font-weight:800;letter-spacing:-.05em;color:#fff;
 }
-.auth-hero p{margin:0;font-size:13.5px;color:rgba(255,255,255,.90);line-height:1.55;position:relative;z-index:1;font-weight:600;letter-spacing:-.01em}
-.hero-tags{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:6px;margin-top:15px}
+.auth-hero p{
+  position:relative;z-index:1;margin:10px 0 0;font-size:13px;line-height:1.55;
+  color:rgba(214,228,243,.78);font-weight:500;letter-spacing:-.005em;
+}
+.hero-tags{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
 .hero-tags span{
-  font-size:11px;font-weight:700;letter-spacing:-.01em;color:#fff;
-  padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.13);
-  border:1px solid rgba(255,255,255,.22); backdrop-filter:blur(6px);
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:600;letter-spacing:-.01em;color:rgba(231,239,249,.86);
+  padding:6px 11px;border-radius:999px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.13);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
 }
 .auth-card{
-  background:var(--card); border-radius:22px; box-shadow:var(--shadow);
-  margin-top:-22px; padding:20px 18px 18px; position:relative; z-index:2;
+  background:#fff; border:1px solid rgba(226,232,240,.9); border-radius:22px;
+  box-shadow:0 1px 2px rgba(15,23,42,.05), 0 18px 40px -22px rgba(15,23,42,.32);
+  margin-top:-24px; padding:18px 18px 20px; position:relative; z-index:2;
 }
-.seg{display:flex;background:#f1f3f8;border-radius:13px;padding:4px;margin-bottom:16px}
+.seg{display:flex;background:#EEF2F8;border-radius:12px;padding:4px;margin-bottom:18px;gap:2px}
 .seg button{
-  flex:1;padding:9px 0;border-radius:10px;font-size:13.5px;font-weight:700;color:var(--ink2);
+  flex:1;padding:9px 0;border-radius:9px;font-size:13.5px;font-weight:700;color:#64748B;
   transition:.18s;
 }
-.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(20,26,36,.12)}
+.seg button.on{background:#fff;color:#0F172A;box-shadow:0 1px 2px rgba(15,23,42,.10),0 6px 12px -8px rgba(15,23,42,.22)}
 .field{margin-bottom:11px}
 .field label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:0 0 6px 3px;letter-spacing:-.01em}
 .field input,.field textarea,.field select{
@@ -154,7 +155,34 @@ input,textarea,select{outline:none}
 }
 .demo-btns button span{display:block;font-size:15px;margin-bottom:1px}
 .demo-btns button:active{background:var(--brand-soft);border-color:#bfd2ff;color:var(--brand-d)}
-.auth-foot{text-align:center;font-size:11px;color:var(--ink3);margin-top:18px;line-height:1.7}
+.auth-foot{text-align:center;font-size:11.5px;color:#94A3B8;margin:auto 0 0;padding-top:26px;line-height:1.7;letter-spacing:-.01em}
+.auth-foot b{font-weight:600;color:#64748B}
+.auth-foot a{color:#94A3B8;font-weight:500;text-decoration:none;border-bottom:1px solid #DDE3EC;padding-bottom:1px}
+
+/* ---- 로그인 화면: 입력칸·버튼·체험 영역 (딥 네이비) ---- */
+#scr-auth .field{margin-bottom:13px}
+#scr-auth .field label{display:block;font-size:12px;font-weight:700;color:#475569;margin:0 0 7px 2px;letter-spacing:-.01em}
+#scr-auth .field input{
+  width:100%;border:1px solid #E2E8F0;background:#F8FAFC;border-radius:12px;
+  padding:13px 14px;font-size:16px;color:#0F172A;transition:.16s;appearance:none;
+}
+#scr-auth .field input::placeholder{color:#A3AFC0;font-weight:500}
+#scr-auth .field input:focus{background:#fff;border-color:#1E3A5F;box-shadow:0 0 0 3.5px rgba(30,58,95,.10)}
+#scr-auth .hint,#scr-auth .field .hint{font-size:11.5px;color:#94A3B8;margin:7px 0 0 2px;line-height:1.5}
+#scr-auth .btn{
+  padding:14px 18px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:-.01em;
+  background:linear-gradient(180deg,#22456B 0%,#1A3355 58%,#13263F 100%);color:#fff;
+  box-shadow:0 12px 24px -14px rgba(15,23,42,.85), inset 0 1px 0 rgba(255,255,255,.14);
+}
+#scr-auth .btn:active{transform:scale(.99)}
+#scr-auth .btn.ghost-line{background:#fff;color:#475569;border:1px solid #E2E8F0;box-shadow:none}
+#scr-auth .btn-link{color:#94A3B8;font-size:12px}
+#scr-auth .demo-box{margin-top:16px;border:1px solid #E6EBF3;border-radius:14px;padding:13px;background:#F8FAFC}
+#scr-auth .demo-box h4{color:#334155}
+#scr-auth .demo-box p{color:#94A3B8}
+#scr-auth .demo-box .badge{background:#EEF2F8;color:#526078;border-color:#E1E7F0}
+#scr-auth .demo-btns button{border-color:#E6EBF3;color:#475569}
+#scr-auth .demo-btns button:active{background:#EEF2F8;border-color:#CBD5E1;color:#1E3A5F}
 
 /* ============ pending ============ */
 #scr-pending{background:var(--bg);align-items:center;justify-content:center;padding:30px 24px calc(30px + var(--safe-b))}
@@ -978,17 +1006,16 @@ input,textarea,select{outline:none}
       <div class="auth-hero">
         <div class="hero-top">
           <div class="mark">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 20v-1.6a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.4"/>
               <path d="M22 20v-1.6a4 4 0 0 0-3-3.85"/><path d="M16 3.7a3.4 3.4 0 0 1 0 6.6"/>
             </svg>
           </div>
-          <span class="hero-chip">TEAM WORKSPACE</span>
         </div>
         <h1>우리팀 허브</h1>
-        <p>공지 · 당직 · 사진 · 대화를 한 곳에서</p>
+        <p>공지 · 당직 · 사진 · 맛집 · 대화를 한 곳에서</p>
         <div class="hero-tags">
-          <span>🏢 당직 자동 배정</span><span>📌 공지</span><span>📸 사진</span><span>💬 대화</span>
+          <span>🏢 당직</span><span>📌 공지</span><span>🍽️ 맛집</span><span>💬 대화</span>
         </div>
       </div>
 
@@ -1045,7 +1072,7 @@ input,textarea,select{outline:none}
       </div>
 
       <div class="auth-foot" id="authFoot">
-        실제 팀원끼리 실시간으로 함께 쓰려면<br>Firebase 무료 프로젝트를 연결하면 됩니다.
+        <a href="#" id="authTryDemo">체험 모드로 둘러보기</a>
       </div>
     </div>
   </section>
@@ -5833,10 +5860,10 @@ function applyModeUI() {
   const foot = $("#authFoot");
   if (!foot) return;
   foot.innerHTML = live
-    ? "실시간 연결 중 · <b style=\"color:var(--brand-d)\">" + esc(S.cfg.projectId || "") + "</b><br>팀원끼리 같은 데이터를 함께 봅니다.<br>" +
-      '<a href="#" id="authTryDemo" style="color:var(--ink3);font-size:11px;text-decoration:underline">체험 모드로 둘러보기</a>'
-    : "지금은 <b>체험 모드</b>입니다 · 이 폰에만 저장돼요<br>" +
-      (cfgComplete(FIREBASE_CONFIG) ? '<a href="#" id="authBackLive" style="font-size:11px;color:var(--brand-d);text-decoration:underline">실시간 연결로 돌아가기</a>' : "");
+    ? '<a href="#" id="authTryDemo">체험 모드로 둘러보기</a>'
+    : (cfgComplete(FIREBASE_CONFIG)
+        ? '<a href="#" id="authBackLive">실시간 연결로 돌아가기</a>'
+        : "체험 모드 · 이 기기에만 저장");
   const td = $("#authTryDemo");
   if (td) td.addEventListener("click", e => {
     e.preventDefault();
