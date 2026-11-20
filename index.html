@@ -731,20 +731,22 @@ input,textarea,select{outline:none}
 #printSheet .ps-meta{font-size:8.5pt;font-weight:600;color:#5c6577;text-align:right;white-space:nowrap;line-height:1.5}
 #printSheet table.ps-cal{width:100%;flex:0 0 auto;border-collapse:collapse;table-layout:fixed;page-break-inside:avoid}
 #printSheet table.ps-cal th{font-size:9pt;font-weight:800;color:#4b5565;letter-spacing:.12em;background:#f2f5fa;border:.6pt solid #cfd6e2;padding:1.6mm 0;text-align:center}
-#printSheet table.ps-cal td{border:.6pt solid #cfd6e2;vertical-align:top;padding:1.3mm 1.5mm}
+#printSheet table.ps-cal td{border:.6pt solid #cfd6e2;vertical-align:top;padding:1.3mm 1.5mm;position:relative}
 #printSheet td.psd.out{background:#fbfcfe}
 #printSheet td.psd.hol{background:#fff7f7}
 #printSheet td.psd.ev{background:#f6f2ff}
-#printSheet .psd-top{display:flex;align-items:baseline;gap:1.2mm}
+#printSheet .psd-top{display:flex;align-items:center;gap:1.2mm}
 #printSheet .psd-num{font-size:12.5pt;font-weight:800;color:#141a24;line-height:1}
 #printSheet .psd-num.dim{color:#c3cad8}
 #printSheet td.psd.today .psd-num{color:#1f52cf}
-#printSheet .psd-wd{font-size:7.6pt;font-weight:700;color:#8a93a6}
+#printSheet .psd-wd{font-size:7.6pt;font-weight:700;color:#8a93a6;line-height:1}
 #printSheet .psd-hol{font-size:7.8pt;font-weight:800;color:#c8323a;margin-top:.9mm;line-height:1.25}
 #printSheet .psd-ev{font-size:8pt;font-weight:800;color:#5b46c9;margin-top:.9mm;line-height:1.25}
-#printSheet .psd-name{font-size:18pt;font-weight:800;color:#0f1722;letter-spacing:-.04em;line-height:1.15;margin-top:2mm}
-#printSheet .psd-name.none{font-size:8pt;font-weight:700;color:#b6bdc9;letter-spacing:0}
-#printSheet .psd-badge{display:inline-block;font-size:7.6pt;font-weight:800;color:#b91c1c;background:#fee2e2;border:.6pt solid #fecaca;border-radius:1.4mm;padding:.5mm 1.6mm;margin-top:1.2mm}
+/* 이름은 칸 아래쪽에 고정 — 등판이 위로 빠져 이름 자리를 넓게 */
+#printSheet .psd-name{position:absolute;left:1.5mm;right:1.5mm;bottom:1.7mm;font-size:20pt;font-weight:800;color:#0f1722;letter-spacing:-.04em;line-height:1.12;word-break:keep-all}
+#printSheet .psd-name.none{font-size:8pt;font-weight:700;color:#b6bdc9;letter-spacing:0;bottom:1.9mm}
+/* 등판 — 날짜·요일 바로 옆(칸 상단) */
+#printSheet .psd-badge{display:inline-block;font-size:7.6pt;font-weight:800;color:#b91c1c;background:#fee2e2;border:.6pt solid #fecaca;border-radius:1.4mm;padding:.5mm 1.6mm;margin-left:.8mm;line-height:1.15}
 #printSheet .ps-foot{display:flex;align-items:flex-start;justify-content:space-between;gap:8mm;margin-top:2.4mm;padding-top:1.6mm;border-top:.6pt solid #cfd6e2;font-size:7.8pt;color:#5c6577;line-height:1.55}
 #printSheet .ps-legend{display:flex;flex-wrap:wrap;gap:0 4mm;align-items:center}
 #printSheet .ps-legend span{display:inline-flex;align-items:center;gap:1.2mm;font-weight:700;color:#4b5565}
@@ -2927,12 +2929,12 @@ function dutyPrintHtml() {
     const cls = "psd" + (c.inM ? "" : " out") + (c.holiday ? " hol" : "") + (c.event ? " ev" : "") + (c.today ? " today" : "");
     return '<td class="' + cls + '">' +
       '<div class="psd-top"><span class="psd-num' + (c.inM ? "" : " dim") + '">' + c.day.getDate() + "</span>" +
-        '<span class="psd-wd">' + DAYS[c.day.getDay()] + "</span></div>" +
+        '<span class="psd-wd">' + DAYS[c.day.getDay()] + "</span>" +
+        (c.board ? '<span class="psd-badge">📋 등판</span>' : "") + "</div>" +
       (c.holiday ? '<div class="psd-hol">' + esc(c.holiday) + "</div>" : "") +
       (c.event ? '<div class="psd-ev">🎈 ' + esc(c.event.title) + "</div>" : "") +
       (c.names.length ? '<div class="psd-name">' + esc(c.names.join(" · ")) + "</div>"
                       : (c.inM ? '<div class="psd-name none">당직 없음</div>' : "")) +
-      (c.board ? '<div class="psd-badge">📋 등판</div>' : "") +
       "</td>";
   };
 
@@ -3044,16 +3046,35 @@ function dutyPrintCanvas() {
     ctx.font = font(fNum, 800);
     const numTxt = String(c.day.getDate());
     const numW = ctx.measureText(numTxt).width;
+    const numBase = pTop + fNum * 0.94;
     ctx.fillStyle = c.inM ? (c.today ? "#1f52cf" : "#141a24") : "#c3cad8";
-    ctx.fillText(numTxt, px, pTop + fNum * 0.94);
+    ctx.fillText(numTxt, px, numBase);
     ctx.font = font(fWd, 700); ctx.fillStyle = c.inM ? "#8a93a6" : "#c9d0dd";
-    ctx.fillText(DAYS[c.day.getDay()], px + numW + 10, pTop + fNum * 0.94);
+    const wdTxt = DAYS[c.day.getDay()];
+    const wdX = px + numW + 10;
+    ctx.fillText(wdTxt, wdX, numBase);
+    const wdW = ctx.measureText(wdTxt).width;
 
-    /* 이름은 칸 아래쪽에 맞춰 이름끼리 줄이 서도록 */
-    const badgeH = Math.max(27, Math.min(34, h * 0.142));
-    const bottom = y + h - 14;
-    const nameBottom = c.board ? bottom - badgeH - 7 : bottom;
-    let fName = Math.max(30, Math.min(58, h * 0.245));
+    /* 📋 등판 — 날짜·요일 바로 옆(칸 상단)에 붙여, 칸 아래쪽은 이름 자리로 비워 둡니다 */
+    if (c.board) {
+      const label = "📋 등판";
+      const badgeH = Math.max(26, Math.min(33, h * 0.132));
+      const fB = Math.max(17, badgeH * 0.60);
+      ctx.font = font(fB, 800);
+      const bw = Math.ceil(ctx.measureText(label).width) + 22;
+      let bx = wdX + wdW + 14;
+      if (bx + bw > x + cw - 16) bx = x + cw - 16 - bw;   /* 자리가 모자라면 칸 오른쪽 끝에 */
+      const by = pTop + fNum * 0.58 - badgeH / 2;          /* 날짜 숫자와 같은 줄 가운데 */
+      rr(bx, by, bw, badgeH, 7);
+      ctx.fillStyle = "#fee2e2"; ctx.fill();
+      ctx.strokeStyle = "#fecaca"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillStyle = "#b91c1c";
+      ctx.fillText(label, bx + 11, by + badgeH / 2 + 1);
+    }
+
+    /* 이름은 칸 아래쪽에 맞춰 이름끼리 줄이 서도록 — 등판이 위로 빠져 이름을 크게 */
+    const nameBottom = y + h - Math.max(14, h * 0.072);
+    let fName = Math.max(30, Math.min(66, h * 0.29));
     const nameTxt = c.names.length ? c.names.join(" · ") : "";
     if (nameTxt) {
       ctx.font = font(fName, 800);
@@ -3084,22 +3105,8 @@ function dutyPrintCanvas() {
       ctx.font = font(fName, 800); ctx.fillStyle = "#0f1722";
       ctx.fillText(clip(nameTxt, maxW), px, nameBottom - fName * 0.17);
     } else if (c.inM) {
-      ctx.font = font(Math.max(18, fName * 0.40), 700); ctx.fillStyle = "#b6bdc9";
-      ctx.fillText("당직 없음", px, nameBottom - 3);
-    }
-
-    /* 📋 등판 */
-    if (c.board) {
-      const label = "📋 등판";
-      const fB = Math.max(18, badgeH * 0.60);
-      ctx.font = font(fB, 800);
-      const bw = ctx.measureText(label).width + 24;
-      const bt = bottom - badgeH;
-      rr(px, bt, bw, badgeH, 7);
-      ctx.fillStyle = "#fee2e2"; ctx.fill();
-      ctx.strokeStyle = "#fecaca"; ctx.lineWidth = 2; ctx.stroke();
-      ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillStyle = "#b91c1c";
-      ctx.fillText(label, px + 12, bt + badgeH / 2 + 1);
+      ctx.font = font(Math.max(18, fName * 0.38), 700); ctx.fillStyle = "#b6bdc9";
+      ctx.fillText("당직 없음", px, nameBottom - fName * 0.17);
     }
   };
 
