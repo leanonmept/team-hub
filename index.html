@@ -3413,7 +3413,7 @@ function openRestSheet(id) {
       '<div class="field"><label>별점 <span class="req">필수</span></label><div class="rt-starbtn" id="rtStars">' +
         [1, 2, 3, 4, 5].map(n => '<button type="button" data-s="' + n + '" class="' + (n <= rating ? "on" : "") + '" aria-label="' + n + '점">★</button>').join("") +
       '</div><div class="hint" id="rtStarHint">' + (rating ? rating + "점" : "별을 눌러 점수를 골라 주세요 (필수)") + "</div></div>" +
-      '<div class="field"><label>한줄평 <span class="opt">선택</span></label><textarea id="rtReview" rows="3" maxlength="200" placeholder="비워도 등록돼요">' + esc(r ? r.review || "" : "") + "</textarea></div>",
+      '<div class="field"><label>한줄평 및 추천메뉴 <span class="opt">선택</span></label><textarea id="rtReview" rows="3" maxlength="200" placeholder="예: 쫄면이랑 비빔만두 추천! 분위기 좋고 깔끔함">' + esc(r ? r.review || "" : "") + "</textarea></div>",
     footer: '<button class="btn" id="rtSave">' + (r ? "수정 저장" : "맛집 등록") + "</button>",
     onMount: root => {
       const locTx = () => {
@@ -5254,7 +5254,7 @@ function openGuideSheet() {
       '<div class="sec-title">3. 사진</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">사진은 올릴 때 가로 960px·JPEG 0.72로 자동 압축되어 Firestore 문서에 저장됩니다. (Firebase 무료 Spark 요금제에서 Storage 없이도 동작)</p>' +
       '<div class="sec-title">🍽️ 맛집</div>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">맛집 등록은 <b>가게 검색 → 지도 → 가게명·주소 → 별점 → 한줄평</b> 순서입니다. 가게 이름으로 검색해 후보를 누르면 가게명·주소·지도 위치가 한 번에 채워지고, <b>지도(핀)와 별점은 필수</b>·<b>한줄평은 선택</b>입니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">맛집 등록은 <b>가게 검색 → 지도 → 가게명·주소 → 별점 → 한줄평 및 추천메뉴</b> 순서입니다. 가게 이름으로 검색해 후보를 누르면 가게명·주소·지도 위치가 한 번에 채워지고, <b>지도(핀)와 별점은 필수</b>·<b>한줄평 및 추천메뉴는 선택</b>입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 14px">앱에 <b>기본 키</b>가 내장되어 있어 따로 설정하지 않아도 <b>카카오 장소 검색·카카오맵</b>으로 동작합니다. 관리자는 상단 오른쪽 프로필 아이콘 → [팀원관리] → 관리에서 <b>카카오 장소 검색 키</b>·<b>카카오맵 화면 키(JS 키)</b>를 바꿀 수 있고, 지우면 다시 기본 키로 돌아갑니다. 카카오맵이 안 뜨면 카카오에 Web 도메인(leanonmept.github.io)이 등록됐는지 확인해 주세요.</p>' +
       '<div class="sec-title">4. 실시간</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0">Firebase를 연결하면 공지·당직·사진·대화·승인 상태가 팀원 모두에게 실시간으로 반영됩니다.</p>'
