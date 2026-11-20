@@ -1113,7 +1113,7 @@ input,textarea,select{outline:none}
         <span class="tl">사진</span>
       </button>
       <button data-tab="rest">
-        <svg width="23" height="23" viewBox="-1.5 -1.5 27 27" fill="currentColor" stroke="none" overflow="visible"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+        <svg width="23" height="23" viewBox="-1.5 -1.5 27 27" fill="currentColor" stroke="none" overflow="visible"><rect x="4.1" y="2.8" width="2" height="7.4" rx="1"/><rect x="7" y="2.8" width="2" height="7.4" rx="1"/><rect x="9.9" y="2.8" width="2" height="7.4" rx="1"/><path d="M4.1 8.6h7.8v1.4a3.9 3.9 0 0 1-7.8 0z"/><rect x="6.9" y="13.2" width="2.2" height="8" rx="1.1"/><path d="M19.4 3c-3.2 2.2-4.8 4.9-4.8 7.7 0 1.9 1.1 3.3 3.1 3.8V21h2.3V3z"/></svg>
         <span class="tl">맛집</span>
       </button>
       <button data-tab="chat">
@@ -3092,7 +3092,13 @@ function restCatOf(r) {
   return String((r && (r.category || r.cat)) || "").trim();
 }
 /* 포크·나이프 — 21px에서도 또렷하게 보이는 솔리드 글리프(2~22 영역, 위아래·좌우 여백 확보) */
-const REST_ICON_PATHS = '<path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>';
+const REST_ICON_PATHS =
+  '<rect x="4.1" y="2.8" width="2" height="7.4" rx="1"/>' +
+  '<rect x="7" y="2.8" width="2" height="7.4" rx="1"/>' +
+  '<rect x="9.9" y="2.8" width="2" height="7.4" rx="1"/>' +
+  '<path d="M4.1 8.6h7.8v1.4a3.9 3.9 0 0 1-7.8 0z"/>' +
+  '<rect x="6.9" y="13.2" width="2.2" height="8" rx="1.1"/>' +
+  '<path d="M19.4 3c-3.2 2.2-4.8 4.9-4.8 7.7 0 1.9 1.1 3.3 3.1 3.8V21h2.3V3z"/>';
 function restGlyph(size, color) {
   /* viewBox 를 넉넉히 잡아(주변 1.5 여백) 위아래·좌우가 잘리지 않게 */
   const s = size || 14;
@@ -3250,13 +3256,13 @@ function restCard(r) {
   const canEdit = r.author_id === myUid() || isAdmin();
   const cat = restCatOf(r);
   const score = (Number(r.rating) || 0).toFixed(1);
-  const quote = r.review ? r.review : (r.menu ? "추천 " + r.menu : "");
+  const quote = [r.review || "", (r.menu ? "추천 " + r.menu : "")].filter(Boolean).join(" · ");
   return '<article class="rt-card" data-rest="' + r.id + '">' +
     '<div class="rt-top"><h3>' + esc(r.name) + '</h3>' +
       (cat ? '<span class="rt-cat c-' + esc(cat) + '">' + esc(cat) + '</span>' : "") +
       '<span class="rt-rate">' + starsHtml(r.rating) + score + '</span></div>' +
     (r.address ? '<p class="rt-addr">📍 ' + esc(r.address) + '</p>' : "") +
-    (quote ? '<div class="rt-quote"><span class="em">' + (r.review ? "💬" : "🍽️") + '</span><span class="tx">' + esc(quote) + '</span></div>' : "") +
+    (quote ? '<div class="rt-quote"><span class="em">💬</span><span class="tx">' + esc(quote) + '</span></div>' : "") +
     '<div class="rt-meta">' + avatarHtml(r.author_name, "xs", r.author_id) +
       '<div class="who"><span>' + esc(r.author_name || "팀원") + '</span></div>' +
       '<button class="rt-like' + (liked ? " on" : "") + '" data-like="' + r.id + '">' + (liked ? ICON.heart : ICON.heartO) + " 좋아요 " + (r.likes || []).length + "</button>" +
