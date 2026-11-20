@@ -58,131 +58,113 @@ input,textarea,select{outline:none}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
 .screen.active{display:flex}
 
-/* ============ auth ============ */
+/* ============ auth (화이트 미니멀 + 딥 네이비) ============ */
 #scr-auth{overflow-y:auto;display:none}
 #scr-auth.active{display:block}
-.auth-wrap{min-height:100%;display:flex;flex-direction:column;padding:0 22px calc(26px + var(--safe-b));background:#F4F6FA}
-.auth-hero{
-  margin:0 -22px; padding:calc(48px + env(safe-area-inset-top, 0px)) 24px 44px; position:relative; overflow:hidden;
-  background:
-    radial-gradient(88% 58% at 92% -6%, rgba(96,146,196,.22) 0%, rgba(96,146,196,.09) 40%, rgba(96,146,196,0) 72%),
-    radial-gradient(90% 70% at -12% 116%, rgba(30,58,95,.88) 0%, rgba(30,58,95,.28) 55%, rgba(30,58,95,0) 78%),
-    linear-gradient(163deg,#0F172A 0%,#1E293B 55%,#1E3A5F 100%);
-  border-radius:0 0 30px 30px; color:#fff;
-  box-shadow:0 20px 42px -32px rgba(15,23,42,.9);
+.auth-wrap{
+  min-height:100%; display:flex; flex-direction:column;
+  padding:calc(56px + env(safe-area-inset-top,0px)) 24px calc(30px + var(--safe-b));
+  background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 56%,#F8FAFC 100%);
 }
-.auth-hero::before{  /* 단정한 미세 격자 — 업무 앱의 정돈된 질감 */
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
-  background-size:28px 28px;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 62%,rgba(0,0,0,0) 100%);
-  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.25) 62%,rgba(0,0,0,0) 100%);
-}
-.hero-top{position:relative;z-index:1;display:flex;align-items:center;margin-bottom:20px}
-.auth-hero .mark{
-  width:54px;height:54px;border-radius:16px;margin:0;
-  background:linear-gradient(160deg,#ffffff 0%,#E8EEF7 100%);
+
+/* 상단 브랜드 */
+.auth-brand{display:flex;flex-direction:column;align-items:flex-start}
+.auth-brand .mark{
+  width:58px;height:58px;border-radius:18px;
+  background:linear-gradient(160deg,#1E3A5F 0%,#17304F 52%,#13263F 100%);
   display:flex;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.9);
-  box-shadow:0 12px 26px -16px rgba(2,6,23,.95), inset 0 -1px 0 rgba(15,23,42,.06);
+  box-shadow:0 10px 22px -14px rgba(19,38,63,.85), inset 0 1px 0 rgba(255,255,255,.10);
 }
-.auth-hero .mark svg{width:27px;height:27px;stroke:#1E3A5F;stroke-width:1.9}
-.auth-hero h1{
-  position:relative;z-index:1;margin:0;font-size:29px;line-height:1.2;
-  font-weight:800;letter-spacing:-.05em;color:#fff;
+.auth-brand .mark svg{width:31px;height:31px;display:block}
+.auth-brand h1{
+  margin:22px 0 0;font-size:31px;line-height:1.22;font-weight:800;
+  letter-spacing:-.04em;color:#191F28;
 }
-.auth-hero p{
-  position:relative;z-index:1;margin:10px 0 0;font-size:13px;line-height:1.55;
-  color:rgba(214,228,243,.78);font-weight:500;letter-spacing:-.005em;
+.auth-brand p{
+  margin:9px 0 0;font-size:13.5px;line-height:1.5;font-weight:500;
+  letter-spacing:-.02em;color:#8B95A1;
 }
-.hero-tags{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
-.hero-tags span{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:11.5px;font-weight:600;letter-spacing:-.01em;color:rgba(231,239,249,.86);
-  padding:6px 11px;border-radius:999px;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.13);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
-}
-.auth-card{
-  background:#fff; border:1px solid rgba(226,232,240,.9); border-radius:22px;
-  box-shadow:0 1px 2px rgba(15,23,42,.05), 0 18px 40px -22px rgba(15,23,42,.32);
-  margin-top:-24px; padding:18px 18px 20px; position:relative; z-index:2;
-}
-.seg{display:flex;background:#EEF2F8;border-radius:12px;padding:4px;margin-bottom:18px;gap:2px}
-.seg button{
-  flex:1;padding:9px 0;border-radius:9px;font-size:13.5px;font-weight:700;color:#64748B;
-  transition:.18s;
-}
-.seg button.on{background:#fff;color:#0F172A;box-shadow:0 1px 2px rgba(15,23,42,.10),0 6px 12px -8px rgba(15,23,42,.22)}
-.field{margin-bottom:11px}
-.field label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:0 0 6px 3px;letter-spacing:-.01em}
-.field input,.field textarea,.field select{
-  width:100%; border:1px solid var(--line); background:#fafbfe; border-radius:12px;
-  padding:12px 13px; font-size:16px; transition:.15s; appearance:none;   /* iOS: 16px 미만이면 포커스 시 화면이 확대돼 버튼이 엉뚱하게 눌림 */
-}
-.field textarea{min-height:96px;resize:vertical;line-height:1.6}
-.field input:focus,.field textarea:focus,.field select:focus{background:#fff;border-color:#b9cbff;box-shadow:0 0 0 3px rgba(47,107,246,.12)}
-.hint{font-size:11.5px;color:var(--ink3);margin:5px 0 0 3px;line-height:1.5}
-.field .hint{font-size:11.5px;color:var(--ink3);margin:5px 0 0 3px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  padding:13px 18px;border-radius:13px;font-weight:700;font-size:14.5px;
-  background:var(--brand);color:#fff;transition:.16s;width:100%;
-  box-shadow:0 6px 16px -8px rgba(47,107,246,.7);
-}
-.btn:active{transform:scale(.985)}
-.btn.sm{padding:9px 13px;font-size:13px;border-radius:10px;width:auto;box-shadow:none}
-.btn.ghost{background:#f2f5fb;color:var(--ink);box-shadow:none}
-.btn.ghost-line{background:transparent;color:var(--ink2);border:1px solid var(--line);box-shadow:none}
-.btn.danger{background:var(--danger-soft);color:var(--danger);box-shadow:none}
-.btn.event{background:#f3f0ff;color:#5b46c9;border:1px solid #ddd5ff;box-shadow:none}
-.btn.ok{background:var(--ok-soft);color:var(--ok);box-shadow:none}
-.btn[disabled]{opacity:.55;pointer-events:none}
-.btn-link{display:block;width:100%;text-align:center;font-size:12.5px;color:var(--ink3);margin-top:14px;padding:6px;text-decoration:underline;text-underline-offset:3px}
 
-.demo-box{margin-top:16px;border:1px dashed #cfd8ea;border-radius:16px;padding:13px 13px 12px;background:#f7f9fe}
-.demo-box h4{margin:0 0 3px;font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:6px}
-.demo-box p{margin:0 0 10px;font-size:11.5px;color:var(--ink3);line-height:1.5}
-.demo-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
-.demo-btns button{
-  background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 4px;
-  font-size:11.5px;font-weight:700;color:var(--ink2);line-height:1.35;
+/* 세그 탭 + 폼 */
+.auth-form{margin-top:34px;display:flex;flex-direction:column}
+#scr-auth .seg{
+  display:flex;gap:4px;padding:4px;background:#F2F4F6;border-radius:14px;margin:0 0 24px;
 }
-.demo-btns button span{display:block;font-size:15px;margin-bottom:1px}
-.demo-btns button:active{background:var(--brand-soft);border-color:#bfd2ff;color:var(--brand-d)}
-.auth-foot{text-align:center;font-size:11.5px;color:#94A3B8;margin:auto 0 0;padding-top:26px;line-height:1.7;letter-spacing:-.01em}
-.auth-foot b{font-weight:600;color:#64748B}
-.auth-foot a{color:#94A3B8;font-weight:500;text-decoration:none;border-bottom:1px solid #DDE3EC;padding-bottom:1px}
+#scr-auth .seg button{
+  flex:1 1 0;height:44px;border-radius:11px;background:transparent;
+  font-size:15px;font-weight:600;letter-spacing:-.02em;color:#8B95A1;
+  transition:background .18s ease,color .18s ease,box-shadow .18s ease;
+}
+#scr-auth .seg button.on{
+  background:#FFFFFF;color:#191F28;font-weight:700;
+  box-shadow:0 1px 3px rgba(25,31,40,.08), 0 1px 1px rgba(25,31,40,.04);
+}
 
-/* ---- 로그인 화면: 입력칸·버튼·체험 영역 (딥 네이비) ---- */
-#scr-auth .field{margin-bottom:13px}
-#scr-auth .field label{display:block;font-size:12px;font-weight:700;color:#475569;margin:0 0 7px 2px;letter-spacing:-.01em}
+#scr-auth .field{margin-bottom:16px}
+#scr-auth .field label{
+  display:block;font-size:13px;font-weight:600;color:#6B7684;
+  margin:0;padding:0 2px 8px;letter-spacing:-.015em;
+}
 #scr-auth .field input{
-  width:100%;border:1px solid #E2E8F0;background:#F8FAFC;border-radius:12px;
-  padding:13px 14px;font-size:16px;color:#0F172A;transition:.16s;appearance:none;
+  width:100%;height:56px;border:1px solid transparent;background:#F2F4F6;border-radius:15px;
+  padding:0 17px;font-size:16.5px;font-weight:600;letter-spacing:-.02em;color:#191F28;
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease;appearance:none;
 }
-#scr-auth .field input::placeholder{color:#A3AFC0;font-weight:500}
-#scr-auth .field input:focus{background:#fff;border-color:#1E3A5F;box-shadow:0 0 0 3.5px rgba(30,58,95,.10)}
-#scr-auth .hint,#scr-auth .field .hint{font-size:11.5px;color:#94A3B8;margin:7px 0 0 2px;line-height:1.5}
+#scr-auth .field input::placeholder{color:#B0B8C1;font-weight:500}
+#scr-auth .field input:focus{background:#FFFFFF;border-color:#1E3A5F;box-shadow:0 0 0 3px rgba(30,58,95,.10)}
+#scr-auth .hint,#scr-auth .field .hint{font-size:11.5px;color:#94A3B8;margin:8px 0 0 2px;line-height:1.5}
+
+/* 풀폭 로그인 / 가입 신청 버튼 */
 #scr-auth .btn{
-  padding:14px 18px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:-.01em;
-  background:linear-gradient(180deg,#22456B 0%,#1A3355 58%,#13263F 100%);color:#fff;
-  box-shadow:0 12px 24px -14px rgba(15,23,42,.85), inset 0 1px 0 rgba(255,255,255,.14);
+  display:inline-flex;align-items:center;justify-content:center;width:100%;height:56px;
+  margin-top:10px;padding:0 18px;border-radius:15px;
+  font-size:17px;font-weight:700;letter-spacing:-.02em;color:#FFFFFF;
+  background:linear-gradient(135deg,#22456B 0%,#1A3355 52%,#13263F 100%);
+  box-shadow:0 12px 24px -14px rgba(19,38,63,.85), inset 0 1px 0 rgba(255,255,255,.12);
 }
 #scr-auth .btn:active{transform:scale(.99)}
-#scr-auth .btn.ghost-line{background:#fff;color:#475569;border:1px solid #E2E8F0;box-shadow:none}
-#scr-auth .btn-link{color:#94A3B8;font-size:12px}
-#scr-auth .demo-box{margin-top:16px;border:1px solid #E6EBF3;border-radius:14px;padding:13px;background:#F8FAFC}
-#scr-auth .demo-box h4{color:#334155}
-#scr-auth .demo-box p{color:#94A3B8}
-#scr-auth .demo-box .badge{background:#EEF2F8;color:#526078;border-color:#E1E7F0}
-#scr-auth .demo-btns button{border-color:#E6EBF3;color:#475569}
-#scr-auth .demo-btns button:active{background:#EEF2F8;border-color:#CBD5E1;color:#1E3A5F}
+#scr-auth #loginErr,#scr-auth #signupErr{margin:12px 0 0;font-size:12.5px;line-height:1.5;text-align:center}
+
+/* 체험(미리보기) 모드 박스 */
+#scr-auth .demo-box{margin-top:22px;border:1px solid #E9EDF2;border-radius:16px;padding:14px;background:#F8FAFC}
+#scr-auth .demo-box h4{margin:0 0 4px;font-size:12.5px;font-weight:700;color:#4E5968;display:flex;align-items:center;gap:6px}
+#scr-auth .demo-box p{margin:0 0 11px;font-size:11.5px;color:#8B95A1;line-height:1.55}
+#scr-auth .demo-box .badge{background:#EDF2F8;color:#3C5A7D;border-color:#DCE5EF}
+#scr-auth .demo-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+#scr-auth .demo-btns button{
+  background:#FFFFFF;border:1px solid #E9EDF2;border-radius:12px;padding:10px 4px;
+  font-size:11.5px;font-weight:700;color:#4E5968;line-height:1.35;
+}
+#scr-auth .demo-btns button span{display:block;font-size:15px;margin-bottom:2px}
+#scr-auth .demo-btns button:active{background:#EDF2F8;border-color:#DCE5EF;color:#1E3A5F}
+#scr-auth .btn-link{
+  display:block;width:100%;text-align:center;font-size:12.5px;color:#94A3B8;margin-top:14px;padding:8px;
+  text-decoration:underline;text-underline-offset:3px;
+}
+
+/* 작은 화면(예: 667px 높이)에서도 스크롤 없이 들어오도록 */
+@media (max-height:720px){
+  .auth-wrap{padding-top:calc(34px + env(safe-area-inset-top,0px))}
+  .auth-brand h1{font-size:28px;margin-top:18px}
+  .auth-form{margin-top:26px}
+  #scr-auth .seg{margin-bottom:20px;padding:3px}
+  #scr-auth .seg button{height:40px}
+  #scr-auth .field{margin-bottom:13px}
+  #scr-auth .field input{height:52px}
+  #scr-auth .btn{height:52px}
+  .auth-foot{padding-top:26px}
+}
+
+/* 하단 체험 모드 링크 */
+.auth-foot{
+  margin:auto 0 0;padding-top:44px;text-align:center;
+  font-size:13px;color:#8B95A1;line-height:1.7;letter-spacing:-.015em;
+}
+.auth-foot b{font-weight:600;color:#64748B}
+.auth-foot a{
+  display:inline-block;color:#8B95A1;font-weight:500;text-decoration:underline;
+  text-decoration-color:rgba(139,149,161,.45);text-underline-offset:3px;padding:8px 6px;
+}
 
 /* ============ pending ============ */
 #scr-pending{background:var(--bg);align-items:center;justify-content:center;padding:30px 24px calc(30px + var(--safe-b))}
@@ -1003,23 +985,22 @@ input,textarea,select{outline:none}
   <!-- ================= AUTH ================= -->
   <section class="screen active" id="scr-auth">
     <div class="auth-wrap">
-      <div class="auth-hero">
-        <div class="hero-top">
-          <div class="mark">
-            <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 20v-1.6a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.4"/>
-              <path d="M22 20v-1.6a4 4 0 0 0-3-3.85"/><path d="M16 3.7a3.4 3.4 0 0 1 0 6.6"/>
-            </svg>
-          </div>
+      <div class="auth-brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <!-- 뒷사람 -->
+            <circle cx="17.1" cy="8.9" r="2.6" fill="#FFFFFF" opacity=".62"/>
+            <path d="M16.4 14.5c2.9.25 5.05 2.35 5.05 5.2" fill="none" stroke="#FFFFFF" stroke-width="2.15" stroke-linecap="round" opacity=".62"/>
+            <!-- 앞사람 -->
+            <circle cx="9.1" cy="7.9" r="3.5" fill="#FFFFFF"/>
+            <path d="M2.4 19.7c0-3.6 3-5.95 6.7-5.95s6.7 2.35 6.7 5.95" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+          </svg>
         </div>
         <h1>우리팀 허브</h1>
         <p>공지 · 당직 · 사진 · 맛집 · 대화를 한 곳에서</p>
-        <div class="hero-tags">
-          <span>🏢 당직</span><span>📌 공지</span><span>🍽️ 맛집</span><span>💬 대화</span>
-        </div>
       </div>
 
-      <div class="auth-card">
+      <div class="auth-form">
         <div class="seg" id="authSeg">
           <button class="on" data-mode="login">로그인</button>
           <button data-mode="signup">회원가입</button>
@@ -1039,15 +1020,13 @@ input,textarea,select{outline:none}
         </form>
 
         <form id="formSignup" class="hidden">
-          <div class="row2">
-            <div class="field">
-              <label>이름</label>
-              <input type="text" id="suName" autocomplete="name" placeholder="홍길동">
-            </div>
-            <div class="field">
-              <label>사번</label>
-              <input type="text" id="suEmp" inputmode="numeric" autocomplete="off" placeholder="예: 1001">
-            </div>
+          <div class="field">
+            <label>이름</label>
+            <input type="text" id="suName" autocomplete="name" placeholder="홍길동">
+          </div>
+          <div class="field">
+            <label>사번</label>
+            <input type="text" id="suEmp" inputmode="numeric" autocomplete="off" placeholder="예: 1001">
           </div>
           <div class="field">
             <label>비밀번호</label>
