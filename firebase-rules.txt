@@ -31,9 +31,14 @@
                               role = 'admin'        : 관리자(승인·권한 부여)
                               canManageDuty = true  : 당직 관리(명단·재배정·행사일·자동 배정)
      announcements/{id}     { title, body, is_pinned, is_important, author_id,
-                              author_name, createdAt }
+                              author_name, createdAt,
+                              poll: { question, options:[string], multi:boolean } | null }
        └ comments/{cid}     { author_id, author_name, body, createdAt }
        └ reads/{uid}        { uid, name, at }
+       └ votes/{voterId}    { choices:[number], name, updatedAt }
+                              → poll: 공지에 붙는 간단 투표 (없으면 null)
+                              → votes: 선택지 index 배열. 본인 표만 쓰고 지울 수 있고
+                                팀원 모두가 읽어 실시간 집계됩니다
      duty_schedules/{id}    { startDate:'YYYY-MM-DD', endDate:'YYYY-MM-DD',
                               type:'day_island'|'overnight_island'|'duty'|'edu'
                                    |'board_meeting'|'opinion_due'|'survey_due',
@@ -58,6 +63,10 @@
      photos/{id}            { imageData(Data URL), caption, author_id, author_name,
                               likes:[uid], comments:[{...}], createdAt }
      chat_messages/{id}     { author_id, author_name, body, createdAt }
+     restaurants/{id}       { name, area:'office'|'island'|'dinner', cat, menu, review,
+                              rating:1~5, lat, lng, address,
+                              author_id, author_name, likes:[uid], createdAt }
+                              → 🍽️ 맛집 공유 지도. 좋아요는 승인 팀원 누구나 토글
 
    ▶ 원칙
      - 승인(status == 'approved')된 팀원만 공지·일정·사진·대화를 읽고 쓸 수 있습니다.
@@ -206,7 +215,7 @@ service cloud.firestore {
 
       allow update: if isApproved()
         && (resource.data.author_id == request.auth.uid || isAdmin())
-        && onlyChanged(['title','body','is_pinned','is_important','updatedAt','author_id','author_name']);
+        && onlyChanged(['title','body','is_pinned','is_important','poll','updatedAt','author_id','author_name']);
 
       allow delete: if isApproved()
         && (resource.data.author_id == request.auth.uid || isAdmin());
@@ -229,6 +238,12 @@ service cloud.firestore {
         allow read: if isApproved();
         allow create, update: if isApproved() && readerId == request.auth.uid;
         allow delete: if false;
+      }
+
+      /* 📊 간단 투표 — 본인 표만 만들고·바꾸고·지울 수 있음 */
+      match /votes/{voterId} {
+        allow read: if isApproved();
+        allow create, update, delete: if isApproved() && voterId == request.auth.uid;
       }
     }
 
@@ -349,6 +364,29 @@ service cloud.firestore {
         && request.resource.data.body.size() <= 1000;
 
       allow update: if false;
+      allow delete: if isApproved()
+        && (resource.data.author_id == request.auth.uid || isAdmin());
+    }
+
+    /* =====================================================================
+       restaurants — 🍽️ 맛집 공유 지도
+       ===================================================================== */
+    match /restaurants/{id} {
+      allow read: if isApproved();
+
+      allow create: if isApproved()
+        && request.resource.data.author_id == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40;
+
+      /* 좋아요는 팀원 누구나, 그 외 수정은 작성자·관리자만 */
+      allow update: if isApproved()
+        && (
+             (resource.data.author_id == request.auth.uid || isAdmin())
+             || onlyChanged(['likes'])
+           );
+
       allow delete: if isApproved()
         && (resource.data.author_id == request.auth.uid || isAdmin());
     }

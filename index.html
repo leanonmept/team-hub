@@ -491,17 +491,28 @@ input,textarea,select{outline:none}
 
 /* ============ tabbar ============ */
 .tabbar{
-  flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.94);
-  backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:7px 4px calc(6px + var(--safe-b));
+  flex-shrink:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:rgba(255,255,255,.94);
+  backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:6px 2px calc(5px + var(--safe-b));
 }
-.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;color:var(--ink3);position:relative}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;color:var(--ink3);position:relative;min-width:0;overflow:visible}
 .tabbar button.on{color:var(--brand)}
-.tabbar button .tl{font-size:10px;font-weight:800;letter-spacing:-.03em}
+.tabbar button svg{width:21px;height:21px;flex-shrink:0}
+.tabbar button .tl{font-size:9.5px;font-weight:800;letter-spacing:-.045em;white-space:nowrap;line-height:1.1}
 .tabbar .dotn{
-  position:absolute;top:1px;right:calc(50% - 14px);min-width:15px;height:15px;border-radius:20px;
+  position:absolute;top:0;right:calc(50% - 15px);min-width:15px;height:15px;border-radius:20px;
   background:var(--danger);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
   padding:0 4px;border:1.5px solid #fff;
 }
+
+/* ============ 🚫 거절된 신청 — 왼쪽 스와이프 삭제 ============ */
+.swipe{position:relative;border-radius:14px;overflow:hidden;margin-bottom:7px;background:#e5484d}
+.swipe-front{
+  position:relative;z-index:2;margin-bottom:0 !important;background:#fff;
+  transition:transform .19s cubic-bezier(.22,1,.36,1);touch-action:pan-y;will-change:transform;
+}
+.swipe-del{position:absolute;inset:0 0 0 auto;width:92px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e5484d,#c9282d)}
+.swipe-del button{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:-.02em}
+.swipe-del button:active{background:rgba(0,0,0,.08)}
 
 /* ============ sheet / modal ============ */
 .backdrop{
@@ -777,6 +788,144 @@ input,textarea,select{outline:none}
   #printSheet{display:block !important}
   #printSheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+/* ============ 오늘의 팀 한 줄 (공지 상단) ============ */
+.tday{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  padding:10px 12px;margin:0 0 10px;border-radius:14px;
+  background:linear-gradient(115deg,#f2f6ff 0%,#f7f3ff 100%);
+  border:1px solid #e2e9fb;box-shadow:0 2px 9px -6px rgba(30,50,110,.5);
+  overflow:hidden;transition:.14s;
+}
+.tday:active{transform:scale(.995)}
+.tday-d{font-size:10.5px;font-weight:800;color:var(--brand-d);background:#fff;border-radius:8px;padding:3px 6px;flex-shrink:0;letter-spacing:-.02em}
+.tday-none{font-size:12px;font-weight:700;color:var(--ink2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tchips{display:flex;align-items:center;gap:5px;flex:1;min-width:0;overflow-x:auto;padding:1px 0}
+.tchip{
+  display:inline-flex;align-items:center;gap:3px;flex-shrink:0;
+  font-size:11px;font-weight:700;color:var(--ink2);background:#fff;border:1px solid var(--line);
+  border-radius:20px;padding:3px 8px;white-space:nowrap;letter-spacing:-.02em;
+}
+.tchip i{font-style:normal;font-size:10px;letter-spacing:-1px}
+.tchip.ev{background:#f4efff;border-color:#e3d7ff;color:#5b3fae;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.tchip.duty{background:#fff7e8;border-color:#ffe3b8;color:#a16300}
+.tchip.island-night{background:#eef0fc;border-color:#d9ddf7;color:#333a9e}
+.tchip.island-day{background:#ecf9ff;border-color:#cdeeff;color:#0b7fa8}
+.tchip.edu{background:#eefbf4;border-color:#cdeedd;color:#0b7a53}
+.tchip.more{background:#eef1f8;border-color:#e2e7f2;color:var(--ink3);font-weight:800}
+.tday-go{color:var(--ink3);font-size:16px;line-height:1;flex-shrink:0;margin-left:-2px}
+
+/* ============ 📊 간단 투표 ============ */
+.pollbadge{
+  display:flex;align-items:center;gap:6px;margin:0 0 8px;padding:7px 10px;border-radius:11px;
+  background:#f5f8ff;border:1px solid #e3eafc;font-size:11.5px;font-weight:800;color:var(--brand-d);
+}
+.pollbadge .pb-more{margin-left:auto;font-weight:700;color:var(--ink3);font-size:10.5px}
+.pollmini{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.pollmini .pm{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--ink2);line-height:1.3}
+.pollmini .pm .nm{width:74px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.pollmini .pm .bb{flex:1;height:6px;border-radius:6px;background:#eef1f8;overflow:hidden}
+.pollmini .pm .bb i{display:block;height:100%;border-radius:6px;background:#9db7f5}
+.pollmini .pm.mine .nm{color:var(--brand-d)}
+.pollmini .pm.mine .bb i{background:var(--brand)}
+.pollmini .pm .vv{width:22px;text-align:right;flex-shrink:0;font-weight:800;color:var(--ink3);font-size:10px}
+.pollbox{background:#f7f9ff;border:1px solid #e4eafa;border-radius:16px;padding:13px 13px 11px;margin:14px 0 4px}
+.pollbox .ph{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+.pollbox .ph b{font-size:13.5px;line-height:1.4;flex:1;letter-spacing:-.02em}
+.pollbox .ph .pn{font-size:10.5px;font-weight:700;color:var(--ink3);flex-shrink:0;padding-top:2px;text-align:right;line-height:1.35}
+.pollopt{
+  display:block;width:100%;text-align:left;position:relative;
+  background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:9px 11px 8px;margin-bottom:6px;
+  transition:.14s;overflow:hidden;
+}
+.pollopt:active{transform:scale(.994)}
+.pollopt.on{border-color:var(--brand);background:#f4f8ff;box-shadow:0 0 0 3px rgba(47,107,246,.09)}
+.pollopt .po-t{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:750;position:relative;z-index:1}
+.pollopt .po-t .chk{
+  width:15px;height:15px;border-radius:5px;border:1.5px solid #cdd5e4;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;background:#fff;
+}
+.pollopt .po-t .chk.solo{border-radius:50%}
+.pollopt.on .po-t .chk{background:var(--brand);border-color:var(--brand);color:#fff}
+.pollopt .po-t .lb{flex:1;min-width:0}
+.pollopt .po-t .ct{font-size:11px;font-weight:800;color:var(--ink3);flex-shrink:0}
+.pollopt .bar{display:block;height:5px;border-radius:5px;background:#eef1f8;margin-top:6px;overflow:hidden;position:relative;z-index:1}
+.pollopt .bar i{display:block;height:100%;border-radius:5px;background:#b9cbf6;transition:width .25s}
+.pollopt.on .bar i{background:var(--brand)}
+.pollopt .who{display:block;font-size:10px;color:var(--ink3);margin-top:5px;line-height:1.45;position:relative;z-index:1}
+.pollbox .pf{font-size:10.5px;color:var(--ink3);text-align:center;padding-top:3px;line-height:1.5}
+.pollbox .pf b{color:var(--brand-d)}
+.pedit{border:1px dashed #cfd8ea;border-radius:14px;padding:11px;background:#fbfcff;margin:2px 0 4px}
+.pedit .opt-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.pedit .opt-row input{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;font-size:13px}
+.pedit .opt-row .del{width:30px;height:30px;flex-shrink:0;border-radius:9px;background:#f4f6fb;color:var(--ink3);display:flex;align-items:center;justify-content:center}
+.pedit .add-opt{font-size:12px;font-weight:800;color:var(--brand-d);background:var(--brand-soft);border-radius:10px;padding:8px 10px;width:100%}
+.pedit .add-opt[disabled]{opacity:.45}
+
+/* ============ 🍽️ 맛집 ============ */
+.seg2{display:flex;gap:4px;background:#e7ecf6;border-radius:13px;padding:4px;margin:0 0 8px}
+.seg2 button{flex:1;padding:9px 6px;border-radius:10px;font-size:12.5px;font-weight:800;color:var(--ink2)}
+.seg2 button.on{background:#fff;color:var(--ink);box-shadow:0 2px 8px -3px rgba(20,26,36,.3)}
+.rt-filter{display:flex;gap:6px;overflow-x:auto;padding:1px 1px 8px;margin:0 -1px}
+.rt-filter button{
+  flex-shrink:0;font-size:11px;font-weight:700;color:var(--ink2);background:#fff;border:1px solid var(--line);
+  border-radius:20px;padding:5px 9px;white-space:nowrap;
+}
+.rt-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rt-map{height:380px;border-radius:16px;overflow:hidden;background:#e9eef8;border:1px solid var(--line);position:relative}
+.rt-map .mapfall{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;font-size:12px;color:var(--ink2);line-height:1.6}
+.rt-map .mapfall .em{font-size:26px}
+.rt-map .leaflet-container{font-family:var(--font)}
+.rt-pin-wrap{background:none !important;border:0 !important}
+.rt-pin{
+  width:30px;height:30px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);
+  background:var(--pc,#2f6bf6);border:2px solid #fff;box-shadow:0 3px 7px rgba(20,26,36,.42);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.rt-pin span{transform:rotate(45deg);display:flex;align-items:center;justify-content:center}
+.rt-card{
+  background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(20,26,36,.03);
+  padding:13px 14px;margin-bottom:10px;
+}
+.rt-card h3{margin:0;font-size:15px;font-weight:800;letter-spacing:-.03em;flex:1;min-width:0}
+.rt-card .rt-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rt-rate{font-size:11.5px;font-weight:800;color:#e08a00;flex-shrink:0;letter-spacing:-.02em}
+.rt-rate .off{color:#d8dde8}
+.rt-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+.rtbg{font-size:10px;font-weight:800;padding:3px 7px;border-radius:7px;background:#f1f3f8;color:var(--ink2)}
+.rtbg.office{background:#eaf1ff;color:var(--brand-d)}
+.rtbg.island{background:#ecf9ff;color:#0b7fa8}
+.rtbg.dinner{background:#fdf0f6;color:#b03a72}
+.rt-menu{margin:0 0 4px;font-size:12px;font-weight:700;color:var(--ink2);line-height:1.5}
+.rt-menu span{color:#c2410c}
+.rt-rev{margin:0 0 9px;font-size:12.5px;color:var(--ink2);line-height:1.6}
+.rt-addr{font-size:10.5px;color:var(--ink3);margin:0 0 8px;line-height:1.5}
+.rt-ft{display:flex;align-items:center;gap:7px;padding-top:8px;border-top:1px solid var(--line2);font-size:11px;color:var(--ink3);flex-wrap:wrap}
+.rt-ft .who{display:flex;align-items:center;gap:5px;min-width:0}
+.rt-ft .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92px}
+.rt-like{
+  display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:var(--ink2);
+  background:#f6f7fb;border:1px solid var(--line);border-radius:20px;padding:5px 9px;
+}
+.rt-like.on{background:#fdeff2;border-color:#f8d3da;color:#d6336c}
+.rt-ft .sp{flex:1}
+.rt-ft .links{display:flex;gap:6px;width:100%;margin-top:8px}
+.rt-ft .links .naver{flex:1;justify-content:center;text-align:center}
+.rt-lnk{
+  display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;border-radius:9px;padding:5px 7px;
+  border:1px solid var(--line);color:var(--ink2);background:#fff;white-space:nowrap;text-decoration:none;
+}
+.rt-lnk.naver{background:#03c75a;border-color:#03c75a;color:#fff;font-size:11px;padding:6px 10px;box-shadow:0 3px 9px -5px rgba(3,199,90,.9)}
+.rt-lnk.naver.big{font-size:11.5px;padding:7px 11px}
+.rt-lnk.kakao{background:#fdf7e3;border-color:#f0e2b4;color:#7a5b00;font-size:10px;padding:5px 7px;opacity:.9}
+.rt-edit{width:28px;height:28px;border-radius:9px;background:#f4f6fb;color:var(--ink3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rt-pick{height:170px;border-radius:13px;overflow:hidden;background:#e9eef8;border:1px solid var(--line);margin-top:7px}
+.rt-starbtn{display:flex;gap:3px}
+.rt-starbtn button{font-size:22px;line-height:1;color:#dde1ea;padding:0 1px}
+.rt-starbtn button.on{color:#f5a524}
+.rt-chips{display:flex;gap:6px;flex-wrap:wrap}
+.rt-chips button{font-size:12px;font-weight:700;color:var(--ink2);background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:6px 11px}
+.rt-chips button.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-d)}
+.rt-noresult{text-align:center;font-size:11.5px;color:var(--ink3);padding:10px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -903,6 +1052,7 @@ input,textarea,select{outline:none}
       <section class="view active" id="view-notices"></section>
       <section class="view" id="view-duty"></section>
       <section class="view" id="view-photos"></section>
+      <section class="view" id="view-rest"></section>
       <section class="view chat" id="view-chat"></section>
       <section class="view" id="view-team"></section>
     </div>
@@ -921,6 +1071,10 @@ input,textarea,select{outline:none}
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="8.8" cy="9.8" r="1.6"/><path d="m4.5 17 4.7-4.4a1.8 1.8 0 0 1 2.4 0l5.2 4.7"/><path d="m14.6 15 1.4-1.3a1.8 1.8 0 0 1 2.4 0l1.8 1.6"/></svg>
         <span class="tl">사진</span>
       </button>
+      <button data-tab="rest">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7.5a2.5 2.5 0 0 0 5 0V3"/><path d="M7.5 10.5V21"/><path d="M18.5 3c-1.7 1.2-2.5 3-2.5 5.2 0 1.7.7 2.8 2.5 3.3V21"/></svg>
+        <span class="tl">맛집</span>
+      </button>
       <button data-tab="chat">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.8a8 8 0 0 1-11.7 7.1L4 20.5l1.6-4.7a8 8 0 1 1 14.9-4z"/><path d="M8.6 11.5h.01M12 11.5h.01M15.4 11.5h.01"/></svg>
         <span class="tl">대화</span>
@@ -928,7 +1082,7 @@ input,textarea,select{outline:none}
       </button>
       <button data-tab="team">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.6a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="3.4"/><path d="M22 20v-1.6a4 4 0 0 0-3-3.85"/><path d="M16 3.7a3.4 3.4 0 0 1 0 6.6"/></svg>
-        <span class="tl" id="tabTeamLabel">팀원</span>
+        <span class="tl" id="tabTeamLabel">팀원관리</span>
         <span class="dotn hidden" id="dotTeam">0</span>
       </button>
     </nav>
@@ -975,6 +1129,11 @@ const S = {
   messages: [],
   comments: {},            // annId -> [comment]
   reads: {},               // annId -> [uid]
+  votes: {},               // annId -> { uid: { choices:[i], name } }
+  restaurants: [],         // 맛집 공유 지도
+  restView: "list",         // 'list' | 'map'
+  restArea: "all",
+  restCat: "all",
   tab: "notices",
   noticeFilter: "all",
   cursor: new Date(),
@@ -1189,7 +1348,8 @@ function seedDemo() {
     { uid: "u_dohyun", empId: "1007", email: "1007@teamhub.local", pw: "123456", name: "윤도현", position: "주임", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 90 * D },
     { uid: "u_jisu", empId: "1008", email: "1008@teamhub.local", pw: "123456", name: "한지수", position: "주임", role: "member", canManageDuty: false, status: "approved", avatarData: "", createdAt: now - 60 * D },
     { uid: "u_sehoon", empId: "1009", email: "1009@teamhub.local", pw: "123456", name: "오세훈", position: "주임", role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: now - 2 * D },
-    { uid: "u_gayoung", empId: "1010", email: "1010@teamhub.local", pw: "123456", name: "문가영", position: "대리", role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: now - 20 * 3600000 }
+    { uid: "u_gayoung", empId: "1010", email: "1010@teamhub.local", pw: "123456", name: "문가영", position: "대리", role: "member", canManageDuty: false, status: "pending", avatarData: "", createdAt: now - 20 * 3600000 },
+    { uid: "u_jaeho", empId: "1011", email: "1011@teamhub.local", pw: "123456", name: "임재호", position: "주임", role: "member", canManageDuty: false, status: "rejected", avatarData: "", createdAt: now - 5 * D }
   ];
 
   const announcements = [
@@ -1236,7 +1396,9 @@ function seedDemo() {
       reads: ["u_admin", "u_junho", "u_mina", "u_hyunwoo", "u_yerin", "u_dohyun"],
       comments: [
         { id: "c6", author_id: "u_jisu", author_name: "한지수", body: "잘 부탁드립니다! 열심히 배우겠습니다 :)", createdAt: now - 3.8 * D }
-      ]
+      ],
+      poll: { question: "환영 회식 메뉴 무엇으로 할까요?", options: ["해물칼국수", "돼지갈비", "파스타"], multi: false },
+      votes: { u_junho: [0], u_mina: [0], u_yerin: [2], u_admin: [1] }
     }
   ];
 
@@ -1304,8 +1466,28 @@ function seedDemo() {
   const nm = new Date(y0, m0 + 1, 10);
   const events = [{ id: ymd(nm), date: ymd(nm), title: "전체 행사 (당직 없음)", createdAt: now - 12 * 3600000 }];
 
+  /* 🍽️ 맛집 공유 지도 예시 */
+  const restaurants = [
+    { id: "r1", name: "연안부두 해물칼국수", area: "office", cat: "한식", menu: "해물칼국수 · 홍합찜",
+      review: "국물이 진하고 점심에 딱이에요. 11시 반 전에 가면 줄 안 서요!", rating: 5,
+      lat: 37.4547, lng: 126.6103, address: "인천 중구 연안부두로 일대",
+      author_id: "u_admin", author_name: "김영환", likes: ["u_seoyeon", "u_junho", "u_mina"], createdAt: now - 6 * D },
+    { id: "r2", name: "월미도 조개구이", area: "dinner", cat: "한식", menu: "조개구이 · 해물칼국수",
+      review: "회식 단골집. 바다 보면서 먹기 좋고 단체석 넓어요.", rating: 4,
+      lat: 37.4738, lng: 126.5964, address: "인천 중구 월미문화로 일대",
+      author_id: "u_seoyeon", author_name: "박서연", likes: ["u_yerin", "u_dohyun"], createdAt: now - 4 * D },
+    { id: "r3", name: "차이나타운 왕만두", area: "office", cat: "중식", menu: "군만두 · 짬뽕",
+      review: "점심에 20분이면 다녀올 수 있어요. 만두가 두툼합니다.", rating: 4,
+      lat: 37.4757, lng: 126.6187, address: "인천 중구 차이나타운로 일대",
+      author_id: "u_junho", author_name: "이준호", likes: ["u_admin"], createdAt: now - 2 * D },
+    { id: "r4", name: "연평도 꽃게식당", area: "island", cat: "한식", menu: "꽃게장 정식",
+      review: "연평도 출장 가면 꼭 들르는 곳. 꽃게장 양념이 지금도 생각나요.", rating: 5,
+      lat: 37.6637, lng: 125.7036, address: "인천 옹진군 연평면",
+      author_id: "u_hyunwoo", author_name: "정현우", likes: ["u_mina", "u_jisu", "u_admin", "u_seoyeon"], createdAt: now - 1 * D }
+  ];
+
   return { users: users, announcements: announcements, duty: duty, photos: photos, messages: messages,
-           roster: { excluded: [], customMembers: [] }, events: events, seededAt: now, v: 4 };
+           roster: { excluded: [], customMembers: [] }, events: events, restaurants: restaurants, seededAt: now, v: 4 };
 }
 
 function demoRead() { try { return JSON.parse(localStorage.getItem(DEMO_KEY) || "null"); } catch (e) { return null; } }
@@ -1336,10 +1518,24 @@ function syncDemo() {
   S.members = d.users.map(u => ({ uid: u.uid, empId: u.empId || emailToEmp(u.email), email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, canManageDuty: u.canManageDuty === true, createdAt: u.createdAt, avatarData: u.avatarData || "", workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
   S.announcements = (d.announcements || []).map(a => ({
     id: a.id, title: a.title, body: a.body, is_pinned: !!a.is_pinned, is_important: !!a.is_important,
-    author_id: a.author_id, author_name: a.author_name, createdAt: a.createdAt
+    author_id: a.author_id, author_name: a.author_name, createdAt: a.createdAt,
+    poll: (a.poll && Array.isArray(a.poll.options) && a.poll.options.length >= 2)
+      ? { question: a.poll.question || a.title, options: a.poll.options.map(String).slice(0, 6), multi: !!a.poll.multi }
+      : null
   }));
-  S.comments = {}; S.reads = {};
-  (d.announcements || []).forEach(a => { S.comments[a.id] = a.comments || []; S.reads[a.id] = a.reads || []; });
+  S.comments = {}; S.reads = {}; S.votes = {};
+  (d.announcements || []).forEach(a => {
+    S.comments[a.id] = a.comments || [];
+    S.reads[a.id] = a.reads || [];
+    const vm = {};
+    Object.keys(a.votes || {}).forEach(uid => {
+      const v = a.votes[uid];
+      const ch = Array.isArray(v) ? v : (v && Array.isArray(v.choices) ? v.choices : []);
+      if (ch.length) vm[uid] = { choices: ch.slice(), name: (v && v.name) || "" };
+    });
+    S.votes[a.id] = vm;
+  });
+  S.restaurants = (d.restaurants || []).map(r => Object.assign({}, r, { likes: Array.isArray(r.likes) ? r.likes : [] }));
   S.duty = (d.duty || []).slice();
   S.roster = Object.assign({ excluded: [], customMembers: [], teamName: "" }, d.roster || {});
   if (!Array.isArray(S.roster.excluded)) S.roster.excluded = [];
@@ -2358,6 +2554,120 @@ async function dbDeleteEntry(id) {
 /* =====================================================================
    10. 공지사항
    ===================================================================== */
+/* =====================================================================
+   10-1. 오늘의 팀 한 줄 — 공지 맨 위 얇은 요약 배너
+   ===================================================================== */
+function todayLineHtml() {
+  const now = new Date();
+  const ds = ymd(now);
+  const ev = eventOf(ds);
+  const TORDER = ["duty", "overnight_island", "day_island", "edu"];
+  const list = entriesOn(ds)
+    .filter(e => TORDER.indexOf(e.type) >= 0)
+    .sort((a, b) => TORDER.indexOf(a.type) - TORDER.indexOf(b.type));
+  const head = '<span class="tday-d">오늘 ' + (now.getMonth() + 1) + "/" + now.getDate() + " (" + DAYS[now.getDay()] + ")</span>";
+  let inner = "";
+  if (!ev && !list.length) {
+    inner = '<span class="tday-none">✨ 오늘 당직·섬·교육 일정 없음</span>';
+  } else {
+    const chips = [];
+    if (ev) chips.push('<span class="tchip ev">🎈 오늘 행사: ' + esc(ev.title) + "</span>");
+    const room = ev ? 1 : 2;
+    list.slice(0, room).forEach(e => {
+      const s = STATUS[e.type] || STATUS.duty;
+      chips.push('<span class="tchip ' + s.cls + '" title="' + esc(s.label + " " + e.memberName) + '"><i>' + (s.mini || s.em) + "</i>" + esc(s.short || s.label) + " " + esc(e.memberName) + "</span>");
+    });
+    const rest = list.length - Math.min(list.length, room);
+    if (rest > 0) chips.push('<span class="tchip more">+' + rest + "</span>");
+    inner = '<span class="tchips">' + chips.join("") + "</span>";
+  }
+  return '<button type="button" class="tday" id="todayBar" aria-label="오늘의 팀 일정 · 당직 탭 열기">' + head + inner + '<span class="tday-go">›</span></button>';
+}
+
+/* =====================================================================
+   10-2. 📊 간단 투표 — 공지에 붙는 선택지 투표
+   · poll : announcements/{id}.poll = { question, options:[...], multi }
+   · 표   : LIVE = announcements/{id}/votes/{uid} { choices:[i], name, updatedAt }
+            DEMO = announcements[i].votes[uid] = [i]
+   ===================================================================== */
+function pollOf(a) {
+  const p = a && a.poll;
+  if (!p || !Array.isArray(p.options) || p.options.length < 2) return null;
+  return { question: p.question || a.title || "", options: p.options.slice(0, 6), multi: !!p.multi };
+}
+function votesOf(id) { return S.votes[id] || {}; }
+function voteChoices(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  return Array.isArray(v.choices) ? v.choices : [];
+}
+function pollPeople(id) { return Object.keys(votesOf(id)).length; }
+function pollCounts(id) {
+  const a = S.announcements.find(x => x.id === id);
+  const p = pollOf(a);
+  const cnt = p ? new Array(p.options.length).fill(0) : [];
+  const votes = votesOf(id);
+  Object.keys(votes).forEach(uid => voteChoices(votes[uid]).forEach(i => { if (i >= 0 && i < cnt.length) cnt[i]++; }));
+  return cnt;
+}
+function voterName(id, uid) {
+  const m = memberOf(uid);
+  const v = votesOf(id)[uid];
+  return (m && m.name) || (v && v.name) || "팀원";
+}
+function votersAt(id, idx) {
+  const votes = votesOf(id);
+  return Object.keys(votes)
+    .filter(uid => voteChoices(votes[uid]).indexOf(idx) >= 0)
+    .map(uid => voterName(id, uid))
+    .sort((a, b) => a.localeCompare(b));
+}
+function pctOf(n, total) { return total ? Math.round((n / total) * 100) : 0; }
+
+/* 목록 카드용 — 배지 + 선택지별 미니 막대 + 내 선택 */
+function pollMiniHtml(a) {
+  const p = pollOf(a);
+  if (!p) return "";
+  const cnt = pollCounts(a.id);
+  const people = pollPeople(a.id);
+  const mine = voteChoices(votesOf(a.id)[myUid()]);
+  const rows = p.options.map((o, i) =>
+    '<div class="pm' + (mine.indexOf(i) >= 0 ? " mine" : "") + '">' +
+      '<span class="nm">' + (mine.indexOf(i) >= 0 ? "✓ " : "") + esc(o) + "</span>" +
+      '<span class="bb"><i style="width:' + pctOf(cnt[i], people) + '%"></i></span>' +
+      '<span class="vv">' + cnt[i] + "</span>" +
+    "</div>").join("");
+  return '<div class="pollbadge">📊 투표 진행중 · ' + people + '명 참여' +
+      '<span class="pb-more">' + (mine.length ? "내 선택 " + mine.map(i => esc(p.options[i])).join(", ") : "눌러서 참여") + "</span></div>" +
+    '<div class="pollmini">' + rows + "</div>";
+}
+
+/* 상세 시트용 — 선택지 버튼 · 득표수/비율 막대 · 참여자 이름 */
+function pollDetailHtml(a) {
+  const p = pollOf(a);
+  if (!p) return "";
+  const cnt = pollCounts(a.id);
+  const people = pollPeople(a.id);
+  const mine = voteChoices(votesOf(a.id)[myUid()]);
+  const opts = p.options.map((o, i) => {
+    const who = votersAt(a.id, i);
+    return '<button type="button" class="pollopt' + (mine.indexOf(i) >= 0 ? " on" : "") + '" data-vote="' + i + '">' +
+        '<span class="po-t"><span class="chk' + (p.multi ? "" : " solo") + '">✓</span>' +
+          '<span class="lb">' + esc(o) + '</span><span class="ct">' + cnt[i] + '표 · ' + pctOf(cnt[i], people) + '%</span></span>' +
+        '<span class="bar"><i style="width:' + pctOf(cnt[i], people) + '%"></i></span>' +
+        (who.length ? '<span class="who">' + esc(who.join(", ")) + "</span>" : '<span class="who">아직 없음</span>') +
+      "</button>";
+  }).join("");
+  const myTx = mine.length
+    ? "내 선택: <b>" + esc(mine.map(i => p.options[i]).join(", ")) + "</b> · 다시 누르면 취소"
+    : (p.multi ? "여러 개를 고를 수 있어요" : "하나만 고를 수 있어요") + " · 선택지를 눌러 참여하세요";
+  return '<div class="pollbox" id="pollBox">' +
+      '<div class="ph"><b>📊 ' + esc(p.question) + '</b><span class="pn">' + people + "명 참여" + (p.multi ? "<br>복수 선택" : "") + "</span></div>" +
+      opts +
+      '<div class="pf">' + myTx + "</div>" +
+    "</div>";
+}
+
 function renderNotices() {
   const v = $("#view-notices");
   const f = S.noticeFilter;
@@ -2372,6 +2682,7 @@ function renderNotices() {
     '<div class="vhead"><div><h2>공지사항</h2><div class="sub">' +
       (unread ? "안 읽은 공지 " + unread + "건" : "모든 공지를 확인했어요") + "</div></div>" +
       '<button class="upbtn" id="btnWriteNote">' + ICON.plus + " 작성</button></div>" +
+    todayLineHtml() +
     '<div class="chips">' +
       ["all:전체", "pin:📌 고정", "imp:🔴 필독", "unread:안 읽음"].map(s => {
         const [k, lb] = s.split(":");
@@ -2381,6 +2692,8 @@ function renderNotices() {
     (list.length ? list.map(noteCard).join("") : '<div class="empty"><span>📭</span>해당하는 공지가 없습니다.</div>');
 
   $("#btnWriteNote").addEventListener("click", () => openNoteEditor(null));
+  const tb = $("#todayBar");
+  if (tb) tb.addEventListener("click", () => setTab("duty"));
   $$("[data-nfilter]", v).forEach(b => b.addEventListener("click", () => { S.noticeFilter = b.dataset.nfilter; renderNotices(); }));
   $$("[data-note]", v).forEach(b => b.addEventListener("click", () => openNote(b.dataset.note)));
 }
@@ -2398,6 +2711,7 @@ function noteCard(a) {
     "</div>" +
     "<h3>" + esc(a.title) + "</h3>" +
     '<p class="prev">' + esc(body) + "</p>" +
+    pollMiniHtml(a) +
     '<div class="meta">' + avatarHtml(a.author_name, "xs", a.author_id) + '<span>' + esc(a.author_name) + '</span><i class="dot"></i><span>' + fmtRel(a.createdAt) + "</span>" +
       '<span class="right">' + (read ? "" : '<span class="dotread"></span>') +
       "<span>" + rc + "명 읽음</span><span>" + ICON.chat + " " + cc + "</span></span></div>" +
@@ -2431,6 +2745,7 @@ function openNote(id) {
         "</div>" +
         '<div class="body">' + esc(a.body) + "</div>" +
       "</div>" +
+      pollDetailHtml(a) +
       '<div class="readbox ' + (read ? "done" : "") + '" id="readBox">' +
         '<span style="flex:1"><b>' + (read ? "읽음 확인 완료" : "아직 확인하지 않았어요") + "</b><br>" +
         '<span style="font-size:11px">' + readBy(a.id).length + "명이 확인했습니다" + (readers.length ? " · " + esc(readers.slice(0, 3).map(r => r.name).join(", ")) + (readers.length > 3 ? " 외 " + (readers.length - 3) + "명" : "") : "") + "</span></span>" +
@@ -2445,6 +2760,22 @@ function openNote(id) {
     footer: '<input type="text" id="cmtInput" placeholder="댓글을 입력하세요" style="flex:1;border:1px solid var(--line);background:#fafbfe;border-radius:12px;padding:11px 13px;font-size:13.5px">' +
       '<button class="btn" id="cmtSend" style="width:52px;flex:0 0 52px;padding:11px 0">등록</button>',
     onMount: root => {
+      /* 📊 투표 — 클릭 즉시 반영(득표·막대·참여자), 시트는 그대로 둔 채 투표 영역만 다시 그림 */
+      const bindVotes = scope => $$("[data-vote]", scope).forEach(btn => btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try { await dbVote(a.id, Number(btn.dataset.vote)); refreshPoll(); }
+        catch (e) { btn.disabled = false; toast(fbErrMsg(e)); }
+      }));
+      const refreshPoll = () => {
+        const box = $("#pollBox", root);
+        if (!box) return;
+        const cur = S.announcements.find(x => x.id === a.id) || a;
+        const tmp = document.createElement("div");
+        tmp.innerHTML = pollDetailHtml(cur);
+        const nb = tmp.firstChild;
+        if (nb) { box.replaceWith(nb); bindVotes(root); }
+      };
+      bindVotes(root);
       const rb = $("#btnReadCheck", root);
       if (rb) rb.addEventListener("click", async () => {
         try { await dbMarkRead(a.id); openNote(a.id); } catch (e) { toast(fbErrMsg(e)); }
@@ -2471,23 +2802,67 @@ function openNote(id) {
 
 function openNoteEditor(existing) {
   const a = existing || null;
+  const p0 = pollOf(a);
+  const optVals = p0 ? p0.options.slice() : ["", ""];
   openSheet({
     title: a ? "공지 수정" : "새 공지 작성",
     body:
       '<div class="field"><label>제목</label><input type="text" id="ntTitle" maxlength="60" placeholder="공지 제목" value="' + esc(a ? a.title : "") + '"></div>' +
-      '<div class="field"><label>내용</label><textarea id="ntBody" rows="8" placeholder="팀원들에게 알릴 내용을 적어주세요.">' + esc(a ? a.body : "") + "</textarea></div>" +
+      '<div class="field"><label>내용</label><textarea id="ntBody" rows="7" placeholder="팀원들에게 알릴 내용을 적어주세요.">' + esc(a ? a.body : "") + "</textarea></div>" +
       '<label class="mem" style="cursor:pointer"><input type="checkbox" id="ntImp" ' + (a && a.is_important ? "checked" : "") + ' style="width:18px;height:18px;accent-color:#e5484d">' +
         '<div class="mi"><b>필독 공지</b><p>빨간 필독 배지가 붙습니다</p></div></label>' +
       '<label class="mem" style="cursor:pointer"><input type="checkbox" id="ntPin" ' + (a && a.is_pinned ? "checked" : "") + ' style="width:18px;height:18px;accent-color:#2f6bf6">' +
-        '<div class="mi"><b>상단 고정 📌</b><p>목록 맨 위에 고정됩니다</p></div></label>',
+        '<div class="mi"><b>상단 고정 📌</b><p>목록 맨 위에 고정됩니다</p></div></label>' +
+      '<label class="mem" style="cursor:pointer"><input type="checkbox" id="ntPollOn" ' + (p0 ? "checked" : "") + ' style="width:18px;height:18px;accent-color:#2f6bf6">' +
+        '<div class="mi"><b>📊 투표 첨부</b><p>선택지로 간단히 의견을 모읍니다</p></div></label>' +
+      '<div class="pedit' + (p0 ? "" : " hidden") + '" id="pollEditor">' +
+        '<div class="field" style="margin-bottom:9px"><label>투표 질문 (비우면 공지 제목)</label>' +
+          '<input type="text" id="ntPollQ" maxlength="80" placeholder="예: 회식 메뉴 무엇으로 할까요?" value="' + esc(p0 ? p0.question : "") + '"></div>' +
+        '<label style="display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:0 0 6px 3px">선택지 <span style="color:var(--ink3);font-weight:600">(2~6개)</span></label>' +
+        '<div id="ntOpts"></div>' +
+        '<button type="button" class="add-opt" id="ntAddOpt">+ 선택지 추가</button>' +
+        '<label class="mem" style="cursor:pointer;margin-top:9px;margin-bottom:0"><input type="checkbox" id="ntPollMulti" ' + (p0 && p0.multi ? "checked" : "") + ' style="width:18px;height:18px;accent-color:#2f6bf6">' +
+          '<div class="mi"><b>복수 선택 허용</b><p>여러 개를 고를 수 있게 합니다</p></div></label>' +
+      "</div>",
     footer: '<button class="btn" id="ntSave">' + (a ? "수정 저장" : "공지 등록") + "</button>",
     onMount: root => {
+      let opts = optVals.slice();
+      const drawOpts = () => {
+        const box = $("#ntOpts", root);
+        box.innerHTML = opts.map((v, i) =>
+          '<div class="opt-row"><input type="text" class="ntOpt" maxlength="40" data-i="' + i + '" placeholder="선택지 ' + (i + 1) + '" value="' + esc(v) + '">' +
+            '<button type="button" class="del" data-del="' + i + '" ' + (opts.length <= 2 ? "disabled style=\"opacity:.35\"" : "") + ' aria-label="선택지 삭제">' + ICON.x + "</button></div>").join("");
+        $("#ntAddOpt", root).disabled = opts.length >= 6;
+        $$(".ntOpt", box).forEach(inp => inp.addEventListener("input", () => { opts[Number(inp.dataset.i)] = inp.value; }));
+        $$("[data-del]", box).forEach(b => b.addEventListener("click", () => {
+          if (opts.length <= 2) return;
+          opts.splice(Number(b.dataset.del), 1);
+          drawOpts();
+        }));
+      };
+      drawOpts();
+      $("#ntPollOn", root).addEventListener("change", e => {
+        $("#pollEditor", root).classList.toggle("hidden", !e.target.checked);
+      });
+      $("#ntAddOpt", root).addEventListener("click", () => {
+        if (opts.length >= 6) return;
+        opts.push("");
+        drawOpts();
+        const all = $$(".ntOpt", root);
+        if (all.length) all[all.length - 1].focus();
+      });
       $("#ntSave", root).addEventListener("click", async () => {
         const title = $("#ntTitle", root).value.trim();
         const body = $("#ntBody", root).value.trim();
         if (!title) return toast("제목을 입력해 주세요");
         if (!body) return toast("내용을 입력해 주세요");
-        const data = { title: title, body: body, is_important: $("#ntImp", root).checked, is_pinned: $("#ntPin", root).checked };
+        let poll = null;
+        if ($("#ntPollOn", root).checked) {
+          const list = opts.map(v => String(v || "").trim()).filter(Boolean).slice(0, 6);
+          if (list.length < 2) return toast("투표 선택지를 2개 이상 입력해 주세요");
+          poll = { question: ($("#ntPollQ", root).value.trim() || title).slice(0, 80), options: list, multi: $("#ntPollMulti", root).checked };
+        }
+        const data = { title: title, body: body, is_important: $("#ntImp", root).checked, is_pinned: $("#ntPin", root).checked, poll: poll };
         $("#ntSave", root).disabled = true;
         try {
           if (a) await dbUpdateNote(a.id, data); else await dbCreateNote(data);
@@ -2501,9 +2876,10 @@ function openNoteEditor(existing) {
 /* ---- 공지 데이터 계층 ---- */
 async function dbCreateNote(data) {
   const doc = { title: data.title, body: data.body, is_pinned: !!data.is_pinned, is_important: !!data.is_important,
+    poll: data.poll || null,
     author_id: myUid(), author_name: S.user.name, createdAt: Date.now() };
   if (S.mode === "demo") {
-    demoMutate(d => { d.announcements.unshift(Object.assign({ id: uid(), reads: [], comments: [] }, doc)); });
+    demoMutate(d => { d.announcements.unshift(Object.assign({ id: uid(), reads: [], comments: [], votes: {} }, doc)); });
   } else {
     const { collection, addDoc, serverTimestamp } = FB.f;
     await addDoc(collection(FB.db, "announcements"), Object.assign({}, doc, { createdAt: serverTimestamp(), author_uid: myUid() }));
@@ -2544,6 +2920,399 @@ async function dbAddNoteComment(id, body) {
     S.comments[id] = (S.comments[id] || []).concat([c]);
     renderNotices(); updateDots();
   }
+}
+/* 📊 투표 — 같은 선택지를 다시 누르면 취소, 복수 선택은 토글 */
+async function dbVote(id, idx) {
+  const a = S.announcements.find(x => x.id === id);
+  const p = pollOf(a);
+  if (!p || !(idx >= 0 && idx < p.options.length)) return;
+  const cur = voteChoices(votesOf(id)[myUid()]).slice();
+  let next;
+  if (p.multi) next = cur.indexOf(idx) >= 0 ? cur.filter(i => i !== idx) : cur.concat([idx]).sort((x, y) => x - y);
+  else next = (cur.length === 1 && cur[0] === idx) ? [] : [idx];
+  if (S.mode === "demo") {
+    demoMutate(d => {
+      const an = d.announcements.find(x => x.id === id);
+      if (!an) return;
+      an.votes = an.votes || {};
+      if (next.length) an.votes[myUid()] = next; else delete an.votes[myUid()];
+    });
+    return;
+  }
+  const { doc, setDoc, deleteDoc, serverTimestamp } = FB.f;
+  if (next.length) {
+    await setDoc(doc(FB.db, "announcements", id, "votes", myUid()),
+      { choices: next, name: S.user.name, updatedAt: serverTimestamp() });
+  } else {
+    await deleteDoc(doc(FB.db, "announcements", id, "votes", myUid()));
+  }
+  S.votes[id] = Object.assign({}, S.votes[id] || {});
+  if (next.length) S.votes[id][myUid()] = { choices: next, name: S.user.name };
+  else delete S.votes[id][myUid()];
+  renderNotices();
+}
+
+/* =====================================================================
+   10-3. 🍽️ 맛집 공유 지도 — Leaflet + OpenStreetMap(키 불필요)
+   · restaurants/{id} = { name, area, cat, menu, review, rating,
+                          lat, lng, address, author_id, author_name,
+                          likes:[uid], createdAt }
+   · area : office(지사 주변) | island(섬/출장지) | dinner(회식/모임)
+   ===================================================================== */
+const REST_AREAS = {
+  office: { label: "지사 주변", em: "🏢", cls: "office" },
+  island: { label: "섬/출장지", em: "⛴️", cls: "island" },
+  dinner: { label: "회식/모임", em: "🍻", cls: "dinner" }
+};
+const REST_CATS = ["한식", "중식", "일식", "양식", "카페"];
+const REST_CAT_EM = { "한식": "🍚", "중식": "🥟", "일식": "🍣", "양식": "🍝", "카페": "☕" };
+const REST_CENTER = [37.475, 126.63];
+const RT = { map: null, pick: null, pickMark: null, L: null, loading: null, failed: false };
+
+function loadLeaflet() {
+  if (window.L && window.L.map) { RT.L = window.L; return Promise.resolve(window.L); }
+  if (RT.loading) return RT.loading;
+  RT.loading = new Promise((resolve, reject) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet"; css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(css);
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.async = true;
+    const timer = setTimeout(() => { RT.failed = true; reject(new Error("leaflet timeout")); }, 9000);
+    s.onload = () => {
+      clearTimeout(timer);
+      if (window.L && window.L.map) { RT.L = window.L; resolve(window.L); }
+      else { RT.failed = true; reject(new Error("leaflet unavailable")); }
+    };
+    s.onerror = () => { clearTimeout(timer); RT.failed = true; reject(new Error("leaflet load error")); };
+    document.head.appendChild(s);
+  });
+  return RT.loading;
+}
+function restFiltered() {
+  return S.restaurants
+    .filter(r => S.restArea === "all" || r.area === S.restArea)
+    .filter(r => S.restCat === "all" || r.cat === S.restCat)
+    .slice()
+    .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0) || (b.createdAt || 0) - (a.createdAt || 0));
+}
+function starsHtml(n) {
+  const v = Math.round(Number(n) || 0);
+  let s = "";
+  for (let i = 1; i <= 5; i++) s += i <= v ? "★" : '<span class="off">☆</span>';
+  return s;
+}
+function restMapLinks(r, big) {
+  const q = encodeURIComponent(r.name + (r.address ? " " + r.address.split(" ").slice(0, 2).join(" ") : ""));
+  return '<a class="rt-lnk naver' + (big ? " big" : "") + '" href="https://map.naver.com/p/search/' + q + '" target="_blank" rel="noopener">🗺️ 네이버지도</a>' +
+    '<a class="rt-lnk kakao" href="https://map.kakao.com/link/search/' + q + '" target="_blank" rel="noopener">카카오맵</a>';
+}
+function restPopupHtml(r) {
+  const a = REST_AREAS[r.area] || REST_AREAS.office;
+  return '<div style="min-width:170px">' +
+      '<div style="font-size:13px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px">' + esc(r.name) + '</div>' +
+      '<div style="font-size:10.5px;color:#8a93a6;margin-bottom:4px">' + a.em + " " + a.label + " · " + esc(r.cat || "") + '</div>' +
+      '<div style="font-size:11px;color:#e08a00;font-weight:800;margin-bottom:4px">' + starsHtml(r.rating) + ' <span style="color:#5c6577">' + (Number(r.rating) || 0).toFixed(1) + '</span></div>' +
+      (r.menu ? '<div style="font-size:11px;color:#c2410c;font-weight:700;margin-bottom:4px">추천 ' + esc(r.menu) + '</div>' : "") +
+      (r.review ? '<div style="font-size:11px;color:#5c6577;line-height:1.5;margin-bottom:7px">' + esc(r.review.slice(0, 70)) + (r.review.length > 70 ? "…" : "") + '</div>' : "") +
+      '<div style="display:flex;gap:5px">' + restMapLinks(r, true) + "</div>" +
+    "</div>";
+}
+
+function restCard(r) {
+  const liked = (r.likes || []).indexOf(myUid()) >= 0;
+  const a = REST_AREAS[r.area] || REST_AREAS.office;
+  const canEdit = r.author_id === myUid() || isAdmin();
+  return '<article class="rt-card" data-rest="' + r.id + '">' +
+    '<div class="rt-hd"><h3>' + esc(r.name) + '</h3><span class="rt-rate">' + starsHtml(r.rating) + " " + (Number(r.rating) || 0).toFixed(1) + "</span></div>" +
+    '<div class="rt-badges"><span class="rtbg ' + a.cls + '">' + a.em + " " + a.label + '</span>' +
+      '<span class="rtbg">' + (REST_CAT_EM[r.cat] || "🍽️") + " " + esc(r.cat || "기타") + '</span></div>' +
+    (r.menu ? '<p class="rt-menu">추천 <span>' + esc(r.menu) + "</span></p>" : "") +
+    (r.review ? '<p class="rt-rev">' + esc(r.review) + "</p>" : "") +
+    (r.address ? '<p class="rt-addr">📍 ' + esc(r.address) + "</p>" : "") +
+    '<div class="rt-ft">' + avatarHtml(r.author_name, "xs", r.author_id) +
+      '<div class="who"><span>' + esc(r.author_name || "팀원") + '</span></div>' +
+      '<button class="rt-like' + (liked ? " on" : "") + '" data-like="' + r.id + '">' + (liked ? ICON.heart : ICON.heartO) + " 좋아요 " + (r.likes || []).length + "</button>" +
+      '<span class="sp"></span>' +
+      (canEdit ? '<button class="rt-edit" data-editrest="' + r.id + '" aria-label="수정">' + ICON.pencil + '</button>' +
+        '<button class="rt-edit" data-delrest="' + r.id + '" aria-label="삭제">' + ICON.trash + "</button>" : "") +
+      '<div class="links">' + restMapLinks(r) + "</div>" +
+    "</div></article>";
+}
+
+function renderRest() {
+  const v = $("#view-rest");
+  if (!v) return;
+  if (RT.map) { try { RT.map.remove(); } catch (e) {} RT.map = null; }
+  const list = restFiltered();
+  const avg = list.length ? list.reduce((s, r) => s + (Number(r.rating) || 0), 0) / list.length : 0;
+  const areaChips = ["all:전체"].concat(Object.keys(REST_AREAS).map(k => k + ":" + REST_AREAS[k].em + " " + REST_AREAS[k].label));
+  const catChips = ["all:전체"].concat(REST_CATS.map(c => c + ":" + REST_CAT_EM[c] + " " + c));
+  const chipHtml = (arr, cur, attr) => arr.map(x => {
+    const i = x.indexOf(":");
+    const k = x.slice(0, i), lb = x.slice(i + 1);
+    return '<button data-' + attr + '="' + k + '" class="' + (cur === k ? "on" : "") + '">' + lb + "</button>";
+  }).join("");
+  const mapInner = '<div class="mapfall"><span class="em">🗺️</span>지도를 불러오는 중…</div>';
+  v.innerHTML =
+    '<div class="vhead"><div><h2>🍽️ 맛집 공유 지도</h2><div class="sub">' + list.length + "곳" +
+      (list.length ? " · 평균 ★" + avg.toFixed(1) : "") + " · 우리 팀이 직접 고른 곳</div></div>" +
+      '<button class="upbtn" id="btnAddRest">' + ICON.plus + " 등록</button></div>" +
+    '<div class="seg2">' +
+      '<button data-rview="map" class="' + (S.restView === "map" ? "on" : "") + '">🗺️ 지도</button>' +
+      '<button data-rview="list" class="' + (S.restView === "list" ? "on" : "") + '">📋 목록</button>' +
+    "</div>" +
+    '<div class="rt-filter">' + chipHtml(areaChips, S.restArea, "rarea") + "</div>" +
+    '<div class="rt-filter">' + chipHtml(catChips, S.restCat, "rcat") + "</div>" +
+    (S.restView === "map"
+      ? '<div class="rt-map" id="rtMap">' + mapInner + "</div>" +
+        '<p class="rt-noresult">핀을 누르면 추천 메뉴·별점과 지도 열기 버튼이 뜹니다.</p>'
+      : (list.length ? list.map(restCard).join("")
+        : '<div class="empty"><span>🍽️</span>조건에 맞는 맛집이 없습니다.<br>첫 맛집을 등록해 보세요!</div>'));
+
+  $("#btnAddRest").addEventListener("click", () => openRestSheet(null));
+  $$("[data-rview]", v).forEach(b => b.addEventListener("click", () => { S.restView = b.dataset.rview; renderRest(); }));
+  $$("[data-rarea]", v).forEach(b => b.addEventListener("click", () => { S.restArea = b.dataset.rarea; renderRest(); }));
+  $$("[data-rcat]", v).forEach(b => b.addEventListener("click", () => { S.restCat = b.dataset.rcat; renderRest(); }));
+  $$("[data-like]", v).forEach(b => b.addEventListener("click", async e => {
+    e.stopPropagation();
+    try { await dbRestLike(b.dataset.like); } catch (err) { toast(fbErrMsg(err)); }
+  }));
+  $$("[data-editrest]", v).forEach(b => b.addEventListener("click", () => openRestSheet(b.dataset.editrest)));
+  $$("[data-delrest]", v).forEach(b => b.addEventListener("click", async () => {
+    const r = S.restaurants.find(x => x.id === b.dataset.delrest);
+    if (!r) return;
+    if (!confirm("‘" + r.name + "’ 맛집을 삭제할까요?")) return;
+    try { await dbRestDelete(r.id); toast("삭제했습니다"); } catch (err) { toast(fbErrMsg(err)); }
+  }));
+  if (S.restView === "map") mountRestMap();
+}
+
+async function mountRestMap() {
+  const box = $("#rtMap");
+  if (!box) return;
+  let L;
+  try { L = await loadLeaflet(); }
+  catch (e) {
+    RT.failed = true;
+    const cur = $("#rtMap");
+    if (cur) cur.innerHTML = '<div class="mapfall"><span class="em">🚧</span>' +
+      '<b>지도를 불러오지 못했어요</b>인터넷 연결이나 CDN 차단 때문일 수 있어요.<br>아래 <b>📋 목록</b>에서 맛집을 그대로 볼 수 있습니다.' +
+      '<button class="chip on" id="mapFallbackList" style="margin-top:4px">📋 목록으로 보기</button></div>';
+    const fb = $("#mapFallbackList");
+    if (fb) fb.addEventListener("click", () => { S.restView = "list"; renderRest(); });
+    return;
+  }
+  if (!$("#rtMap") || !document.body.contains($("#rtMap"))) return;
+  const list = restFiltered().filter(r => isFinite(Number(r.lat)) && isFinite(Number(r.lng)) && r.lat !== null && r.lng !== null);
+  box.innerHTML = "";
+  const map = L.map(box, { zoomControl: true, scrollWheelZoom: false, attributionControl: true })
+    .setView(REST_CENTER, 11);
+  RT.map = map;
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+  const pins = [];
+  list.forEach(r => {
+    const a = REST_AREAS[r.area] || REST_AREAS.office;
+    const pinSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7.5a2.5 2.5 0 0 0 5 0V3"/><path d="M7.5 10.5V21"/><path d="M18.5 3c-1.7 1.2-2.5 3-2.5 5.2 0 1.7.7 2.8 2.5 3.3V21"/></svg>';
+    const icon = L.divIcon({
+      className: "rt-pin-wrap",
+      html: '<div class="rt-pin" style="--pc:' + (r.area === "island" ? "#0ea5e9" : r.area === "dinner" ? "#d6336c" : "#2f6bf6") + '"><span>' + pinSvg + "</span></div>",
+      iconSize: [30, 30], iconAnchor: [15, 28], popupAnchor: [0, -24]
+    });
+    const mk = L.marker([Number(r.lat), Number(r.lng)], { icon: icon }).addTo(map);
+    mk.bindPopup(restPopupHtml(r), { maxWidth: 250 });
+    pins.push(mk);
+  });
+  if (pins.length) {
+    /* 핀이 한 지역에 모여 있을 때만 화면을 맞춥니다. (연평도처럼 먼 곳이 섞이면 인천 중심 유지) */
+    const lats = list.map(r => Number(r.lat)), lngs = list.map(r => Number(r.lng));
+    const latSpread = Math.max.apply(null, lats) - Math.min.apply(null, lats);
+    const lngSpread = Math.max.apply(null, lngs) - Math.min.apply(null, lngs);
+    if (latSpread <= 0.25 && lngSpread <= 0.4) {
+      try { map.fitBounds(L.featureGroup(pins).getBounds().pad(0.3), { maxZoom: 14 }); } catch (e) {}
+    }
+  }
+  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 90);
+  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 500);
+}
+
+/* ---- 맛집 등록/수정 시트 ---- */
+function openRestSheet(id) {
+  const r = id ? S.restaurants.find(x => x.id === id) : null;
+  let area = r ? (REST_AREAS[r.area] ? r.area : "office") : "office";
+  let cat = r && r.cat ? r.cat : "한식";
+  let rating = r ? Number(r.rating) || 0 : 0;
+  let loc = { lat: r && r.lat != null && isFinite(Number(r.lat)) ? Number(r.lat) : null,
+              lng: r && r.lng != null && isFinite(Number(r.lng)) ? Number(r.lng) : null,
+              address: (r && r.address) || "" };
+  openSheet({
+    title: r ? "맛집 수정" : "맛집 등록",
+    body:
+      '<div class="field"><label>가게명</label><input type="text" id="rtName" maxlength="40" placeholder="예: 연안부두 해물칼국수" value="' + esc(r ? r.name : "") + '"></div>' +
+      '<div class="field"><label>구분</label><div class="rt-chips" id="rtAreas">' +
+        Object.keys(REST_AREAS).map(k => '<button type="button" data-a="' + k + '" class="' + (k === area ? "on" : "") + '">' + REST_AREAS[k].em + " " + REST_AREAS[k].label + "</button>").join("") +
+      "</div></div>" +
+      '<div class="field"><label>음식 종류</label><div class="rt-chips" id="rtCats">' +
+        REST_CATS.map(c => '<button type="button" data-c="' + c + '" class="' + (c === cat ? "on" : "") + '">' + REST_CAT_EM[c] + " " + c + "</button>").join("") +
+      "</div></div>" +
+      '<div class="field"><label>추천 메뉴</label><input type="text" id="rtMenu" maxlength="60" placeholder="예: 해물칼국수 · 홍합찜" value="' + esc(r ? r.menu || "" : "") + '"></div>' +
+      '<div class="field"><label>한줄평</label><textarea id="rtReview" rows="3" maxlength="200" placeholder="어떤 점이 좋았나요?">' + esc(r ? r.review || "" : "") + "</textarea></div>" +
+      '<div class="field"><label>별점</label><div class="rt-starbtn" id="rtStars">' +
+        [1, 2, 3, 4, 5].map(n => '<button type="button" data-s="' + n + '" class="' + (n <= rating ? "on" : "") + '" aria-label="' + n + '점">★</button>').join("") +
+      '</div><div class="hint" id="rtStarHint">' + (rating ? rating + "점" : "별을 눌러 점수를 고르세요 (선택)") + "</div></div>" +
+      '<div class="field" style="margin-bottom:6px"><label>위치 <span style="color:var(--ink3);font-weight:600">(선택)</span></label>' +
+        '<div style="display:flex;gap:6px"><input type="text" id="rtSearch" placeholder="주소 또는 가게명 검색" style="flex:1;border:1px solid var(--line);background:#fafbfe;border-radius:12px;padding:11px 12px;font-size:13px">' +
+          '<button type="button" class="btn sm" id="rtSearchBtn" style="flex:0 0 62px;padding:11px 0">검색</button></div>' +
+        '<div id="rtSearchRes"></div>' +
+        '<div class="rt-pick" id="rtPickMap"></div>' +
+        '<div style="display:flex;align-items:center;gap:7px;margin-top:6px;font-size:11px;color:var(--ink3)">' +
+          '<span id="rtLocTx" style="flex:1;min-width:0;line-height:1.5">' + (loc.lat != null ? "📍 " + esc(loc.address || (loc.lat.toFixed(4) + ", " + loc.lng.toFixed(4))) : "지도를 눌러 핀을 찍거나 위에서 검색하세요") + '</span>' +
+          '<button type="button" class="rt-lnk" id="rtLocClear">지우기</button></div>' +
+      "</div>",
+    footer: '<button class="btn" id="rtSave">' + (r ? "수정 저장" : "맛집 등록") + "</button>",
+    onMount: root => {
+      $$("[data-a]", root).forEach(b => b.addEventListener("click", () => {
+        area = b.dataset.a;
+        $$("[data-a]", root).forEach(x => x.classList.toggle("on", x === b));
+      }));
+      $$("[data-c]", root).forEach(b => b.addEventListener("click", () => {
+        cat = b.dataset.c;
+        $$("[data-c]", root).forEach(x => x.classList.toggle("on", x === b));
+      }));
+      $$("[data-s]", root).forEach(b => b.addEventListener("click", () => {
+        rating = Number(b.dataset.s);
+        $$("[data-s]", root).forEach(x => x.classList.toggle("on", Number(x.dataset.s) <= rating));
+        $("#rtStarHint", root).textContent = rating + "점";
+      }));
+
+      /* 작은 지도 — 눌러서 핀 찍기 */
+      let pickMap = null, pickMark = null;
+      const setLoc = (la, ln, addr, fly) => {
+        loc.lat = la; loc.lng = ln;
+        if (addr != null) loc.address = addr;
+        $("#rtLocTx", root).textContent = "📍 " + (loc.address || (la.toFixed(4) + ", " + ln.toFixed(4)));
+        if (pickMap) {
+          if (!pickMark) pickMark = RT.L.marker([la, ln]).addTo(pickMap);
+          else pickMark.setLatLng([la, ln]);
+          if (fly) pickMap.setView([la, ln], 16);
+        }
+      };
+      loadLeaflet().then(L => {
+        const box = $("#rtPickMap", root);
+        if (!box) return;
+        box.innerHTML = "";
+        pickMap = L.map(box, { zoomControl: true, scrollWheelZoom: false }).setView(REST_CENTER, 12);
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(pickMap);
+        if (loc.lat != null) setLoc(loc.lat, loc.lng, null, true);
+        pickMap.on("click", e => {
+          setLoc(e.latlng.lat, e.latlng.lng, "", false);
+          loc.address = "";
+          $("#rtLocTx", root).textContent = "📍 " + e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+        });
+        setTimeout(() => { try { pickMap.invalidateSize(); } catch (e) {} }, 120);
+        setTimeout(() => { try { pickMap.invalidateSize(); } catch (e) {} }, 520);
+      }).catch(() => {
+        const box = $("#rtPickMap", root);
+        if (box) box.innerHTML = '<div class="mapfall" style="font-size:11px"><span class="em">🚧</span>지도를 불러오지 못했어요.<br>주소·가게명 검색만으로도 등록할 수 있습니다.</div>';
+      });
+
+      /* 주소·가게명 검색 (OpenStreetMap Nominatim) */
+      const doSearch = async () => {
+        const q = $("#rtSearch", root).value.trim() || $("#rtName", root).value.trim();
+        const res = $("#rtSearchRes", root);
+        if (!q) return toast("주소나 가게명을 입력해 주세요");
+        res.innerHTML = '<div class="rt-noresult">검색 중…</div>';
+        try {
+          const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=4&accept-language=ko&q=" + encodeURIComponent(q);
+          const rr = await fetch(url, { headers: { "Accept": "application/json" } });
+          const arr = await rr.json();
+          if (!Array.isArray(arr) || !arr.length) { res.innerHTML = '<div class="rt-noresult">검색 결과가 없어요. 지도를 직접 눌러 핀을 찍어 주세요.</div>'; return; }
+          res.innerHTML = arr.map((x, i) =>
+            '<button type="button" data-pick="' + i + '" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:5px;font-size:11px;color:var(--ink2);line-height:1.45">' + esc(x.display_name) + "</button>").join("");
+          $$("[data-pick]", res).forEach(b => b.addEventListener("click", () => {
+            const x = arr[Number(b.dataset.pick)];
+            setLoc(Number(x.lat), Number(x.lon), String(x.display_name).slice(0, 90), true);
+            res.innerHTML = "";
+            $("#rtSearch", root).value = "";
+          }));
+        } catch (e) { res.innerHTML = '<div class="rt-noresult">검색 서버에 연결하지 못했어요. 지도를 직접 눌러 주세요.</div>'; }
+      };
+      $("#rtSearchBtn", root).addEventListener("click", doSearch);
+      $("#rtSearch", root).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doSearch(); } });
+      $("#rtLocClear", root).addEventListener("click", () => {
+        loc = { lat: null, lng: null, address: "" };
+        if (pickMark && pickMap) { try { pickMap.removeLayer(pickMark); } catch (e) {} pickMark = null; }
+        $("#rtLocTx", root).textContent = "지도를 눌러 핀을 찍거나 위에서 검색하세요";
+      });
+
+      $("#rtSave", root).addEventListener("click", async () => {
+        const name = $("#rtName", root).value.trim();
+        if (!name) return toast("가게명을 입력해 주세요");
+        const data = {
+          name: name.slice(0, 40), area: area, cat: cat,
+          menu: $("#rtMenu", root).value.trim().slice(0, 60),
+          review: $("#rtReview", root).value.trim().slice(0, 200),
+          rating: rating, lat: loc.lat, lng: loc.lng, address: (loc.address || "").slice(0, 120)
+        };
+        $("#rtSave", root).disabled = true;
+        try {
+          await dbRestSave(r ? r.id : null, data);
+          closeSheet(); toast(r ? "맛집을 수정했습니다" : "맛집을 등록했습니다");
+        } catch (e) { $("#rtSave", root).disabled = false; toast(fbErrMsg(e)); }
+      });
+    }
+  });
+}
+
+/* ---- 맛집 데이터 계층 ---- */
+async function dbRestSave(id, data) {
+  if (S.mode === "demo") {
+    demoMutate(d => {
+      d.restaurants = d.restaurants || [];
+      if (id) {
+        const it = d.restaurants.find(x => x.id === id);
+        if (it) Object.assign(it, data, { updatedAt: Date.now() });
+      } else {
+        d.restaurants.unshift(Object.assign({ id: uid(), likes: [], author_id: myUid(), author_name: S.user.name, createdAt: Date.now() }, data));
+      }
+    });
+    return;
+  }
+  if (id) {
+    const { doc, updateDoc } = FB.f;
+    await updateDoc(doc(FB.db, "restaurants", id), Object.assign({}, data, { updatedAt: Date.now() }));
+  } else {
+    const { collection, addDoc, serverTimestamp } = FB.f;
+    await addDoc(collection(FB.db, "restaurants"), Object.assign({}, data, {
+      author_id: myUid(), author_name: S.user.name, likes: [], createdAt: serverTimestamp()
+    }));
+  }
+}
+async function dbRestLike(id) {
+  const r = S.restaurants.find(x => x.id === id);
+  if (!r) return;
+  const likes = (r.likes || []).slice();
+  const at = likes.indexOf(myUid());
+  if (at >= 0) likes.splice(at, 1); else likes.push(myUid());
+  if (S.mode === "demo") {
+    demoMutate(d => { const it = (d.restaurants || []).find(x => x.id === id); if (it) it.likes = likes; });
+    return;
+  }
+  const { doc, updateDoc } = FB.f;
+  await updateDoc(doc(FB.db, "restaurants", id), { likes: likes });
+  r.likes = likes;
+  renderRest();
+}
+async function dbRestDelete(id) {
+  if (S.mode === "demo") {
+    demoMutate(d => { d.restaurants = (d.restaurants || []).filter(x => x.id !== id); });
+    return;
+  }
+  const { doc, deleteDoc } = FB.f;
+  await deleteDoc(doc(FB.db, "restaurants", id));
 }
 
 /* =====================================================================
@@ -3568,10 +4337,17 @@ function renderTeam() {
       "</button>";
     }).join("") : '<div class="empty"><span>👤</span>아직 팀원이 없습니다.</div>') +
 
-    (adminOn && rej.length ? '<div class="sec-title">🚫 거절된 신청</div>' + rej.map(m =>
-      '<div class="mem"><span class="avatar" style="background:#c2c9d6">' + esc(initial(m.name)) + "</span>" +
-      '<div class="mi"><b>' + esc(m.name) + ' <span class="pill rejected">거절</span></b><p>사번 ' + esc(m.empId || "-") + "</p></div>" +
-      '<button class="btn sm ghost" data-approve="' + m.uid + '">다시 승인</button></div>').join("") : "") +
+    (adminOn && rej.length ? '<div class="sec-title">🚫 거절된 신청 ' + rej.length + '명</div>' +
+      '<div class="hint" style="margin:-2px 4px 8px;font-size:10.5px;color:var(--ink3)">← 카드를 왼쪽으로 밀면 삭제할 수 있어요</div>' +
+      rej.map(m =>
+        '<div class="swipe" data-swipe="' + m.uid + '">' +
+          '<div class="swipe-del"><button type="button" data-deluser="' + m.uid + '">🗑️ 삭제</button></div>' +
+          '<div class="swipe-front mem" data-front="' + m.uid + '">' +
+            '<span class="avatar" style="background:#c2c9d6">' + esc(initial(m.name)) + "</span>" +
+            '<div class="mi"><b>' + esc(m.name) + ' <span class="pill rejected">거절</span></b><p>사번 ' + esc(m.empId || "-") + "</p></div>" +
+            '<button class="btn sm ghost" data-approve="' + m.uid + '">다시 승인</button>' +
+          "</div>" +
+        "</div>").join("") : "") +
 
     '<div class="sec-title">⚙️ 관리</div>' +
     '<button class="set-item" id="setFb"><div class="si"><b>Firebase 연결 설정</b><p>' +
@@ -3597,6 +4373,58 @@ function renderTeam() {
     try { await dbSetUserStatus(b.dataset.reject, "rejected"); toast("거절 처리했습니다"); } catch (e) { toast(fbErrMsg(e)); }
   }));
   $$("[data-member]", v).forEach(b => b.addEventListener("click", () => openMemberSheet(b.dataset.member)));
+
+  /* 🚫 거절된 신청 카드 — 왼쪽으로 밀면 삭제 버튼(터치·마우스 드래그) */
+  const SWIPE_W = 92;
+  const closeOther = keep => $$("[data-swipe]", v).forEach(o => {
+    if (o === keep) return;
+    o.classList.remove("open");
+    const f = $("[data-front]", o);
+    if (f) { f.style.transition = ""; f.style.transform = "translateX(0)"; }
+  });
+  $$("[data-swipe]", v).forEach(w => {
+    const front = $("[data-front]", w);
+    if (!front) return;
+    let x0 = 0, dx = 0, dragging = false, moved = false;
+    const base = () => (w.classList.contains("open") ? -SWIPE_W : 0);
+    const paint = px => { front.style.transform = "translateX(" + px + "px)"; };
+    const start = x => { x0 = x; dx = 0; dragging = true; moved = false; closeOther(w); front.style.transition = "none"; };
+    const move = x => {
+      if (!dragging) return;
+      dx = x - x0;
+      if (Math.abs(dx) > 5) moved = true;
+      paint(Math.max(-SWIPE_W - 22, Math.min(0, base() + dx)));
+    };
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      front.style.transition = "";
+      const cur = base() + dx;
+      if (cur < -SWIPE_W / 2) { w.classList.add("open"); paint(-SWIPE_W); }
+      else { w.classList.remove("open"); paint(0); }
+    };
+    front.addEventListener("touchstart", e => start(e.touches[0].clientX), { passive: true });
+    front.addEventListener("touchmove", e => move(e.touches[0].clientX), { passive: true });
+    front.addEventListener("touchend", end);
+    front.addEventListener("touchcancel", end);
+    front.addEventListener("mousedown", e => {
+      start(e.clientX);
+      const mv = ev => move(ev.clientX);
+      const up = () => { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); end(); };
+      document.addEventListener("mousemove", mv);
+      document.addEventListener("mouseup", up);
+    });
+    /* 드래그 직후의 클릭은 무시 (다시 승인 버튼 오작동 방지) */
+    front.addEventListener("click", e => {
+      if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; }
+    }, true);
+  });
+  $$("[data-deluser]", v).forEach(b => b.addEventListener("click", async () => {
+    const m = memberOf(b.dataset.deluser);
+    if (!m) return;
+    if (!confirm("‘" + m.name + "’ 님의 가입 신청 기록을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.")) return;
+    try { await dbRemoveMember(m.uid); toast("가입 신청을 삭제했습니다"); } catch (e) { toast(fbErrMsg(e)); }
+  }));
   $("#btnMyAvatar").addEventListener("click", openAvatarSheet);
   $("#setFb").addEventListener("click", openCfgSheet);
   const setTeamBtn = $("#setTeam");
@@ -3980,6 +4808,7 @@ function renderCurrent() {
   if (S.tab === "notices") renderNotices();
   else if (S.tab === "duty") renderDuty();
   else if (S.tab === "photos") renderPhotos();
+  else if (S.tab === "rest") renderRest();
   else if (S.tab === "chat") renderChat();
   else if (S.tab === "team") renderTeam();
 }
@@ -4180,7 +5009,10 @@ function startSubs() {
     S.announcements = snap.docs.map(d => {
       const v = d.data() || {};
       return { id: d.id, title: v.title || "", body: v.body || "", is_pinned: !!v.is_pinned, is_important: !!v.is_important,
-        author_id: v.author_id || v.author_uid || "", author_name: v.author_name || "", createdAt: toMs(v.createdAt) };
+        author_id: v.author_id || v.author_uid || "", author_name: v.author_name || "", createdAt: toMs(v.createdAt),
+        poll: (v.poll && Array.isArray(v.poll.options) && v.poll.options.length >= 2)
+          ? { question: v.poll.question || v.title || "", options: v.poll.options.map(String).slice(0, 6), multi: !!v.poll.multi }
+          : null };
     });
     snap.docs.forEach(d => subExtras(d.id));
     if (S.tab === "notices") renderNotices();
@@ -4223,6 +5055,20 @@ function startSubs() {
     if (S.tab === "photos") renderPhotos();
   }, e => console.warn("photos:", e && e.code)));
 
+  /* 🍽️ 맛집 공유 지도 */
+  S.subs.push(onSnapshot(query(collection(FB.db, "restaurants"), orderBy("createdAt", "desc"), limit(100)), snap => {
+    S.restaurants = snap.docs.map(d => {
+      const v = d.data() || {};
+      return { id: d.id, name: v.name || "", area: v.area || "office", cat: v.cat || "", menu: v.menu || "",
+        review: v.review || "", rating: Number(v.rating) || 0,
+        lat: (v.lat == null || v.lat === "") ? null : Number(v.lat),
+        lng: (v.lng == null || v.lng === "") ? null : Number(v.lng),
+        address: v.address || "", author_id: v.author_id || v.author_uid || "", author_name: v.author_name || "",
+        likes: Array.isArray(v.likes) ? v.likes : [], createdAt: toMs(v.createdAt) };
+    });
+    if (S.tab === "rest") renderRest();
+  }, e => console.warn("restaurants:", e && e.code)));
+
   S.subs.push(onSnapshot(query(collection(FB.db, "chat_messages"), orderBy("createdAt", "asc"), limit(300)), snap => {
     S.messages = snap.docs.map(d => {
       const v = d.data() || {};
@@ -4262,8 +5108,19 @@ function subExtras(id) {
     if (S.tab === "notices") renderNotices();
     updateDots();
   }, e => console.warn("reads:", e && e.code));
-  S.commentSubs[id] = [cu, ru];
-  S.subs.push(cu, ru);
+  /* 📊 투표 — votes/{uid} 를 실시간 구독해 모든 팀원 화면에 즉시 집계 */
+  const vu = onSnapshot(collection(FB.db, "announcements", id, "votes"), s => {
+    const m = {};
+    s.docs.forEach(d => {
+      const v = d.data() || {};
+      const ch = Array.isArray(v.choices) ? v.choices.map(Number).filter(n => !isNaN(n)) : [];
+      if (ch.length) m[d.id] = { choices: ch, name: v.name || "" };
+    });
+    S.votes[id] = m;
+    if (S.tab === "notices") renderNotices();
+  }, e => console.warn("votes:", e && e.code));
+  S.commentSubs[id] = [cu, ru, vu];
+  S.subs.push(cu, ru, vu);
 }
 
 /* =====================================================================
