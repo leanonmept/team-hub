@@ -58,6 +58,30 @@ input,textarea,select{outline:none}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
 .screen.active{display:flex}
 
+/* ============ boot (로그인 상태 확인 중) ============ */
+#scr-boot{align-items:center;justify-content:center;background:linear-gradient(180deg,#FFFFFF 0%,#F7F9FC 100%)}
+.boot-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 28px;width:100%;max-width:340px}
+.boot-wrap .mark{
+  width:58px;height:58px;border-radius:18px;
+  background:linear-gradient(160deg,#1E3A5F 0%,#17304F 52%,#13263F 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 22px -14px rgba(19,38,63,.85), inset 0 1px 0 rgba(255,255,255,.10);
+}
+.boot-wrap .mark svg{width:31px;height:31px;display:block}
+.boot-txt{margin-top:18px;display:flex;flex-direction:column;gap:6px}
+.boot-txt b{font-size:19px;font-weight:800;letter-spacing:-.03em;color:#191F28}
+.boot-txt span{font-size:12.5px;font-weight:500;letter-spacing:-.01em;color:#94A3B8}
+.boot-spin{
+  margin-top:26px;width:22px;height:22px;border-radius:50%;
+  border:2.5px solid #E3E8EF;border-top-color:#1E3A5F;
+  animation:bootspin .8s linear infinite;
+}
+@keyframes bootspin{to{transform:rotate(360deg)}}
+.boot-retry{margin-top:22px;width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
+.boot-retry p{margin:0;font-size:12.5px;line-height:1.65;color:#6B7684;letter-spacing:-.01em}
+.boot-retry .btn{width:100%;max-width:220px;background:linear-gradient(135deg,#22456B 0%,#1A3355 52%,#13263F 100%);box-shadow:0 12px 24px -14px rgba(19,38,63,.85), inset 0 1px 0 rgba(255,255,255,.12)}
+.boot-retry .btn-link{margin-top:2px;text-underline-offset:3px}
+
 /* ============ auth (화이트 미니멀 + 딥 네이비) ============ */
 #scr-auth{overflow-y:auto;display:none}
 #scr-auth.active{display:block}
@@ -1222,8 +1246,32 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 <body>
 <div class="app" id="app">
 
+  <!-- ================= BOOT (로그인 상태 확인) ================= -->
+  <section class="screen active" id="scr-boot">
+    <div class="boot-wrap">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="17.1" cy="8.9" r="2.6" fill="#FFFFFF" opacity=".62"/>
+          <path d="M16.4 14.5c2.9.25 5.05 2.35 5.05 5.2" fill="none" stroke="#FFFFFF" stroke-width="2.15" stroke-linecap="round" opacity=".62"/>
+          <circle cx="9.1" cy="7.9" r="3.5" fill="#FFFFFF"/>
+          <path d="M2.4 19.7c0-3.6 3-5.95 6.7-5.95s6.7 2.35 6.7 5.95" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="boot-txt">
+        <b>우리팀 허브</b>
+        <span id="bootMsg">로그인 상태 확인 중…</span>
+      </div>
+      <div class="boot-spin" id="bootSpin" aria-hidden="true"></div>
+      <div class="boot-retry hidden" id="bootRetry">
+        <p id="bootRetryMsg"></p>
+        <button class="btn" id="bootRetryBtn" type="button">다시 시도</button>
+        <button class="btn-link" id="bootLoginBtn" type="button">로그인 화면으로</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= AUTH ================= -->
-  <section class="screen active" id="scr-auth">
+  <section class="screen" id="scr-auth">
     <div class="auth-wrap">
       <div class="auth-brand">
         <div class="mark" aria-hidden="true">
@@ -1907,10 +1955,51 @@ async function initFirebase(cfg) {
   ]);
   try { FB.app = appMod.getApp("teamhub"); } catch (e) { FB.app = appMod.initializeApp(cfg, "teamhub"); }
   FB.core = appMod; FB.a = authMod; FB.f = fsMod;
-  FB.auth = authMod.getAuth(FB.app);
+  FB.auth = initAuth(authMod, FB.app);
   FB.db = fsMod.getFirestore(FB.app);
   FB.ready = true;
   authMod.onAuthStateChanged(FB.auth, onAuthState);
+}
+
+/* 로그인 유지 — 저장소를 하나만 쓰지 않고 localStorage 를 우선, IndexedDB 를 다음으로 둡니다.
+   · Firebase 는 클라이언트 버전 때문에 persistence 배열에서 '쓸 수 있는 첫 번째'를 쓰지만,
+     다른 저장소에 이미 세션이 남아 있으면 그 세션을 읽어 새 저장소로 옮겨 줍니다.
+     그래서 기존에 IndexedDB 에 저장돼 있던 로그인도 다시 로그인하지 않고 그대로 이어집니다.
+   · iOS Safari·홈 화면 웹앱은 IndexedDB 를 비우는 일이 잦고, firebase 10.14.1 의 getAuth 기본값이
+     [IndexedDB, localStorage, sessionStorage] 라서 IndexedDB 가 살아 있는 동안에는 계속 IndexedDB 에만
+     저장됐습니다 → IndexedDB 가 비워지는 순간 로그인이 풀렸습니다.
+   · initializeAuth 는 이미 초기화된 경우 auth/already-initialized 로 거절하므로, 그때는 getAuth 로 받아
+     localStorage 로 고정합니다. */
+function initAuth(authMod, app) {
+  const useLocal = localStoreOk();
+  const chain = useLocal
+    ? [authMod.browserLocalPersistence, authMod.indexedDBLocalPersistence]
+    : [authMod.indexedDBLocalPersistence, authMod.browserLocalPersistence];
+  try {
+    const auth = authMod.initializeAuth(app, { persistence: chain });
+    FB.persist = useLocal ? "local+idb" : "idb+local";
+    return auth;
+  } catch (e) {
+    const auth = authMod.getAuth(app);
+    FB.persist = "fallback";
+    if (useLocal) {
+      try { Promise.resolve(authMod.setPersistence(auth, authMod.browserLocalPersistence)).catch(() => {}); }
+      catch (err) {}
+    }
+    return auth;
+  }
+}
+/* localStorage 에 로그인 정보(약 1.5KB)를 쓸 여유가 있는지 먼저 확인합니다.
+   꽉 찼거나 막힌 브라우저라면 IndexedDB 를 먼저 쓰도록 순서를 바꿉니다. */
+function localStoreOk() {
+  try {
+    const k = "__th_probe__";
+    const v = "0".repeat(4096);
+    localStorage.setItem(k, v);
+    const ok = localStorage.getItem(k) === v;
+    localStorage.removeItem(k);
+    return ok;
+  } catch (e) { return false; }
 }
 
 function fbErrMsg(e) {
@@ -6622,7 +6711,55 @@ function setTab(t) {
   renderCurrent();
   updateDots();
 }
+/* ---------- 부팅(로그인 상태 확인) 화면 ----------
+   앱을 켜자마자 로그인 폼이 먼저 번쩍이면 '로그인이 풀렸다'고 느끼게 됩니다.
+   첫 인증 판정이 끝날 때까지 이 화면을 유지하고, 오래 걸리면 다시 시도할 수 있게 합니다. */
+let bootDone = false, bootTimer = null, bootBound = false;
+function bindBootOnce() {
+  if (bootBound) return; bootBound = true;
+  const rb = $("#bootRetryBtn");
+  if (rb) rb.addEventListener("click", () => location.reload());
+  const lb = $("#bootLoginBtn");
+  if (lb) lb.addEventListener("click", () => { endBoot(); showAuthLogin(); });
+}
+function bootOnly() {
+  $$(".screen").forEach(s => s.classList.toggle("active", s.id === "scr-boot"));
+  bindBootOnce();
+}
+function showBoot(msg) {
+  if (bootDone) return;
+  if (!$("#scr-boot")) return;
+  bootOnly();
+  if (msg) { const m = $("#bootMsg"); if (m) m.textContent = msg; }
+  if (!bootTimer) bootTimer = setTimeout(bootSlow, 9000);
+}
+function bootSlow() {
+  bootTimer = null;
+  if (bootDone) return;
+  const sp = $("#bootSpin"); if (sp) sp.classList.add("hidden");
+  const r = $("#bootRetry"); if (r) r.classList.remove("hidden");
+  const m = $("#bootMsg"); if (m) m.textContent = "연결이 조금 느립니다";
+  const rm = $("#bootRetryMsg"); if (rm) rm.innerHTML = "휴대폰 네트워크를 확인한 뒤 다시 시도해 주세요.";
+}
+/* 세션은 살아 있는데 프로필을 못 불러온 경우 — 로그인 화면으로 보내지 않습니다 */
+function bootNetFail(msg) {
+  bootDone = false;
+  clearTimeout(bootTimer); bootTimer = null;
+  if (!$("#scr-boot")) { showAuthLogin(); if (msg) toast(msg); return; }
+  bootOnly();
+  const sp = $("#bootSpin"); if (sp) sp.classList.add("hidden");
+  const r = $("#bootRetry"); if (r) r.classList.remove("hidden");
+  const m = $("#bootMsg"); if (m) m.textContent = "로그인은 그대로 유지돼요";
+  const rm = $("#bootRetryMsg"); if (rm) rm.innerHTML = (msg ? esc(msg) + "<br>" : "") + "네트워크를 확인한 뒤 다시 시도해 주세요.";
+}
+function endBoot() {
+  bootDone = true;
+  clearTimeout(bootTimer); bootTimer = null;
+  const el = $("#scr-boot"); if (el) el.classList.remove("active");
+}
+
 function show(id) {
+  if (id !== "scr-boot") endBoot();
   $$(".screen").forEach(s => s.classList.toggle("active", s.id === id));
 }
 function showAuthLogin() {
@@ -6755,13 +6892,29 @@ async function loadProfile(fbUser) {
   if (S.user.status === "approved") { startSubs(); route(); }
   else { showPending(); }
 }
+const isNetErr = e => {
+  const c = (e && e.code) || "";
+  if (c === "unavailable" || c === "auth/network-request-failed" || c === "auth/timeout" || c === "deadline-exceeded") return true;
+  try { return typeof navigator !== "undefined" && navigator.onLine === false; } catch (err) { return false; }
+};
 async function onAuthState(fbUser) {
   FB.user = fbUser;
-  if (signingUp) return;
+  if (signingUp) { endBoot(); return; }
   if (!fbUser) {
-    S.user = null; stopSubs(); isSubbed = false; show("scr-auth"); return;
+    S.user = null; stopSubs(); isSubbed = false; showAuthLogin(); return;
   }
-  try { await loadProfile(fbUser); } catch (e) { toast(fbErrMsg(e)); show("scr-auth"); }
+  /* 프로필 조회는 네트워크에 기대므로 몇 번 더 시도합니다.
+     로그인 자체는 살아 있으니, 조회가 잠깐 실패해도 로그인 화면으로 보내지 않습니다. */
+  for (let i = 0; i < 3; i++) {
+    try { await loadProfile(fbUser); return; }
+    catch (e) {
+      if (isNetErr(e)) {
+        if (i < 2) { showBoot("연결을 다시 확인하는 중…"); await sleep(500 * (i + 1)); continue; }
+        bootNetFail(fbErrMsg(e)); return;
+      }
+      toast(fbErrMsg(e)); showAuthLogin(); return;
+    }
+  }
 }
 async function doLogout() {
   if (!confirm("로그아웃할까요?")) return;
@@ -7046,6 +7199,9 @@ async function boot() {
   bindGlobal();
   applyModeUI();
 
+  /* 첫 인증 판정 전까지는 로그인 폼 대신 부팅 화면을 보여 줍니다 */
+  showBoot();
+
   if (S.mode === "demo") {
     syncDemo();
     const sess = localStorage.getItem(SESSION_KEY);
@@ -7053,7 +7209,7 @@ async function boot() {
       const u = demoGet().users.find(x => x.uid === sess);
       if (u) { S.user = Object.assign({}, u); route(); return; }
     }
-    show("scr-auth");
+    showAuthLogin();
     return;
   }
 
@@ -7063,7 +7219,7 @@ async function boot() {
   } catch (e) {
     S.mode = "demo"; syncDemo(); applyModeUI();
     toast("Firebase 연결 실패 — 미리보기 모드로 실행합니다");
-    show("scr-auth");
+    showAuthLogin();
   }
 }
 
