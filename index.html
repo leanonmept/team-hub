@@ -4353,7 +4353,7 @@ function seaDayCardHtml(i, ds) {
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
     '<div class="sea-wave"><b>' + seaNum(s.max) + "</b>" + "<i>m</i>" + "<small>최고 파고</small></div>" +
     '<div class="sea-split">오전 <b>' + seaM(s.am) + "</b> · 오후 <b>" + seaM(s.pm) + "</b></div>" +
-    '<div class="sea-meta">💨 최대 풍속 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
+    '<div class="sea-meta">💨 최대 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
     "</div>";
 }
 
@@ -4363,7 +4363,7 @@ function seaWindCardHtml(i, s) {
   return '<div class="sea-card ' + wb.cls + '">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + wb.cls + '">' + wb.label + "</span></div>" +
     '<div class="sea-nowave">파고 예보 미제공<small>(최대 9일)</small></div>' +
-    '<div class="sea-meta">💨 최대 풍속 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
+    '<div class="sea-meta">💨 최대 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
     '<div class="sea-meta">🌡 최고 ' + seaTemp(s.tmax) + " · 최저 " + seaTemp(s.tmin) + "</div>" +
     "</div>";
 }
