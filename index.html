@@ -85,6 +85,34 @@ input,textarea,select{outline:none}
   letter-spacing:-.02em;color:#8B95A1;
 }
 
+/* ============ 공통 버튼 · 입력칸 (시트·폼에서 함께 사용) ============ */
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:0 0 6px 3px;letter-spacing:-.01em}
+.field input,.field textarea,.field select{
+  width:100%;border:1px solid var(--line);background:#fafbfe;border-radius:12px;
+  padding:12px 13px;font-size:16px;transition:.15s;appearance:none;   /* iOS: 16px 미만이면 포커스 시 화면이 확대됩니다 */
+}
+.field textarea{min-height:96px;resize:vertical;line-height:1.6}
+.field input:focus,.field textarea:focus,.field select:focus{background:#fff;border-color:#b9cbff;box-shadow:0 0 0 3px rgba(47,107,246,.12)}
+.hint{font-size:11.5px;color:var(--ink3);margin:5px 0 0 3px;line-height:1.5}
+.field .hint{font-size:11.5px;color:var(--ink3);margin:5px 0 0 3px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:13px 18px;border-radius:13px;font-weight:700;font-size:14.5px;
+  background:var(--brand);color:#fff;transition:.16s;width:100%;
+  box-shadow:0 6px 16px -8px rgba(47,107,246,.7);
+}
+.btn:active{transform:scale(.985)}
+.btn.sm{padding:9px 13px;font-size:13px;border-radius:10px;width:auto;box-shadow:none}
+.btn.ghost{background:#f2f5fb;color:var(--ink);box-shadow:none}
+.btn.ghost-line{background:transparent;color:var(--ink2);border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:var(--danger-soft);color:var(--danger);box-shadow:none}
+.btn.event{background:#f3f0ff;color:#5b46c9;border:1px solid #ddd5ff;box-shadow:none}
+.btn.ok{background:var(--ok-soft);color:var(--ok);box-shadow:none}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn-link{display:block;width:100%;text-align:center;font-size:12.5px;color:var(--ink3);margin-top:14px;padding:6px;text-decoration:underline;text-underline-offset:3px}
+
 /* 세그 탭 + 폼 */
 .auth-form{margin-top:34px;display:flex;flex-direction:column}
 #scr-auth .seg{
@@ -423,6 +451,57 @@ input,textarea,select{outline:none}
   font-size:12.5px;font-weight:800;box-shadow:0 6px 14px -8px rgba(47,107,246,.9);
 }
 .lightbox{position:fixed;inset:0;z-index:80;background:#0b0e15;display:flex;flex-direction:column;pointer-events:auto}
+
+/* ============ 🔍 검색창 (공지 · 대화) ============ */
+.searchbar{
+  display:flex;align-items:center;gap:8px;height:42px;padding:0 8px 0 12px;margin:0 0 10px;
+  background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);transition:.15s;
+}
+.searchbar:focus-within{border-color:#bcd0f7;box-shadow:0 0 0 3px rgba(47,107,246,.10)}
+.searchbar .sicon{font-size:13px;line-height:1;opacity:.72;flex-shrink:0}
+.searchbar input{
+  flex:1;min-width:0;border:0;background:transparent;outline:0;
+  font-size:13px;font-weight:600;color:var(--ink);font-family:inherit;
+}
+.searchbar input::placeholder{color:var(--ink3);font-weight:500}
+.searchbar input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.searchbar .sclear{
+  display:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+  background:#eef1f7;color:var(--ink2);font-size:11px;font-weight:800;flex-shrink:0;
+}
+.searchbar.has-q .sclear{display:flex}
+mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-weight:inherit}
+.chat-search{padding:9px 14px 1px;flex-shrink:0;background:rgba(255,255,255,.9);backdrop-filter:blur(12px)}
+.chat-search .searchbar{height:38px;margin:0 0 8px}
+.mhits{display:flex;justify-content:center;margin:0 0 4px}
+.mhits span{background:#eef3ff;color:var(--brand-d);font-size:10.5px;font-weight:800;padding:4px 11px;border-radius:20px}
+
+/* ============ 📸 사진 태그 · 여러 장 올리기 ============ */
+.chip .cn{font-style:normal;font-size:10.5px;font-weight:800;opacity:.62;margin-left:3px}
+.pcell .ptg{
+  position:absolute;right:5px;top:5px;font-size:10px;line-height:1;
+  background:rgba(12,16,26,.5);backdrop-filter:blur(3px);padding:3px 5px;border-radius:20px;
+}
+.upempty{text-align:center;color:var(--ink3);font-size:12px;line-height:1.65;padding:14px 6px 4px}
+.upgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.upcell{position:relative;aspect-ratio:1/1;border-radius:11px;overflow:hidden;background:#eef1f7}
+.upcell img{width:100%;height:100%;object-fit:cover;display:block}
+.upcell .x{
+  position:absolute;right:4px;top:4px;width:20px;height:20px;border-radius:50%;
+  background:rgba(12,16,26,.62);color:#fff;font-size:10.5px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);
+}
+.upcell .kb{
+  position:absolute;right:4px;bottom:4px;padding:2px 6px;font-size:9px;color:#fff;
+  background:rgba(12,16,26,.55);backdrop-filter:blur(3px);border-radius:20px;
+}
+.upcell.done:after{
+  content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(15,122,82,.55);color:#fff;font-size:26px;font-weight:800;
+}
+.upprog{font-size:11.5px;font-weight:700;color:var(--brand-d);text-align:center;padding:8px 0 0;min-height:0}
+.upprog:empty{padding:0}
+.btn.up-pick{background:#eef4ff;color:var(--brand-d);border:1px dashed #b9cbff;box-shadow:none}
 
 /* ============ chat ============ */
 .chat-top{
@@ -1242,6 +1321,9 @@ const S = {
   tab: "notices",
   lastMainTab: "notices",
   noticeFilter: "all",
+  noticeQuery: "",            // 🔍 공지 검색어 (제목·본문·작성자)
+  chatQuery: "",              // 🔍 대화 검색어 (내용·이름)
+  photoTag: "전체",            // 📸 사진 태그 필터 · '전체'|'섬 출장'|'회식'|'일상'
   cursor: new Date(),
   calMode: "duty",          // 'duty' | 'island'
   roster: { excluded: [], customMembers: [], teamName: "", kakaoRestKey: "", kakaoJsKey: "" }, // 당직 명단 + 팀 이름·카카오 검색/지도 키(관리자가 바꾸면 전원에게 실시간)
@@ -1263,6 +1345,15 @@ const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const pad2 = n => (n < 10 ? "0" + n : "" + n);
 const uid = () => "id_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* 검색어 강조 — esc 로 안전하게 바꾼 뒤 일치 부분만 <mark> 로 감싼다 */
+function hlQ(text, q) {
+  const t = esc(text);
+  const k = String(q == null ? "" : q).trim();
+  if (!k) return t;
+  const pat = esc(k).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  try { return t.replace(new RegExp("(" + pat + ")", "gi"), '<mark class="hl">$1</mark>'); }
+  catch (e) { return t; }
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function ymd(d) { const x = new Date(d); return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate()); }
@@ -1555,12 +1646,13 @@ function seedDemo() {
   const duty = Object.keys(dmap).map(x => dmap[x]);
 
   const photos = [
-    { id: "p1", imageData: demoPhoto("11월 팀 워크숍", "#2f6bf6", "#6f46ea"), caption: "11월 팀 워크숍 단체사진 📸", author_id: "u_seoyeon", author_name: "박서연", likes: ["u_admin", "u_junho", "u_mina", "u_yerin"], createdAt: now - 5 * 3600000, comments: [{ id: "pc1", author_id: "u_junho", author_name: "이준호", body: "다들 너무 잘 어울리네요!", createdAt: now - 4 * 3600000 }] },
-    { id: "p2", imageData: demoPhoto("사무실 풍경", "#0e8a9c", "#158f5f"), caption: "새로 정리한 사무실 자리", author_id: "u_junho", author_name: "이준호", likes: ["u_seoyeon", "u_admin"], createdAt: now - 26 * 3600000, comments: [] },
-    { id: "p3", imageData: demoPhoto("간식 타임", "#e0713a", "#c2417a"), caption: "관리자님이 쏘신 간식 🍩", author_id: "u_mina", author_name: "최민아", likes: ["u_admin", "u_seoyeon", "u_junho", "u_hyunwoo", "u_jisu"], createdAt: now - 2 * D, comments: [{ id: "pc2", author_id: "u_yerin", author_name: "강예린", body: "감사합니다 잘 먹었습니다 🙏", createdAt: now - 2 * D + 3600000 }] },
-    { id: "p4", imageData: demoPhoto("야근 인증", "#4b5563", "#2f6bf6"), caption: "야근 중인 사무실 (불 꺼진 복도)", author_id: "u_dohyun", author_name: "윤도현", likes: ["u_mina"], createdAt: now - 3 * D, comments: [] },
-    { id: "p5", imageData: demoPhoto("단체 회식", "#b08217", "#e0713a"), caption: "분기 회식 날 🍶", author_id: "u_admin", author_name: "김영환", likes: ["u_seoyeon", "u_junho", "u_mina", "u_yerin", "u_dohyun", "u_jisu", "u_hyunwoo"], createdAt: now - 6 * D, comments: [] },
-    { id: "p6", imageData: demoPhoto("민원 창구", "#6b53d8", "#0e8a9c"), caption: "새로 바뀐 민원 창구 안내판", author_id: "u_yerin", author_name: "강예린", likes: ["u_admin", "u_seoyeon"], createdAt: now - 9 * D, comments: [] }
+    { id: "p1", imageData: demoPhoto("11월 팀 워크숍", "#2f6bf6", "#6f46ea"), caption: "11월 팀 워크숍 단체사진 📸", tag: "일상", author_id: "u_seoyeon", author_name: "박서연", likes: ["u_admin", "u_junho", "u_mina", "u_yerin"], createdAt: now - 5 * 3600000, comments: [{ id: "pc1", author_id: "u_junho", author_name: "이준호", body: "다들 너무 잘 어울리네요!", createdAt: now - 4 * 3600000 }] },
+    { id: "p2", imageData: demoPhoto("사무실 풍경", "#0e8a9c", "#158f5f"), caption: "새로 정리한 사무실 자리", tag: "일상", author_id: "u_junho", author_name: "이준호", likes: ["u_seoyeon", "u_admin"], createdAt: now - 26 * 3600000, comments: [] },
+    { id: "p3", imageData: demoPhoto("간식 타임", "#e0713a", "#c2417a"), caption: "관리자님이 쏘신 간식 🍩", tag: "일상", author_id: "u_mina", author_name: "최민아", likes: ["u_admin", "u_seoyeon", "u_junho", "u_hyunwoo", "u_jisu"], createdAt: now - 2 * D, comments: [{ id: "pc2", author_id: "u_yerin", author_name: "강예린", body: "감사합니다 잘 먹었습니다 🙏", createdAt: now - 2 * D + 3600000 }] },
+    { id: "p4", imageData: demoPhoto("야근 인증", "#4b5563", "#2f6bf6"), caption: "야근 중인 사무실 (불 꺼진 복도)", tag: "일상", author_id: "u_dohyun", author_name: "윤도현", likes: ["u_mina"], createdAt: now - 3 * D, comments: [] },
+    { id: "p5", imageData: demoPhoto("단체 회식", "#b08217", "#e0713a"), caption: "분기 회식 날 🍶", tag: "회식", author_id: "u_admin", author_name: "김영환", likes: ["u_seoyeon", "u_junho", "u_mina", "u_yerin", "u_dohyun", "u_jisu", "u_hyunwoo"], createdAt: now - 6 * D, comments: [] },
+    { id: "p6", imageData: demoPhoto("민원 창구", "#6b53d8", "#0e8a9c"), caption: "새로 바뀐 민원 창구 안내판", tag: "일상", author_id: "u_yerin", author_name: "강예린", likes: ["u_admin", "u_seoyeon"], createdAt: now - 9 * D, comments: [] },
+    { id: "p7", imageData: demoPhoto("연평도 섬 출장", "#1c6f8c", "#2f6bf6"), caption: "연평도 섬 출장 · 배 위에서 ⛴️", tag: "섬 출장", author_id: "u_hyunwoo", author_name: "정현우", likes: ["u_admin", "u_mina", "u_jisu"], createdAt: now - 12 * D, comments: [] }
   ];
 
   const messages = [
@@ -2849,40 +2941,93 @@ function pollDetailHtml(a) {
     "</div>";
 }
 
-function renderNotices() {
-  const v = $("#view-notices");
-  const f = S.noticeFilter;
+/* ---------- 🔍 공지 검색 (제목·본문·작성자) ---------- */
+function noticeHit(a, q) {
+  if (!q) return true;
+  const s = q.toLowerCase();
+  return String(a.title || "").toLowerCase().indexOf(s) >= 0
+    || String(a.body || "").toLowerCase().indexOf(s) >= 0
+    || String(a.author_name || "").toLowerCase().indexOf(s) >= 0;
+}
+function filteredNotices() {
+  const f = S.noticeFilter, q = String(S.noticeQuery || "").trim();
   let list = S.announcements.slice();
   if (f === "pin") list = list.filter(a => a.is_pinned);
   if (f === "imp") list = list.filter(a => a.is_important);
   if (f === "unread") list = list.filter(a => !isRead(a.id));
+  if (q) list = list.filter(a => noticeHit(a, q));
   list.sort((a, b) => ((b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0)) || (b.createdAt - a.createdAt));
+  return list;
+}
+function noticeListHtml(list) {
+  const q = String(S.noticeQuery || "").trim();
+  if (!list.length) {
+    return '<div class="empty"><span>' + (q ? "🔍" : "📭") + "</span>" +
+      (q ? "‘<b>" + esc(q) + "</b>’에 해당하는 공지가 없습니다." : (S.noticeFilter === "all" ? "아직 공지가 없습니다." : "해당하는 공지가 없습니다.")) + "</div>";
+  }
+  return list.map(noteCard).join("");
+}
+function renderNotices() {
+  const v = $("#view-notices");
+  const f = S.noticeFilter;
+  const q = String(S.noticeQuery || "").trim();
+  const list = filteredNotices();
   const unread = S.announcements.filter(a => !isRead(a.id)).length;
 
   v.innerHTML =
-    '<div class="vhead"><div><h2>공지사항</h2><div class="sub">' +
-      (unread ? "안 읽은 공지 " + unread + "건" : "모든 공지를 확인했어요") + "</div></div>" +
+    '<div class="vhead"><div><h2>공지사항</h2><div class="sub" id="noteSub">' +
+      (q ? "‘" + esc(q) + "’ 검색 결과 " + list.length + "건" : (unread ? "안 읽은 공지 " + unread + "건" : "모든 공지를 확인했어요")) + "</div></div>" +
       '<button class="upbtn" id="btnWriteNote">' + ICON.plus + " 작성</button></div>" +
     todayLineHtml() +
+    '<div class="searchbar' + (S.noticeQuery ? " has-q" : "") + '" id="noteSearchBar">' +
+      '<span class="sicon">🔍</span>' +
+      '<input type="search" id="noteSearch" value="' + esc(S.noticeQuery || "") + '" placeholder="공지 제목·내용 검색" aria-label="공지 제목·내용 검색" autocomplete="off">' +
+      '<button type="button" class="sclear" id="noteSearchClear" aria-label="검색어 지우기">✕</button>' +
+    "</div>" +
     '<div class="chips">' +
       ["all:전체", "pin:📌 고정", "imp:🔴 필독", "unread:안 읽음"].map(s => {
         const [k, lb] = s.split(":");
         return '<button class="chip' + (f === k ? " on" : "") + '" data-nfilter="' + k + '">' + lb + "</button>";
       }).join("") +
     "</div>" +
-    (list.length ? list.map(noteCard).join("") : '<div class="empty"><span>📭</span>해당하는 공지가 없습니다.</div>');
+    '<div id="noteList">' + noticeListHtml(list) + "</div>";
 
   $("#btnWriteNote").addEventListener("click", () => openNoteEditor(null));
   const tb = $("#todayBar");
   if (tb) tb.addEventListener("click", () => setTab("duty"));
   $$("[data-nfilter]", v).forEach(b => b.addEventListener("click", () => { S.noticeFilter = b.dataset.nfilter; renderNotices(); }));
-  $$("[data-note]", v).forEach(b => b.addEventListener("click", () => openNote(b.dataset.note)));
+
+  /* 실시간 검색 — 목록만 다시 그려서 입력 중 포커스·커서를 잃지 않게 합니다 */
+  const inp = $("#noteSearch", v);
+  const bar = $("#noteSearchBar", v);
+  const bindCards = () => $$("[data-note]", $("#noteList", v) || v).forEach(b => b.addEventListener("click", () => openNote(b.dataset.note)));
+  bindCards();
+  const applyQ = () => {
+    S.noticeQuery = inp.value;
+    bar.classList.toggle("has-q", !!inp.value);
+    const l = filteredNotices();
+    $("#noteList", v).innerHTML = noticeListHtml(l);
+    const sub = $("#noteSub", v);
+    if (sub) {
+      const qq = String(inp.value || "").trim();
+      sub.textContent = qq ? "‘" + qq + "’ 검색 결과 " + l.length + "건"
+        : (unread ? "안 읽은 공지 " + unread + "건" : "모든 공지를 확인했어요");
+    }
+    bindCards();
+  };
+  inp.addEventListener("input", applyQ);
+  inp.addEventListener("search", applyQ);
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Escape") { inp.value = ""; applyQ(); }
+  });
+  $("#noteSearchClear", v).addEventListener("click", () => { inp.value = ""; applyQ(); inp.focus(); });
 }
 
 function noteCard(a) {
   const cc = cmtsOf(a.id).length;
   const rc = readBy(a.id).length;
   const read = isRead(a.id);
+  const q = String(S.noticeQuery || "").trim();
   const body = String(a.body || "").replace(/\n+/g, " ");
   return '<article class="note ' + (a.is_pinned ? "pinned " : "") + (a.is_important ? "important" : "") + '" data-note="' + a.id + '">' +
     '<div class="top">' +
@@ -2890,10 +3035,10 @@ function noteCard(a) {
       (a.is_important ? '<span class="tag imp">필독</span>' : "") +
       (!read && !a.is_pinned ? '<span class="tag new">NEW</span>' : "") +
     "</div>" +
-    "<h3>" + esc(a.title) + "</h3>" +
-    '<p class="prev">' + esc(body) + "</p>" +
+    "<h3>" + hlQ(a.title, q) + "</h3>" +
+    '<p class="prev">' + hlQ(body, q) + "</p>" +
     pollMiniHtml(a) +
-    '<div class="meta">' + avatarHtml(a.author_name, "xs", a.author_id) + '<span>' + esc(a.author_name) + '</span><i class="dot"></i><span>' + fmtRel(a.createdAt) + "</span>" +
+    '<div class="meta">' + avatarHtml(a.author_name, "xs", a.author_id) + '<span>' + hlQ(a.author_name, q) + '</span><i class="dot"></i><span>' + fmtRel(a.createdAt) + "</span>" +
       '<span class="right">' + (read ? "" : '<span class="dotread"></span>') +
       "<span>" + rc + "명 읽음</span><span>" + ICON.chat + " " + cc + "</span></span></div>" +
     "</article>";
@@ -4823,24 +4968,51 @@ function monthList(rows, isDuty, events) {
 /* =====================================================================
    11. 사진공유
    ===================================================================== */
+/* 📸 사진 앨범 태그 — 전체(필터용) · 섬 출장 · 회식 · 일상 */
+const PTAGS = [
+  { k: "전체", em: "" },
+  { k: "섬 출장", em: "⛴️" },
+  { k: "회식", em: "🍻" },
+  { k: "일상", em: "📷" }
+];
+/* 태그가 없던 기존 사진은 일상으로 봅니다(전체에서는 그대로 다 보입니다) */
+function photoTagOf(p) {
+  const t = String((p && p.tag) || "").trim();
+  return (t === "섬 출장" || t === "회식" || t === "일상") ? t : "일상";
+}
+function tagEmoji(t) { return t === "섬 출장" ? "⛴️" : t === "회식" ? "🍻" : "📷"; }
+function photoTagLabel(t) { const x = PTAGS.find(v => v.k === t); return x ? (x.em ? x.em + " " : "") + x.k : t; }
+
 function renderPhotos() {
   const v = $("#view-photos");
-  const list = S.photos.slice().sort((a, b) => b.createdAt - a.createdAt);
+  const all = S.photos.slice().sort((a, b) => b.createdAt - a.createdAt);
+  const f = S.photoTag || "전체";
+  const list = f === "전체" ? all : all.filter(p => photoTagOf(p) === f);
+  const sub = f === "전체" ? all.length + "장 · 우리 팀의 순간들" : list.length + "장 · " + photoTagLabel(f);
   v.innerHTML =
-    '<div class="vhead"><div><h2>사진공유</h2><div class="sub">' + list.length + "장 · 우리 팀의 순간들</div></div></div>" +
+    '<div class="vhead"><div><h2>사진공유</h2><div class="sub">' + sub + "</div></div></div>" +
     '<div class="phead"><span class="cnt">📷 자동 압축 저장 (가로 960px · JPEG)</span>' +
       '<button class="upbtn" id="btnUpload">' + ICON.plus + " 올리기</button></div>" +
+    '<div class="chips">' + PTAGS.map(t => {
+        const n = t.k === "전체" ? all.length : all.filter(p => photoTagOf(p) === t.k).length;
+        return '<button class="chip' + (f === t.k ? " on" : "") + '" data-ptag="' + t.k + '">' +
+          (t.em ? t.em + " " : "") + t.k + '<i class="cn">' + n + "</i></button>";
+      }).join("") + "</div>" +
     (list.length
       ? '<div class="pgrid">' + list.map(p =>
           '<button class="pcell" data-photo="' + p.id + '">' +
             '<img src="' + p.imageData + '" alt="' + esc(p.caption || "사진") + '" loading="lazy">' +
             '<span class="pav">' + avatarHtml(p.author_name, "xs", p.author_id) + "</span>" +
+            '<span class="ptg">' + tagEmoji(photoTagOf(p)) + "</span>" +
             (p.caption ? '<span class="pcap">' + esc(p.caption) + "</span>" : "") +
             '<span class="plike">' + ICON.heart + " " + (p.likes || []).length + "</span>" +
           "</button>").join("") + "</div>"
-      : '<div class="empty"><span>🖼️</span>아직 사진이 없습니다.<br>첫 사진을 올려보세요.</div>');
+      : '<div class="empty"><span>🖼️</span>' + (f === "전체"
+          ? "아직 사진이 없습니다.<br>첫 사진을 올려보세요."
+          : "‘" + esc(f) + "’ 사진이 아직 없습니다.<br>올릴 때 태그를 골라 모아볼 수 있어요.") + "</div>");
 
   $("#btnUpload").addEventListener("click", openUpload);
+  $$("[data-ptag]", v).forEach(b => b.addEventListener("click", () => { S.photoTag = b.dataset.ptag; renderPhotos(); }));
   $$("[data-photo]", v).forEach(b => b.addEventListener("click", () => openPhoto(b.dataset.photo)));
 }
 
@@ -4873,42 +5045,120 @@ function compressImage(file, maxW, quality) {
 }
 
 function openUpload() {
+  const MAX = 10;
   openSheet({
     title: "사진 올리기",
     body:
-      '<input type="file" id="fileIn" accept="image/*" style="display:none">' +
-      '<button class="btn ghost" id="pickBtn" style="margin-bottom:12px">📷 갤러리에서 사진 선택</button>' +
-      '<div id="prevBox" style="text-align:center;color:var(--ink3);font-size:12px;padding:10px 0 4px">아직 선택한 사진이 없습니다.</div>' +
-      '<div class="field" style="margin-top:12px"><label>설명 (선택)</label>' +
+      '<input type="file" id="fileIn" accept="image/*" multiple style="display:none">' +
+      '<button class="btn up-pick" id="pickBtn" style="margin-bottom:2px">📷 사진 선택 (여러 장 가능)</button>' +
+      '<div id="prevBox"><div class="upempty">아직 선택한 사진이 없습니다.<br>한 번에 ' + MAX + '장까지 고를 수 있어요.</div></div>' +
+      '<div class="upprog" id="upProg"></div>' +
+      '<div class="field" style="margin-top:14px"><label>태그</label>' +
+        '<div class="chips" style="padding-bottom:2px">' +
+          ["섬 출장", "회식", "일상"].map(t =>
+            '<button type="button" class="chip' + (t === "일상" ? " on" : "") + '" data-utag="' + t + '">' + tagEmoji(t) + " " + t + "</button>").join("") +
+        "</div></div>" +
+      '<div class="field" style="margin-top:10px"><label>한 줄 메모 (선택 · 여러 장 공통)</label>' +
         '<input type="text" id="capIn" maxlength="60" placeholder="예: 11월 팀 워크숍"></div>' +
       '<div class="notice-bar">사진은 올릴 때 자동으로 리사이즈·압축되어 저장됩니다. (가로 최대 960px, JPEG 0.72)</div>',
     footer: '<button class="btn" id="upSave" disabled>사진 올리기</button>',
     onMount: root => {
-      let picked = null;
+      let picked = [];        // { data, kb, done }
+      let tag = "일상";
+      let busy = false;
       const fi = $("#fileIn", root);
-      $("#pickBtn", root).addEventListener("click", () => fi.click());
-      fi.addEventListener("change", async () => {
-        const f = fi.files && fi.files[0];
-        if (!f) return;
-        const box = $("#prevBox", root);
-        box.innerHTML = '<div class="loading"><span class="spin"></span>사진을 압축하는 중…</div>';
-        try {
-          picked = await compressImage(f);
-          box.innerHTML = '<img src="' + picked.data + '" style="width:100%;max-height:230px;object-fit:cover;border-radius:14px">' +
-            '<div style="font-size:11px;color:var(--ink3);margin-top:7px">' + picked.w + "×" + picked.h + " · 약 " + picked.kb + "KB로 압축됨</div>";
-          $("#upSave", root).disabled = false;
-        } catch (e) {
-          box.innerHTML = '<span style="color:var(--danger)">' + esc(e.message) + "</span>";
+      const box = $("#prevBox", root);
+      const prog = $("#upProg", root);
+      const saveBtn = $("#upSave", root);
+      const capIn = $("#capIn", root);
+
+      const syncBtn = () => {
+        const left = picked.filter(p => !p.done).length;
+        saveBtn.disabled = busy || left === 0;
+        if (!busy) saveBtn.textContent = left > 1 ? left + "장 올리기" : "사진 올리기";
+      };
+      const drawGrid = () => {
+        if (!picked.length) {
+          box.innerHTML = '<div class="upempty">아직 선택한 사진이 없습니다.<br>한 번에 ' + MAX + '장까지 고를 수 있어요.</div>';
+        } else {
+          box.innerHTML = '<div class="upgrid">' + picked.map((p, i) =>
+            '<div class="upcell' + (p.done ? " done" : "") + '">' +
+              '<img src="' + p.data + '" alt="선택한 사진 ' + (i + 1) + '">' +
+              (p.done ? "" : '<button type="button" class="x" data-drop="' + i + '" aria-label="이 사진 빼기">✕</button>') +
+              '<span class="kb">' + p.kb + "KB</span>" +
+            "</div>").join("") + "</div>";
+          $$("[data-drop]", box).forEach(b => b.addEventListener("click", () => {
+            if (busy) return;
+            picked.splice(Number(b.dataset.drop), 1);
+            drawGrid(); syncBtn();
+          }));
         }
+        syncBtn();
+      };
+
+      $("#pickBtn", root).addEventListener("click", () => { if (!busy) fi.click(); });
+      fi.addEventListener("change", async () => {
+        const files = Array.from(fi.files || []);
+        fi.value = "";
+        if (!files.length) return;
+        const room = MAX - picked.length;
+        if (room <= 0) { toast("한 번에 최대 " + MAX + "장까지 올릴 수 있어요"); return; }
+        const use = files.slice(0, room);
+        if (files.length > room) toast("최대 " + MAX + "장까지 · " + use.length + "장만 담았어요");
+        prog.innerHTML = '<span class="spin"></span> 사진을 압축하는 중…';
+        for (let i = 0; i < use.length; i++) {
+          try {
+            const c = await compressImage(use[i]);
+            picked.push({ data: c.data, kb: c.kb, done: false });
+            prog.textContent = (i + 1) + "/" + use.length + " 압축 중…";
+            drawGrid();
+          } catch (e) {
+            toast("'" + (use[i].name || "사진") + "'을(를) 읽을 수 없어요");
+          }
+        }
+        prog.textContent = "";
+        drawGrid();
       });
-      $("#upSave", root).addEventListener("click", async () => {
-        if (!picked) return;
-        $("#upSave", root).disabled = true;
-        try {
-          await dbAddPhoto(picked.data, $("#capIn", root).value.trim());
-          closeSheet(); toast("사진을 올렸습니다");
-        } catch (e) { $("#upSave", root).disabled = false; toast(fbErrMsg(e)); }
+
+      $$("[data-utag]", root).forEach(b => b.addEventListener("click", () => {
+        if (busy) return;
+        tag = b.dataset.utag;
+        $$("[data-utag]", root).forEach(x => x.classList.toggle("on", x === b));
+      }));
+
+      saveBtn.addEventListener("click", async () => {
+        const todo = picked.filter(p => !p.done);
+        if (!todo.length || busy) return;
+        const cap = capIn.value.trim();
+        busy = true;
+        saveBtn.disabled = true;
+        let ok = 0, fail = null;
+        for (let i = 0; i < todo.length; i++) {
+          const label = (i + 1) + "/" + todo.length + " 올리는 중…";
+          saveBtn.textContent = label;
+          prog.textContent = label;
+          try {
+            await dbAddPhoto(todo[i].data, cap, tag);
+            todo[i].done = true; ok++;
+            drawGrid();
+          } catch (e) { fail = e; break; }
+        }
+        busy = false;
+        saveBtn.textContent = "사진 올리기";
+        if (fail) {
+          ghostDone();                    // 이미 올라간 사진은 목록에서 빼고, 남은 것만 다시 시도
+          prog.textContent = ok ? ok + "장을 올렸습니다 · 남은 사진을 다시 시도해 주세요" : "";
+          syncBtn();
+          toast(fbErrMsg(fail));
+          return;
+        }
+        closeSheet();
+        S.photoTag = tag;               // 올린 사진이 바로 보이도록 그 태그로 필터를 맞춥니다
+        renderPhotos();
+        toast(ok > 1 ? ok + "장의 사진을 올렸습니다" : "사진을 올렸습니다");
       });
+      const ghostDone = () => { picked = picked.filter(p => !p.done); drawGrid(); syncBtn(); };
+      syncBtn();
     }
   });
 }
@@ -4934,6 +5184,8 @@ function openPhoto(id) {
       "</div>" +
       '<div style="background:#fff;border-radius:22px 22px 0 0;padding:14px 16px calc(14px + var(--safe-b));max-height:44%;overflow-y:auto;flex-shrink:0">' +
         (p.caption ? '<div style="font-size:14px;font-weight:700;margin-bottom:9px">' + esc(p.caption) + "</div>" : "") +
+        '<div style="display:flex;align-items:center;gap:7px;margin:0 0 10px"><span class="tag gray">' + photoTagLabel(photoTagOf(p)) + "</span>" +
+          '<span style="font-size:11px;color:var(--ink3)">앨범 태그</span></div>' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
           '<button id="phLike" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:' + (liked ? "#e5484d" : "var(--ink2)") + '">' +
             (liked ? ICON.heart : ICON.heartO) + " 좋아요 " + (p.likes || []).length + "</button>" +
@@ -4968,8 +5220,9 @@ function openPhoto(id) {
   $("#phCmtIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); send(); } });
 }
 
-async function dbAddPhoto(imageData, caption) {
-  const doc = { imageData: imageData, caption: caption, author_id: myUid(), author_name: S.user.name, likes: [], comments: [], createdAt: Date.now() };
+async function dbAddPhoto(imageData, caption, tag) {
+  const t = photoTagOf({ tag: tag });
+  const doc = { imageData: imageData, caption: caption || "", tag: t, author_id: myUid(), author_name: S.user.name, likes: [], comments: [], createdAt: Date.now() };
   if (S.mode === "demo") {
     demoMutate(d => { d.photos.unshift(Object.assign({ id: uid() }, doc)); });
   } else {
@@ -5022,6 +5275,11 @@ function renderChat() {
         '<div><b id="chatTeamName">' + esc(S.team) + " 단체방</b><br>" +
         '<span><i class="dotlive"></i>' + (S.mode === "live" ? "실시간 연결" : "미리보기 · 이 폰에만 저장") + " · " + approved().length + "명</span></div>" +
       "</div>" +
+      '<div class="chat-search"><div class="searchbar' + (S.chatQuery ? " has-q" : "") + '" id="chatSearchBar">' +
+        '<span class="sicon">🔍</span>' +
+        '<input type="search" id="chatSearch" value="' + esc(S.chatQuery || "") + '" placeholder="대화 내용·이름 검색" aria-label="대화 내용·이름 검색" autocomplete="off">' +
+        '<button type="button" class="sclear" id="chatSearchClear" aria-label="검색어 지우기">✕</button>' +
+      "</div></div>" +
       '<div class="msgs" id="msgs"></div>' +
       '<div class="composer"><textarea id="chatIn" rows="1" placeholder="메시지를 입력하세요" maxlength="500"></textarea>' +
         '<button class="send" id="chatSend" disabled>' + ICON.send + "</button></div>";
@@ -5035,6 +5293,19 @@ function renderChat() {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
     });
     sendBtn.addEventListener("click", sendChat);
+
+    /* 🔍 대화 검색 — 입력하면 일치 메시지만 추리고, 일치 부분을 강조합니다 */
+    const ci = $("#chatSearch", v);
+    const cbar = $("#chatSearchBar", v);
+    const applyQ = () => {
+      S.chatQuery = ci.value;
+      cbar.classList.toggle("has-q", !!ci.value);
+      renderMessages();
+    };
+    ci.addEventListener("input", applyQ);
+    ci.addEventListener("search", applyQ);
+    ci.addEventListener("keydown", e => { if (e.key === "Escape") { ci.value = ""; applyQ(); } });
+    $("#chatSearchClear", v).addEventListener("click", () => { ci.value = ""; applyQ(); ci.focus(); });
   }
   renderMessages();
 }
@@ -5052,9 +5323,16 @@ async function sendChat() {
 function renderMessages() {
   const box = $("#msgs");
   if (!box) return;
+  const q = String(S.chatQuery || "").trim();
   const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
-  const list = S.messages.slice().sort((a, b) => a.createdAt - b.createdAt);
+  let list = S.messages.slice().sort((a, b) => a.createdAt - b.createdAt);
+  if (q) {
+    const s = q.toLowerCase();
+    list = list.filter(m => String(m.body || "").toLowerCase().indexOf(s) >= 0
+      || String(m.author_name || "").toLowerCase().indexOf(s) >= 0);
+  }
   let html = "", lastDay = "";
+  if (q) html += '<div class="mhits"><span>🔍 ‘' + esc(q) + '’ 일치 메시지 ' + list.length + "개</span></div>";
   list.forEach(m => {
     const day = ymd(m.createdAt);
     if (day !== lastDay) { html += '<div class="mday"><span>' + fmtDay(m.createdAt) + "</span></div>"; lastDay = day; }
@@ -5062,13 +5340,15 @@ function renderMessages() {
     html += '<div class="mrow' + (me ? " me" : "") + '">' +
       (me ? "" : avatarHtml(m.author_name, "av", m.author_id)) +
       '<div class="mbody">' +
-        (me ? "" : '<span class="mwho">' + esc(m.author_name) + "</span>") +
-        '<div class="bubble">' + esc(m.body) + "</div>" +
+        (me ? "" : '<span class="mwho">' + hlQ(m.author_name, q) + "</span>") +
+        '<div class="bubble">' + hlQ(m.body, q) + "</div>" +
         '<span class="mtime">' + fmtTime(m.createdAt) + "</span>" +
       "</div></div>";
   });
-  box.innerHTML = html || '<div class="empty" style="margin:auto"><span>💬</span>첫 메시지를 보내보세요.</div>';
-  if (nearBottom || S.tab === "chat") box.scrollTop = box.scrollHeight;
+  box.innerHTML = html || '<div class="empty" style="margin:auto"><span>' + (q ? "🔍" : "💬") + "</span>" +
+    (q ? "일치하는 메시지가 없어요.<br>다른 말로 검색해 보세요." : "첫 메시지를 보내보세요.") + "</div>";
+  if (q) box.scrollTop = 0;
+  else if (nearBottom || S.tab === "chat") box.scrollTop = box.scrollHeight;
 }
 
 async function dbSendMessage(body) {
@@ -5947,7 +6227,7 @@ function startSubs() {
   S.subs.push(onSnapshot(query(collection(FB.db, "photos"), orderBy("createdAt", "desc"), limit(60)), snap => {
     S.photos = snap.docs.map(d => {
       const v = d.data() || {};
-      return { id: d.id, imageData: v.imageData || "", caption: v.caption || "", author_id: v.author_id || v.author_uid || "",
+      return { id: d.id, imageData: v.imageData || "", caption: v.caption || "", tag: v.tag || "", author_id: v.author_id || v.author_uid || "",
         author_name: v.author_name || "", likes: v.likes || [], comments: v.comments || [], createdAt: toMs(v.createdAt) };
     });
     if (S.tab === "photos") renderPhotos();
