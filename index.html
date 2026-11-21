@@ -4279,7 +4279,7 @@ async function seaLoad() {
       /* 날짜별: 그날 최고 파고 · 오전(06~12시) 최고 · 오후(12~18시) 최고 · 최대 풍속·돌풍 · 기온 */
       const per = {};
       days.forEach(ds => {
-        let mx = null, am = null, pm = null, wmx = null, gmx = null;
+        let mx = null, am = null, pm = null, wmx = null, gmx = null, nhr = 0;
         for (let k = 0; k < times.length; k++) {
           const t = String(times[k]);
           if (t.slice(0, 10) !== ds) continue;
@@ -4287,6 +4287,7 @@ async function seaLoad() {
           const v = waves[k];
           if (typeof v === "number" && isFinite(v)) {
             if (mx === null || v > mx) mx = v;
+            nhr++;
             if (hh >= 6 && hh < 12 && (am === null || v > am)) am = v;
             if (hh >= 12 && hh < 18 && (pm === null || v > pm)) pm = v;
           }
@@ -4295,7 +4296,7 @@ async function seaLoad() {
           if (ww && typeof ww.g === "number" && isFinite(ww.g) && (gmx === null || ww.g > gmx)) gmx = ww.g;
         }
         per[ds] = {
-          max: mx, am: am, pm: pm, wind: wmx, gust: gmx,
+          max: mx, am: am, pm: pm, wind: wmx, gust: gmx, n: nhr,
           tmax: tmap[ds] && typeof tmap[ds].max === "number" ? tmap[ds].max : null,
           tmin: tmap[ds] && typeof tmap[ds].min === "number" ? tmap[ds].min : null
         };
@@ -4393,13 +4394,15 @@ function seaBodyHtml() {
   const future = di > 0 && !!selDs;
   const hasWave = ds => !!(d && ds && d.items.some(i => i.days && i.days[ds] && typeof i.days[ds].max === "number"));
   const windOnly = future && !hasWave(selDs);
+  /* 파고 예보가 하루 중 일부 시간만 있는 날(예: 해양예보 마지막 날) */
+  const partial = future && !windOnly && !!(d && d.items.every(i => !i.days || !i.days[selDs] || typeof i.days[selDs].n !== "number" || i.days[selDs].n < 24));
 
   const daysBar = days.length > 1
     ? '<div class="sea-days">' + days.map((ds, k) =>
         '<button type="button" class="sea-day' + (k === di ? " on" : "") + '" data-sd="' + k + '">' + seaDayLabel(ds, k) + "</button>").join("") + "</div>" +
       (!future ? "" : windOnly
         ? '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " · 파고 예보 없음(최대 9일) · 풍속·기온 참고 — 12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호</div>"
-        : '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " 최고 파고 기준 · 오전 06~12시 · 오후 12~18시</div>")
+        : '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " 최고 파고 기준 · 오전 06~12시 · 오후 12~18시" + (partial ? " · 일부 시간대는 파고 예보 없음" : "") + "</div>")
     : "";
 
   let cards = "";
