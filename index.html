@@ -752,6 +752,8 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sea-day-hint{margin:0 2px 7px;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
 .sea-split{margin-top:1px;font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:-.02em;white-space:nowrap}
 .sea-split b{font-weight:800;color:var(--ink2)}
+.sea-nowave{margin-top:3px;font-size:11.5px;font-weight:800;color:var(--ink2);letter-spacing:-.02em;line-height:1.25}
+.sea-nowave small{display:block;font-size:9px;font-weight:600;color:var(--ink3);margin-top:0}
 .sea-top{display:flex;align-items:center;gap:4px}
 .sea-top b{font-size:12.5px;font-weight:800;letter-spacing:-.03em}
 .sea-badge{margin-left:auto;font-size:9px;font-weight:800;border-radius:20px;padding:2px 6px;white-space:nowrap;letter-spacing:-.02em}
@@ -4203,7 +4205,7 @@ const SEA_LINKS = [
   { em: "⚓", label: "인천항 여객선 운항정보", sub: "KOMSA · 당일 운항·결항 조회", url: "https://www.komsa.or.kr/prog/pssgCurState/kor/sub03_0202/list.do" }
 ];
 const SEA_TTL = 10 * 60 * 1000;        /* 10분 캐시 */
-const SEA_DAYS = 7;                    /* 오늘부터 7일 예보 */
+const SEA_DAYS = 16;                   /* 오늘부터 16일 예보 (파고는 해양예보 최대 9일) */
 const SEA_WEEK = "일월화수목금토";
 let seaCache = null;                   /* { at, items, stamp, days } */
 let seaBusy = false;
@@ -4231,7 +4233,7 @@ function seaUrl(kind) {
       "&current=wave_height,wave_period&hourly=wave_height&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
   }
   return "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
-    "&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=wind_speed_10m,wind_gusts_10m&wind_speed_unit=ms&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
+    "&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=wind_speed_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min&wind_speed_unit=ms&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
 }
 /* 12초 안에 응답이 없으면 중단 */
 function seaGet(url) {
@@ -4255,8 +4257,8 @@ async function seaLoad() {
     const mArr = Array.isArray(res[0]) ? res[0] : [res[0]];
     const wArr = Array.isArray(res[1]) ? res[1] : [res[1]];
     /* 날짜 축은 API 응답(Asia/Seoul)에서 뽑습니다. 브라우저 시간대와 무관하게 섬 기준 날짜로 맞습니다. */
-    const axis = (((mArr[0] && mArr[0].hourly && mArr[0].hourly.time) ||
-      (wArr[0] && wArr[0].hourly && wArr[0].hourly.time) || []).map(t => String(t).slice(0, 10)));
+    const axis = (((wArr[0] && wArr[0].hourly && wArr[0].hourly.time) ||
+      (mArr[0] && mArr[0].hourly && mArr[0].hourly.time) || []).map(t => String(t).slice(0, 10)));
     const days = axis.filter((v, i, a) => /^\d{4}-\d{2}-\d{2}$/.test(v) && a.indexOf(v) === i).slice(0, SEA_DAYS);
     const items = SEA_ISLANDS.map((isl, i) => {
       const m = mArr[i] || {}, w = wArr[i] || {};
@@ -4268,7 +4270,13 @@ async function seaLoad() {
       const wgust = (w.hourly && w.hourly.wind_gusts_10m) || [];
       const wmap = {};
       for (let k = 0; k < wtime.length; k++) wmap[String(wtime[k])] = { w: wspeed[k], g: wgust[k] };
-      /* 날짜별: 그날 최고 파고 · 오전(06~12시) 최고 · 오후(12~18시) 최고 · 최대 풍속·돌풍 */
+      /* 날짜별 기온(최고·최저) — 파고가 없는 뒤쪽 날짜의 참고값 */
+      const dtime = (w.daily && w.daily.time) || [];
+      const dmax = (w.daily && w.daily.temperature_2m_max) || [];
+      const dmin = (w.daily && w.daily.temperature_2m_min) || [];
+      const tmap = {};
+      for (let k = 0; k < dtime.length; k++) tmap[String(dtime[k])] = { max: dmax[k], min: dmin[k] };
+      /* 날짜별: 그날 최고 파고 · 오전(06~12시) 최고 · 오후(12~18시) 최고 · 최대 풍속·돌풍 · 기온 */
       const per = {};
       days.forEach(ds => {
         let mx = null, am = null, pm = null, wmx = null, gmx = null;
@@ -4286,7 +4294,11 @@ async function seaLoad() {
           if (ww && typeof ww.w === "number" && isFinite(ww.w) && (wmx === null || ww.w > wmx)) wmx = ww.w;
           if (ww && typeof ww.g === "number" && isFinite(ww.g) && (gmx === null || ww.g > gmx)) gmx = ww.g;
         }
-        per[ds] = { max: mx, am: am, pm: pm, wind: wmx, gust: gmx };
+        per[ds] = {
+          max: mx, am: am, pm: pm, wind: wmx, gust: gmx,
+          tmax: tmap[ds] && typeof tmap[ds].max === "number" ? tmap[ds].max : null,
+          tmin: tmap[ds] && typeof tmap[ds].min === "number" ? tmap[ds].min : null
+        };
       });
       const maxOf = ds => (per[ds] && typeof per[ds].max === "number") ? per[ds].max : null;
       return {
@@ -4323,15 +4335,36 @@ function seaCardHtml(i) {
     "</div>";
 }
 
-/* 내일~7일째: 그날 최고 파고 · 오전/오후 파고 · 최대 풍속 */
+/* 파고가 없는 날(해양예보 최대 9일 이후)은 풍속 기준 참고 배지 */
+function seaWindBadge(w) {
+  if (typeof w !== "number") return { cls: "na", label: "정보없음" };
+  if (w >= 12) return { cls: "high", label: "강풍 주의" };
+  if (w >= 9) return { cls: "warn", label: "바람 약간" };
+  return { cls: "ok", label: "바람 양호" };
+}
+function seaTemp(v) { return (typeof v === "number" && isFinite(v)) ? Math.round(v) + "°" : "–"; }
+
+/* 내일~16일째: 파고가 있으면 그날 최고 파고 · 오전/오후 파고 · 최대 풍속 */
 function seaDayCardHtml(i, ds) {
   const s = (i.days && i.days[ds]) || {};
+  if (typeof s.max !== "number") return seaWindCardHtml(i, s);
   const b = seaBadge(s.max);
   return '<div class="sea-card ' + b.cls + '">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
-    '<div class="sea-wave"><b>' + seaNum(s.max) + "</b>" + (typeof s.max === "number" ? "<i>m</i>" : "") + "<small>최고 파고</small></div>" +
+    '<div class="sea-wave"><b>' + seaNum(s.max) + "</b>" + "<i>m</i>" + "<small>최고 파고</small></div>" +
     '<div class="sea-split">오전 <b>' + seaM(s.am) + "</b> · 오후 <b>" + seaM(s.pm) + "</b></div>" +
     '<div class="sea-meta">💨 최대 풍속 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
+    "</div>";
+}
+
+/* 10일째~: 파고를 채우지 않고 '파고 예보 미제공' + 최대 풍속·최고/최저 기온 */
+function seaWindCardHtml(i, s) {
+  const wb = seaWindBadge(s.wind);
+  return '<div class="sea-card ' + wb.cls + '">' +
+    '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + wb.cls + '">' + wb.label + "</span></div>" +
+    '<div class="sea-nowave">파고 예보 미제공<small>(최대 9일)</small></div>' +
+    '<div class="sea-meta">💨 최대 풍속 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
+    '<div class="sea-meta">🌡 최고 ' + seaTemp(s.tmax) + " · 최저 " + seaTemp(s.tmin) + "</div>" +
     "</div>";
 }
 
@@ -4340,7 +4373,7 @@ function seaDayLabel(ds, k) {
   const p = String(ds || "").split("-");
   const dt = new Date(ds + "T12:00:00");
   const wd = SEA_WEEK.charAt(isNaN(dt.getTime()) ? 0 : dt.getDay());
-  const md = Number(p[1]) + "/" + Number(p[2]) + "(" + wd + ")";
+  const md = p[1] + "/" + p[2] + "(" + wd + ")";
   return (k === 0 ? "오늘 " : k === 1 ? "내일 " : "") + md;
 }
 
@@ -4358,11 +4391,15 @@ function seaBodyHtml() {
   if (!(di >= 0 && di < days.length)) di = 0;
   const selDs = days[di] || null;
   const future = di > 0 && !!selDs;
+  const hasWave = ds => !!(d && ds && d.items.some(i => i.days && i.days[ds] && typeof i.days[ds].max === "number"));
+  const windOnly = future && !hasWave(selDs);
 
   const daysBar = days.length > 1
     ? '<div class="sea-days">' + days.map((ds, k) =>
         '<button type="button" class="sea-day' + (k === di ? " on" : "") + '" data-sd="' + k + '">' + seaDayLabel(ds, k) + "</button>").join("") + "</div>" +
-      (future ? '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " 최고 파고 기준 · 오전 06~12시 · 오후 12~18시" + "</div>" : "")
+      (!future ? "" : windOnly
+        ? '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " · 파고 예보 없음(최대 9일) · 풍속·기온 참고 — 12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호</div>"
+        : '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " 최고 파고 기준 · 오전 06~12시 · 오후 12~18시</div>")
     : "";
 
   let cards = "";
@@ -4384,13 +4421,16 @@ function seaBodyHtml() {
   if (d) {
     const cnt = { ok: 0, warn: 0, high: 0, na: 0 };
     d.items.forEach(i => {
-      const v = future ? ((i.days && i.days[selDs]) ? i.days[selDs].max : null) : i.wave;
-      cnt[seaBadge(v).cls]++;
+      const s = future && i.days ? i.days[selDs] : null;
+      const v = future ? (s ? (typeof s.max === "number" ? s.max : null) : null) : i.wave;
+      if (typeof v === "number") cnt[seaBadge(v).cls]++;
+      else if (future && s && typeof s.wind === "number") cnt[seaWindBadge(s.wind).cls]++;
+      else cnt.na++;
     });
     sum = '<div class="sea-sum">' +
-      '<div><b class="ok">' + cnt.ok + '</b><span>양호</span></div>' +
-      '<div><b class="warn">' + cnt.warn + '</b><span>주의</span></div>' +
-      '<div><b class="high">' + cnt.high + '</b><span>높음·결항주의</span></div>' +
+      '<div><b class="ok">' + cnt.ok + '</b><span>' + (windOnly ? "바람 양호" : "양호") + '</span></div>' +
+      '<div><b class="warn">' + cnt.warn + '</b><span>' + (windOnly ? "바람 약간" : "주의") + '</span></div>' +
+      '<div><b class="high">' + cnt.high + '</b><span>' + (windOnly ? "강풍 주의" : "높음·결항주의") + '</span></div>' +
     "</div>" + (cnt.na ? '<div class="sea-na">정보 없음 ' + cnt.na + "곳</div>" : "");
   }
 
@@ -4404,14 +4444,14 @@ function seaBodyHtml() {
       '<span class="ar">›</span></a>').join("");
 
   return hd + sum + daysBar + staleBar + cards +
-    '<div class="sea-legend">' +
+    (windOnly ? "" : '<div class="sea-legend">' +
       '<span><i style="background:#158f5f"></i>1.0m 미만 양호</span>' +
       '<span><i style="background:#e08a00"></i>1.0~1.9m 주의</span>' +
       '<span><i style="background:#e5484d"></i>2.0m 이상 높음·결항주의</span>' +
-    "</div>" +
+    "</div>") +
     '<div class="sec-title" style="margin:16px 4px 8px">🚢 배편 · 운항정보</div>' +
     '<div class="sea-links">' + links + "</div>" +
-    '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 7일 예보 · 참고용 · 실제 결항은 운항정보 확인)<br>' +
+    '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 16일 · 파고는 해양예보 최대 9일이라 그 뒤는 풍속·기온만) · 실제 결항은 운항정보 확인<br>' +
       "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.</div>";
 }
 
@@ -4434,8 +4474,10 @@ function paintSea() {
       paintSea();
     }));
     const on = bar.querySelector(".sea-day.on");
-    if (on) bar.scrollLeft = Math.max(0, on.offsetLeft - 12);
-    else bar.scrollLeft = prevScroll;
+    if (on) {
+      const dx = on.getBoundingClientRect().left - bar.getBoundingClientRect().left;
+      bar.scrollLeft = Math.max(0, bar.scrollLeft + dx - 12);
+    } else bar.scrollLeft = prevScroll;
   }
 }
 
@@ -6023,7 +6065,7 @@ function openGuideSheet() {
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">회원가입 후에는 <b>승인 대기</b> 상태가 됩니다. 관리자가 [팀원] 탭에서 승인하면 공지·당직·사진·대화를 모두 쓸 수 있습니다.</p>' +
       '<div class="sec-title">2. 달력</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🏢 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">달력 위의 <b>🌊 섬 파고 · 배편</b>을 누르면 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉)의 <b>지금 파고·풍속</b>과 <b>오늘·내일 최고 파고</b>를 보고, <b>여객선 예매(KSA)</b>·<b>인천항 여객선 운항정보(KOMSA)</b>로 바로 갈 수 있습니다. 위쪽 <b>날짜 칩</b>으로 오늘부터 7일치를 넘겨 보면 섬마다 <b>그날 최고 파고·오전/오후 파고·최대 풍속</b>과 <b>양호/주의/높음·결항주의</b> 표시가 나와 배편 예매 판단에 쓸 수 있습니다. 파고는 Open-Meteo 예보값이라 참고용이고, 실제 결항은 운항정보에서 확인합니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">달력 위의 <b>🌊 섬 파고 · 배편</b>을 누르면 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉)의 <b>지금 파고·풍속</b>과 <b>오늘·내일 최고 파고</b>를 보고, <b>여객선 예매(KSA)</b>·<b>인천항 여객선 운항정보(KOMSA)</b>로 바로 갈 수 있습니다. 위쪽 <b>날짜 칩</b>으로 오늘부터 16일치를 넘겨 볼 수 있습니다. 파고가 있는 날(최대 9일)은 섬마다 <b>그날 최고 파고·오전/오후 파고·최대 풍속</b>과 <b>양호/주의/높음·결항주의</b> 배지가, 그 뒤 날은 <b>파고 예보 미제공</b> 안내와 함께 <b>최대 풍속·최고/최저 기온</b>이 나옵니다. 파고는 Open-Meteo 예보값이라 참고용이고, 실제 결항은 운항정보에서 확인합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🏢 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날 당직은 취소되고, 달력 칸 전체가 <b>연보라색</b>으로 칠해지며 등록한 행사명이 표시됩니다(공휴일의 연분홍과 구분).</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
