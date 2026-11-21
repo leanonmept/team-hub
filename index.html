@@ -1050,9 +1050,8 @@ input,textarea,select{outline:none}
         <button class="btn-link hidden" id="openCfgFromAuth" type="button">Firebase 연결 설정</button>
       </div>
 
-      <div class="auth-foot" id="authFoot">
-        <a href="#" id="authTryDemo">체험 모드로 둘러보기</a>
-      </div>
+      <!-- 체험 모드 안내는 개발·테스트용이라 기본은 숨김(applyModeUI 가 ?demo=1 로 들어온 경우에만 표시) -->
+      <div class="auth-foot hidden" id="authFoot"></div>
     </div>
   </section>
 
@@ -1350,6 +1349,16 @@ function loadConfig() {
   }
   let wantDemo = false;
   try { wantDemo = sessionStorage.getItem(DEMO_TRY_KEY) === "1"; } catch (e) {}
+  /* 개발·테스트용 체험 모드: 주소 끝에 ?demo=1 을 붙인 경우에만 열립니다.
+     로그인 화면에는 체험 모드로 들어가는 링크를 두지 않습니다(일반 팀원 노출 방지). */
+  let demoParam = false;
+  try { demoParam = new URLSearchParams(location.search || "").get("demo") === "1"; } catch (e) { demoParam = false; }
+  if (demoParam) {
+    wantDemo = true;
+    try { sessionStorage.setItem(DEMO_TRY_KEY, "1"); } catch (e) {}
+    /* 주소창에 남은 ?demo=1 은 지워서, 새로고침·재방문 때 일반 화면으로 돌아가게 */
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+  }
   const live = cfgComplete(cfg) && !wantDemo;
   let team = "행정지원팀";
   try { team = localStorage.getItem(TEAM_KEY) || team; } catch (e) {}
@@ -5838,17 +5847,13 @@ function applyModeUI() {
   const cfgLink = $("#openCfgFromAuth"); if (cfgLink) cfgLink.classList.toggle("hidden", live);
   const foot = $("#authFoot");
   if (!foot) return;
+  /* 실서버 모드에서는 하단 체험 모드 문구/링크를 아예 그리지 않습니다. */
+  foot.classList.toggle("hidden", live);
   foot.innerHTML = live
-    ? '<a href="#" id="authTryDemo">체험 모드로 둘러보기</a>'
+    ? ""
     : (cfgComplete(FIREBASE_CONFIG)
         ? '<a href="#" id="authBackLive">실시간 연결로 돌아가기</a>'
         : "체험 모드 · 이 기기에만 저장");
-  const td = $("#authTryDemo");
-  if (td) td.addEventListener("click", e => {
-    e.preventDefault();
-    try { sessionStorage.setItem(DEMO_TRY_KEY, "1"); } catch (err) {}
-    location.reload();
-  });
   const bl = $("#authBackLive");
   if (bl) bl.addEventListener("click", e => {
     e.preventDefault();
