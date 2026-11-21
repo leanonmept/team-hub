@@ -656,6 +656,7 @@ input,textarea,select{outline:none}
 .sea-sum b{display:block;font-size:16px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
 .sea-sum b.ok{color:#158f5f}.sea-sum b.warn{color:#c47c00}.sea-sum b.high{color:#e5484d}.sea-sum b.na{color:var(--ink3)}
 .sea-sum span{display:block;font-size:10px;font-weight:700;color:var(--ink3);margin-top:1px}
+.sea-na{margin:5px 2px 0;font-size:10px;font-weight:700;color:var(--ink3)}
 .sea-grp{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--ink2);margin:13px 2px 7px;letter-spacing:-.02em}
 .sea-grp em{font-style:normal;font-size:9.5px;font-weight:700;color:var(--ink3)}
 .sea-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -4060,6 +4061,7 @@ function seaBadge(w) {
   return { cls: "ok", label: "양호" };
 }
 function seaNum(v) { return (typeof v === "number" && isFinite(v)) ? v.toFixed(1) : "–"; }
+function seaM(v) { return (typeof v === "number" && isFinite(v)) ? v.toFixed(1) + "m" : "–"; }
 function seaClock(t) {
   const s = String(t || "");
   if (s.length < 16) return "방금";
@@ -4140,9 +4142,9 @@ function seaCardHtml(i) {
   const wind = i.wind !== null && i.wind !== undefined ? seaNum(i.wind) + " m/s" : "–";
   return '<div class="sea-card ' + b.cls + '">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
-    '<div class="sea-wave"><b>' + seaNum(i.wave) + "</b><i>m</i><small>지금 파고</small></div>" +
+    '<div class="sea-wave"><b>' + seaNum(i.wave) + "</b>" + (i.wave !== null ? "<i>m</i>" : "") + "<small>지금 파고</small></div>" +
     '<div class="sea-meta">💨 ' + wind + (i.temp !== null && i.temp !== undefined ? ' <span>· ' + seaNum(i.temp) + "°</span>" : "") + "</div>" +
-    '<div class="sea-max">오늘 최고 <b>' + seaNum(i.todayMax) + 'm</b> · 내일 <b>' + seaNum(i.tomMax) + "m</b></div>" +
+    '<div class="sea-max">오늘 최고 <b>' + seaM(i.todayMax) + '</b> · 내일 <b>' + seaM(i.tomMax) + "</b></div>" +
     "</div>";
 }
 
@@ -4178,7 +4180,7 @@ function seaBodyHtml() {
       '<div><b class="ok">' + cnt.ok + '</b><span>양호</span></div>' +
       '<div><b class="warn">' + cnt.warn + '</b><span>주의</span></div>' +
       '<div><b class="high">' + cnt.high + '</b><span>높음·결항주의</span></div>' +
-    "</div>";
+    "</div>" + (cnt.na ? '<div class="sea-na">정보 없음 ' + cnt.na + "곳</div>" : "");
   }
 
   const staleBar = (d && stale && !seaBusy)
