@@ -740,16 +740,53 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sea-grp em{font-style:normal;font-size:9.5px;font-weight:700;color:var(--ink3)}
 .sea-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sea-card{position:relative;background:#fff;border:1px solid rgba(20,26,36,.06);border-radius:14px;padding:9px 10px 9px 12px;
-  box-shadow:0 3px 10px -8px rgba(20,26,36,.55);overflow:hidden}
+  box-shadow:0 3px 10px -8px rgba(20,26,36,.55);overflow:hidden;text-align:left;font-family:inherit}
+.sea-card.tap{width:100%;cursor:pointer;-webkit-appearance:none}
+.sea-card.tap:active{transform:scale(.985)}
+.sea-more{margin-top:3px;font-size:9px;font-weight:800;color:#0b6d8f;letter-spacing:-.02em}
+/* 🌊 섬 선택 칩 — 상단 고정 */
+.sea-chips{position:sticky;top:-16px;z-index:6;display:flex;flex-wrap:wrap;gap:5px;margin:-16px -16px 9px;padding:11px 16px 9px;
+  background:#f7f8fc;border-bottom:1px solid rgba(20,26,36,.05);box-shadow:0 7px 10px -10px rgba(20,26,36,.55)}
+.sea-chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 9px;font-size:11px;font-weight:800;
+  color:var(--ink2);letter-spacing:-.03em;white-space:nowrap;line-height:1.15;font-family:inherit;cursor:pointer}
+.sea-chip.all{background:#eef7fb;border-color:#d8ecf5;color:#0b6d8f}
+.sea-chip.on{background:#0b6d8f;border-color:#0b6d8f;color:#fff;box-shadow:0 2px 6px rgba(11,109,143,.22)}
+/* 선택 섬 지금 상태 */
+.sea-cur{background:linear-gradient(118deg,#0b6d8f 0%,#1189b6 58%,#1ba4cd 100%);color:#fff;border-radius:14px;padding:9px 12px;margin-bottom:8px;
+  box-shadow:0 8px 18px -16px rgba(11,109,143,.95)}
+.sea-cur .ct{display:flex;align-items:center;gap:6px}
+.sea-cur .ct b{font-size:13.5px;font-weight:800;letter-spacing:-.03em}
+.sea-cur .ct small{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.8);letter-spacing:-.02em}
+.sea-cur .ct .sea-badge{margin-left:auto;background:rgba(255,255,255,.2);color:#fff}
+.sea-cur .cm{margin-top:2px;font-size:10.5px;font-weight:700;color:rgba(255,255,255,.92);letter-spacing:-.02em}
+.sea-cur .cm b{font-weight:800;color:#fff}
+.sea-cc{display:flex;flex-wrap:wrap;gap:3px 9px;margin:0 2px 8px;font-size:10px;font-weight:800;letter-spacing:-.03em;color:var(--ink3)}
+.sea-cc b{font-size:11px}
+.sea-cc .ok{color:#158f5f}.sea-cc .warn{color:#c47c00}.sea-cc .high{color:#e5484d}.sea-cc .na{color:var(--ink3)}
+/* 16일 날짜 리스트 — 한 줄에 하루 */
+.sea-list{display:flex;flex-direction:column;gap:5px}
+.sr{position:relative;display:grid;grid-template-columns:54px 1fr;gap:8px;align-items:center;background:#fff;
+  border:1px solid rgba(20,26,36,.06);border-radius:12px;padding:7px 9px 7px 12px;box-shadow:0 3px 10px -9px rgba(20,26,36,.55);overflow:hidden}
+.sr:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e3}
+.sr.ok:before{background:#158f5f}.sr.warn:before{background:#e08a00}.sr.high:before{background:#e5484d}
+.sr.today{background:#f4fbfe;border-color:#d8eef8}
+.sr-d{min-width:0}
+.sr-d b{display:block;font-size:11.5px;font-weight:800;letter-spacing:-.045em;line-height:1.2;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sr-d span{display:inline-block;margin-top:2px;padding:1px 5px;border-radius:20px;background:#eaf7fc;color:#0b6d8f;font-size:8.5px;font-weight:800;letter-spacing:-.02em;line-height:1.3}
+.sr-m{min-width:0}
+.sr-l1{display:grid;grid-template-columns:58px 1fr auto;gap:5px;align-items:baseline}
+.sr-w{font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.04em}
+.sr-w b{font-size:16px;font-weight:800;line-height:1.15}
+.sr-w i{font-style:normal;font-size:10px;font-weight:800;color:var(--ink2);margin-left:1px}
+.sr-nw{font-size:10px;font-weight:800;color:var(--ink3);letter-spacing:-.05em;white-space:nowrap}
+.sr-split{font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.03em;white-space:nowrap;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.sr-split em{font-style:normal;color:#c47c00;font-weight:800}
+.sr-l2{margin-top:1px;font-size:10px;font-weight:700;color:var(--ink2);letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sea-tip{margin:8px 2px 0;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
 .sea-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e3}
 .sea-card.ok:before{background:#158f5f}
 .sea-card.warn:before{background:#e08a00}
 .sea-card.high:before{background:#e5484d}
-.sea-days{display:flex;gap:6px;overflow-x:auto;margin:9px 0 2px;padding:1px 1px 6px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
-.sea-days::-webkit-scrollbar{display:none;height:0}
-.sea-day{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 10px;font-size:11px;font-weight:800;color:var(--ink2);letter-spacing:-.02em;white-space:nowrap;line-height:1.2}
-.sea-day.on{background:#0b6d8f;border-color:#0b6d8f;color:#fff;box-shadow:0 2px 6px rgba(11,109,143,.22)}
-.sea-day-hint{margin:0 2px 7px;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
 .sea-split{margin-top:1px;font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:-.02em;white-space:nowrap}
 .sea-split b{font-weight:800;color:var(--ink2)}
 .sea-nowave{margin-top:3px;font-size:11.5px;font-weight:800;color:var(--ink2);letter-spacing:-.02em;line-height:1.25}
@@ -4210,7 +4247,8 @@ const SEA_WEEK = "일월화수목금토";
 let seaCache = null;                   /* { at, items, stamp, days } */
 let seaBusy = false;
 let seaError = "";
-let seaDay = 0;                        /* 0=오늘, 1=내일 … 6 */
+let seaSel = 0;                        /* 0..7 선택한 섬, -1 = 전체(오늘) */
+const SEA_ALL = -1;
 
 function seaBadge(w) {
   if (typeof w !== "number") return { cls: "na", label: "정보없음" };
@@ -4325,15 +4363,17 @@ async function seaLoad() {
   paintSea();
 }
 
-function seaCardHtml(i) {
+/* 전체(오늘) — 섬 카드를 누르면 그 섬의 16일 리스트로 이동 */
+function seaCardHtml(i, idx) {
   const b = seaBadge(i.wave);
   const wind = i.wind !== null && i.wind !== undefined ? seaNum(i.wind) + " m/s" : "–";
-  return '<div class="sea-card ' + b.cls + '">' +
+  return '<button type="button" class="sea-card tap ' + b.cls + '" data-si="' + idx + '" aria-label="' + esc(i.name) + ' 16일 파고 보기">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
     '<div class="sea-wave"><b>' + seaNum(i.wave) + "</b>" + (i.wave !== null ? "<i>m</i>" : "") + "<small>지금 파고</small></div>" +
     '<div class="sea-meta">💨 ' + wind + (i.temp !== null && i.temp !== undefined ? ' <span>· ' + seaNum(i.temp) + "°</span>" : "") + "</div>" +
     '<div class="sea-max">오늘 최고 <b>' + seaM(i.todayMax) + '</b> · 내일 <b>' + seaM(i.tomMax) + "</b></div>" +
-    "</div>";
+    '<div class="sea-more">16일 보기 ›</div>' +
+    "</button>";
 }
 
 /* 파고가 없는 날(해양예보 최대 9일 이후)은 풍속 기준 참고 배지 */
@@ -4345,37 +4385,87 @@ function seaWindBadge(w) {
 }
 function seaTemp(v) { return (typeof v === "number" && isFinite(v)) ? Math.round(v) + "°" : "–"; }
 
-/* 내일~16일째: 파고가 있으면 그날 최고 파고 · 오전/오후 파고 · 최대 풍속 */
-function seaDayCardHtml(i, ds) {
-  const s = (i.days && i.days[ds]) || {};
-  if (typeof s.max !== "number") return seaWindCardHtml(i, s);
-  const b = seaBadge(s.max);
-  return '<div class="sea-card ' + b.cls + '">' +
-    '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
-    '<div class="sea-wave"><b>' + seaNum(s.max) + "</b>" + "<i>m</i>" + "<small>최고 파고</small></div>" +
-    '<div class="sea-split">오전 <b>' + seaM(s.am) + "</b> · 오후 <b>" + seaM(s.pm) + "</b></div>" +
-    '<div class="sea-meta">💨 최대 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
-    "</div>";
-}
-
-/* 10일째~: 파고를 채우지 않고 '파고 예보 미제공' + 최대 풍속·최고/최저 기온 */
-function seaWindCardHtml(i, s) {
-  const wb = seaWindBadge(s.wind);
-  return '<div class="sea-card ' + wb.cls + '">' +
-    '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + wb.cls + '">' + wb.label + "</span></div>" +
-    '<div class="sea-nowave">파고 예보 미제공<small>(최대 9일)</small></div>' +
-    '<div class="sea-meta">💨 최대 ' + (typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–") + "</div>" +
-    '<div class="sea-meta">🌡 최고 ' + seaTemp(s.tmax) + " · 최저 " + seaTemp(s.tmin) + "</div>" +
-    "</div>";
-}
-
-/* 날짜 칩 — 오늘 11/21(토) · 내일 11/22(일) · 11/23(월) … */
-function seaDayLabel(ds, k) {
+/* 날짜 표기 — 11/21(토) */
+function seaMd(ds) {
   const p = String(ds || "").split("-");
   const dt = new Date(ds + "T12:00:00");
   const wd = SEA_WEEK.charAt(isNaN(dt.getTime()) ? 0 : dt.getDay());
-  const md = p[1] + "/" + p[2] + "(" + wd + ")";
-  return (k === 0 ? "오늘 " : k === 1 ? "내일 " : "") + md;
+  return Number(p[1]) + "/" + Number(p[2]) + "(" + wd + ")";
+}
+
+/* 선택한 섬의 하루 = 한 줄 — 날짜 / 최고 파고·오전·오후 / 최대 풍속 / 배지 */
+function seaRowHtml(it, ds, k) {
+  const s = (it.days && it.days[ds]) || {};
+  const hasWave = typeof s.max === "number";
+  const b = hasWave ? seaBadge(s.max) : seaWindBadge(s.wind);
+  const badge = hasWave && b.cls === "high" ? "높음·결항주의" : b.label;
+  /* 해양예보 마지막 날처럼 파고가 하루 일부 시간만 있는 경우 */
+  const partial = hasWave && k > 0 && typeof s.n === "number" && s.n < 24;
+  const tag = k === 0 ? "오늘" : k === 1 ? "내일" : "";
+  const windTxt = typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–";
+  let l1, l2;
+  if (hasWave) {
+    l1 = '<span class="sr-w"><b>' + seaNum(s.max) + "</b><i>m</i></span>" +
+      '<span class="sr-split">오전 ' + seaNum(s.am) + " · 오후 " + seaNum(s.pm) + (partial ? " <em>＊</em>" : "") + "</span>";
+    l2 = "💨 최대 " + windTxt;
+  } else {
+    l1 = '<span class="sr-nw">파고 미제공</span><span class="sr-split"></span>';
+    l2 = "💨 최대 " + windTxt +
+      (typeof s.tmax === "number" ? " · 🌡 " + seaTemp(s.tmax) + "/" + seaTemp(s.tmin) : "");
+  }
+  return '<div class="sr ' + b.cls + (k === 0 ? " today" : "") + '">' +
+    '<div class="sr-d"><b>' + seaMd(ds) + "</b>" + (tag ? "<span>" + tag + "</span>" : "") + "</div>" +
+    '<div class="sr-m"><div class="sr-l1">' + l1 +
+      '<span class="sea-badge ' + b.cls + '">' + badge + "</span></div>" +
+      '<div class="sr-l2">' + l2 + "</div></div>" +
+    "</div>";
+}
+
+/* 선택한 섬 — 지금 상태 + 16일 날짜 리스트 */
+function seaIslandHtml(it, d) {
+  const days = d.days || [];
+  const b = seaBadge(it.wave);
+  let ok = 0, warn = 0, high = 0, na = 0;
+  const rows = days.map((ds, k) => {
+    const s = (it.days && it.days[ds]) || {};
+    if (typeof s.max === "number") {
+      const bb = seaBadge(s.max);
+      if (bb.cls === "ok") ok++; else if (bb.cls === "warn") warn++; else if (bb.cls === "high") high++;
+    } else na++;
+    return seaRowHtml(it, ds, k);
+  }).join("");
+  const cur = "지금 파고 <b>" + seaM(it.wave) + "</b>" +
+    (typeof it.wind === "number" ? " · 💨 " + seaNum(it.wind) + " m/s" : "") +
+    (typeof it.temp === "number" ? " · 🌡 " + seaTemp(it.temp) : "");
+  return '<div class="sea-cur"><div class="ct"><b>' + esc(it.name) + "</b><small>" + esc(it.area) + "</small>" +
+      '<span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
+      '<div class="cm">' + cur + "</div></div>" +
+    '<div class="sea-cc">' +
+      '<span class="ok">파고 양호 <b>' + ok + "</b></span>" +
+      '<span class="warn">주의 <b>' + warn + "</b></span>" +
+      '<span class="high">높음 <b>' + high + "</b></span>" +
+      '<span class="na">파고 미제공 <b>' + na + "일</b></span></div>" +
+    '<div class="sea-list">' + rows + "</div>";
+}
+
+/* 전체(오늘) — 8개 섬의 지금 파고·풍속·오늘/내일 최고 */
+function seaAllHtml(d) {
+  const cnt = { ok: 0, warn: 0, high: 0, na: 0 };
+  d.items.forEach(i => { cnt[seaBadge(i.wave).cls]++; });
+  let cards = "";
+  SEA_GROUPS.forEach(g => {
+    const list = d.items.map((i, idx) => ({ i: i, idx: idx })).filter(o => o.i.area === g);
+    if (!list.length) return;
+    cards += '<div class="sea-grp">' + esc(g) + "<em>" + list.length + "곳</em></div>" +
+      '<div class="sea-grid">' + list.map(o => seaCardHtml(o.i, o.idx)).join("") + "</div>";
+  });
+  return '<div class="sea-cc">' +
+      '<span class="ok">양호 <b>' + cnt.ok + "</b></span>" +
+      '<span class="warn">주의 <b>' + cnt.warn + "</b></span>" +
+      '<span class="high">높음 <b>' + cnt.high + "</b></span>" +
+      (cnt.na ? '<span class="na">정보없음 <b>' + cnt.na + "</b></span>" : "") + "</div>" +
+    cards +
+    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·풍속으로 바로 넘어갑니다.</div>';
 }
 
 function seaBodyHtml() {
@@ -4387,58 +4477,37 @@ function seaBodyHtml() {
   else hd += "연결하지 못했어요";
   hd += '<button class="rf" id="seaRefresh"' + (seaBusy ? " disabled" : "") + ">" + (seaBusy ? "⏳ 받는 중" : "🔄 새로고침") + "</button></div>";
 
-  const days = (d && d.days) || [];
-  let di = seaDay;
-  if (!(di >= 0 && di < days.length)) di = 0;
-  const selDs = days[di] || null;
-  const future = di > 0 && !!selDs;
-  const hasWave = ds => !!(d && ds && d.items.some(i => i.days && i.days[ds] && typeof i.days[ds].max === "number"));
-  const windOnly = future && !hasWave(selDs);
-  /* 파고 예보가 하루 중 일부 시간만 있는 날(예: 해양예보 마지막 날) */
-  const partial = future && !windOnly && !!(d && d.items.every(i => !i.days || !i.days[selDs] || typeof i.days[selDs].n !== "number" || i.days[selDs].n < 24));
+  /* 선택 상태 — 데이터가 없거나 범위를 벗어나면 첫 번째 섬(백령도) */
+  let sel = seaSel;
+  if (sel !== SEA_ALL && !(sel >= 0 && sel < SEA_ISLANDS.length)) sel = 0;
+  const chipOn = n => (sel === n ? " on" : "");
+  const chips = '<div class="sea-chips" id="seaChips">' +
+    '<button type="button" class="sea-chip all' + chipOn(SEA_ALL) + '" data-si="-1">전체(오늘)</button>' +
+    SEA_ISLANDS.map((s, i) => '<button type="button" class="sea-chip' + chipOn(i) + '" data-si="' + i + '">' + esc(s.name) + "</button>").join("") +
+    "</div>";
 
-  const daysBar = days.length > 1
-    ? '<div class="sea-days">' + days.map((ds, k) =>
-        '<button type="button" class="sea-day' + (k === di ? " on" : "") + '" data-sd="' + k + '">' + seaDayLabel(ds, k) + "</button>").join("") + "</div>" +
-      (!future ? "" : windOnly
-        ? '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " · 파고 예보 없음(최대 9일) · 풍속·기온 참고 — 12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호</div>"
-        : '<div class="sea-day-hint">' + seaDayLabel(selDs, di) + " 최고 파고 기준 · 오전 06~12시 · 오후 12~18시" + (partial ? " · 일부 시간대는 파고 예보 없음" : "") + "</div>")
-    : "";
-
-  let cards = "";
-  if (d) {
-    SEA_GROUPS.forEach(g => {
-      const list = d.items.filter(i => i.area === g);
-      if (!list.length) return;
-      cards += '<div class="sea-grp">' + esc(g) + "<em>" + list.length + "곳</em></div>" +
-        '<div class="sea-grid">' + list.map(i => future ? seaDayCardHtml(i, selDs) : seaCardHtml(i)).join("") + "</div>";
-    });
+  let main = "";
+  if (d && sel === SEA_ALL) {
+    main = seaAllHtml(d);
+  } else if (d && d.items[sel]) {
+    main = seaIslandHtml(d.items[sel], d);
   } else if (seaError) {
-    cards = '<div class="sea-err"><span>📡</span>파고 정보를 받지 못했어요.<br>' + esc(seaError) +
+    main = '<div class="sea-err"><span>📡</span>파고 정보를 받지 못했어요.<br>' + esc(seaError) +
       '<br><button id="seaRetry">다시 시도</button></div>';
   } else {
-    cards = '<div class="sea-grid">' + Array(4).fill('<div class="sea-skel"></div>').join("") + "</div>";
-  }
-
-  let sum = "";
-  if (d) {
-    const cnt = { ok: 0, warn: 0, high: 0, na: 0 };
-    d.items.forEach(i => {
-      const s = future && i.days ? i.days[selDs] : null;
-      const v = future ? (s ? (typeof s.max === "number" ? s.max : null) : null) : i.wave;
-      if (typeof v === "number") cnt[seaBadge(v).cls]++;
-      else if (future && s && typeof s.wind === "number") cnt[seaWindBadge(s.wind).cls]++;
-      else cnt.na++;
-    });
-    sum = '<div class="sea-sum">' +
-      '<div><b class="ok">' + cnt.ok + '</b><span>' + (windOnly ? "바람 양호" : "양호") + '</span></div>' +
-      '<div><b class="warn">' + cnt.warn + '</b><span>' + (windOnly ? "바람 약간" : "주의") + '</span></div>' +
-      '<div><b class="high">' + cnt.high + '</b><span>' + (windOnly ? "강풍 주의" : "높음·결항주의") + '</span></div>' +
-    "</div>" + (cnt.na ? '<div class="sea-na">정보 없음 ' + cnt.na + "곳</div>" : "");
+    main = '<div class="sea-list">' + Array(6).fill('<div class="sea-skel" style="height:48px"></div>').join("") + "</div>";
   }
 
   const staleBar = (d && stale && !seaBusy)
     ? '<div class="sea-stale">' + (seaError ? "새 정보를 못 받아 지난 값을 보여 줍니다. " : "10분 넘은 값이에요. ") + "[새로고침]을 눌러 주세요.</div>" : "";
+
+  const legend = '<div class="sea-legend">' +
+      '<span><i style="background:#158f5f"></i>1.0m 미만 양호</span>' +
+      '<span><i style="background:#e08a00"></i>1.0~1.9m 주의</span>' +
+      '<span><i style="background:#e5484d"></i>2.0m 이상 높음·결항주의</span>' +
+      '<span><i style="background:#cbd5e3"></i>파고 미제공 = 풍속·기온 참고</span>' +
+    "</div>" +
+    (sel === SEA_ALL ? "" : '<div class="sea-legend" style="margin-top:4px"><span>＊ 그날 일부 시간대는 파고 예보 없음</span></div>');
 
   const links = SEA_LINKS.map(l =>
     '<a class="sea-link" href="' + l.url + '" target="_blank" rel="noopener">' +
@@ -4446,47 +4515,37 @@ function seaBodyHtml() {
       '<span class="tx"><b>' + esc(l.label) + '</b><small>' + esc(l.sub) + '</small></span>' +
       '<span class="ar">›</span></a>').join("");
 
-  return hd + sum + daysBar + staleBar + cards +
-    (windOnly ? "" : '<div class="sea-legend">' +
-      '<span><i style="background:#158f5f"></i>1.0m 미만 양호</span>' +
-      '<span><i style="background:#e08a00"></i>1.0~1.9m 주의</span>' +
-      '<span><i style="background:#e5484d"></i>2.0m 이상 높음·결항주의</span>' +
-    "</div>") +
+  return hd + chips + main + staleBar + legend +
     '<div class="sec-title" style="margin:16px 4px 8px">🚢 배편 · 운항정보</div>' +
     '<div class="sea-links">' + links + "</div>" +
-    '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 16일 · 파고는 해양예보 최대 9일이라 그 뒤는 풍속·기온만) · 실제 결항은 운항정보 확인<br>' +
+    '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 16일 · 파고는 해양예보 최대 9일) · 실제 결항은 운항정보 확인<br>' +
+      "10일째부터는 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
       "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.</div>";
 }
 
 function paintSea() {
   const wrap = $("#seaWrap");
   if (!wrap) return;
-  const prev = wrap.querySelector(".sea-days");
-  const prevScroll = prev ? prev.scrollLeft : 0;
+  const bd = $("#sheetBd");
+  const st = bd ? bd.scrollTop : 0;
   wrap.innerHTML = seaBodyHtml();
   const rf = $("#seaRefresh", wrap);
   if (rf) rf.addEventListener("click", () => { if (!seaBusy) seaLoad(); });
   const rt = $("#seaRetry", wrap);
   if (rt) rt.addEventListener("click", () => { if (!seaBusy) seaLoad(); });
-  const bar = wrap.querySelector(".sea-days");
-  if (bar) {
-    bar.querySelectorAll(".sea-day").forEach(btn => btn.addEventListener("click", () => {
-      const n = Number(btn.getAttribute("data-sd"));
-      if (!isFinite(n) || n === seaDay) return;
-      seaDay = n;
-      paintSea();
-    }));
-    const on = bar.querySelector(".sea-day.on");
-    if (on) {
-      const dx = on.getBoundingClientRect().left - bar.getBoundingClientRect().left;
-      bar.scrollLeft = Math.max(0, bar.scrollLeft + dx - 12);
-    } else bar.scrollLeft = prevScroll;
-  }
+  /* 섬 칩 · 전체(오늘) 카드 → 그 섬의 16일 리스트로 */
+  wrap.querySelectorAll("[data-si]").forEach(el => el.addEventListener("click", () => {
+    const n = Number(el.getAttribute("data-si"));
+    if (!isFinite(n) || n === seaSel) return;
+    seaSel = n;
+    paintSea();
+  }));
+  if (bd) bd.scrollTop = st;
 }
 
 function openSeaSheet() {
   seaError = "";
-  seaDay = 0;
+  seaSel = 0;                          /* 기본 진입 = 백령도 16일 리스트 */
   openSheet({
     title: "🌊 섬 파고 · 배편",
     body: '<div id="seaWrap">' + seaBodyHtml() + "</div>",
@@ -4649,7 +4708,7 @@ function renderDuty() {
     (isDuty ? "" :
     '<button class="wave-strip" id="waveBtn" aria-label="섬 파고와 배편 열기">' +
       '<span class="em">🌊</span>' +
-      '<span class="tx"><b>섬 파고 · 배편</b><small>인천 8개 섬 실시간 파고·풍속 · 여객선 예매</small></span>' +
+      '<span class="tx"><b>섬 파고 · 배편</b><small>섬을 고르면 16일 파고·풍속 · 여객선 예매</small></span>' +
       '<span class="go">열기 ›</span>' +
     "</button>") +
     '<div class="sum-grid">' +
@@ -6069,7 +6128,7 @@ function openGuideSheet() {
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">회원가입 후에는 <b>승인 대기</b> 상태가 됩니다. 관리자가 [팀원] 탭에서 승인하면 공지·당직·사진·대화를 모두 쓸 수 있습니다.</p>' +
       '<div class="sec-title">2. 달력</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🏢 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">[⛴️ 섬·교육] 달력 위의 <b>🌊 섬 파고 · 배편</b>을 누르면 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉)의 <b>지금 파고·풍속</b>과 <b>오늘·내일 최고 파고</b>를 보고, <b>여객선 예매(KSA)</b>·<b>인천항 여객선 운항정보(KOMSA)</b>로 바로 갈 수 있습니다. 위쪽 <b>날짜 칩</b>으로 오늘부터 16일치를 넘겨 볼 수 있습니다. 파고가 있는 날(최대 9일)은 섬마다 <b>그날 최고 파고·오전/오후 파고·최대 풍속</b>과 <b>양호/주의/높음·결항주의</b> 배지가, 그 뒤 날은 <b>파고 예보 미제공</b> 안내와 함께 <b>최대 풍속·최고/최저 기온</b>이 나옵니다. 파고는 Open-Meteo 예보값이라 참고용이고, 실제 결항은 운항정보에서 확인합니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">[⛴️ 섬·교육] 달력 위의 <b>🌊 섬 파고 · 배편</b>을 누르면 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉) 중 <b>섬을 고르는 칩</b>과 함께 그 섬의 <b>오늘부터 16일치 날짜 리스트</b>가 나옵니다. 위쪽 <b>전체(오늘)</b> 칩을 누르면 오늘 8개 섬의 지금 파고를 한 번에 비교하고, 섬 카드를 누르면 그 섬의 16일 리스트로 바로 넘어갑니다. 날짜별로 파고가 있는 날(최대 9일)은 <b>그날 최고 파고·오전/오후 파고·최대 풍속</b>과 <b>양호/주의/높음·결항주의</b> 배지가, 그 뒤 날은 <b>파고 미제공</b>과 함께 <b>최대 풍속·최고/최저 기온</b>이 나옵니다. 아래 <b>여객선 예매(KSA)</b>·<b>인천항 여객선 운항정보(KOMSA)</b> 링크로 바로 갈 수 있습니다. 파고는 Open-Meteo 예보값이라 참고용이고, 실제 결항은 운항정보에서 확인합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🏢 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날 당직은 취소되고, 달력 칸 전체가 <b>연보라색</b>으로 칠해지며 등록한 행사명이 표시됩니다(공휴일의 연분홍과 구분).</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
