@@ -4046,8 +4046,9 @@ const SEA_ISLANDS = [
 ];
 const SEA_GROUPS = ["서해 5도", "인천 앞바다"];
 const SEA_LINKS = [
-  { em: "🚢", label: "가보고 싶은 섬", sub: "여객선 예매 · 섬 여행", url: "https://island.haewoon.co.kr/" },
-  { em: "⚓", label: "인천항 여객선 운항정보", sub: "KOMSA 운항·결항 확인", url: "https://www.komsa.or.kr/kor/sub02_02_01.do" }
+  /* 2025-03-31 '가보고 싶은 섬(island.haewoon.co.kr)'이 종료되어 KSA 여객선예매로 이전했습니다. */
+  { em: "🚢", label: "가보고 싶은 섬 (여객선 예매)", sub: "KSA 여객선예매 · 시간표·승선권", url: "https://island.theksa.co.kr/" },
+  { em: "⚓", label: "인천항 여객선 운항정보", sub: "KOMSA · 당일 운항·결항 조회", url: "https://www.komsa.or.kr/prog/pssgCurState/kor/sub03_0202/list.do" }
 ];
 const SEA_TTL = 10 * 60 * 1000;        /* 10분 캐시 */
 let seaCache = null;                   /* { at, items, stamp } */
