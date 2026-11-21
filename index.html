@@ -634,6 +634,69 @@ input,textarea,select{outline:none}
 .cal-tabs button.on{background:#fff;color:var(--ink);box-shadow:0 2px 8px -3px rgba(20,26,36,.3)}
 .cal-tabs button.on.duty{color:#96590a}
 .cal-tabs button.on.island{color:#0b6d8f}
+
+/* 🌊 섬 파고 · 배편 — 달력 상단 진입 카드 */
+.wave-strip{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:10px 12px;border-radius:15px;margin:-3px 0 12px;
+  background:linear-gradient(118deg,#0b6d8f 0%,#1189b6 58%,#1ba4cd 100%);color:#fff;
+  box-shadow:0 10px 22px -16px rgba(11,109,143,.95)}
+.wave-strip .em{font-size:18px;line-height:1;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+.wave-strip .tx{display:block;min-width:0;flex:1}
+.wave-strip .tx b{display:block;font-size:12.5px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.wave-strip .tx small{display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,.85);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em}
+.wave-strip .go{flex-shrink:0;font-size:10.5px;font-weight:800;background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 9px;white-space:nowrap}
+.wave-strip:active{transform:scale(.99)}
+
+/* 🌊 섬 파고 시트 */
+.sea-hd{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--ink3);margin:0 2px 9px;letter-spacing:-.01em}
+.sea-hd .dot{width:6px;height:6px;border-radius:50%;background:#1189b6;box-shadow:0 0 0 3px rgba(17,137,182,.15);flex-shrink:0}
+.sea-hd .rf{margin-left:auto;font-size:10.5px;font-weight:800;color:#0b6d8f;background:#eaf7fc;border:1px solid #d5edf8;border-radius:20px;padding:4px 9px;white-space:nowrap;letter-spacing:-.02em}
+.sea-hd .rf[disabled]{opacity:.5}
+.sea-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
+.sea-sum div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 4px;text-align:center}
+.sea-sum b{display:block;font-size:16px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.sea-sum b.ok{color:#158f5f}.sea-sum b.warn{color:#c47c00}.sea-sum b.high{color:#e5484d}.sea-sum b.na{color:var(--ink3)}
+.sea-sum span{display:block;font-size:10px;font-weight:700;color:var(--ink3);margin-top:1px}
+.sea-grp{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--ink2);margin:13px 2px 7px;letter-spacing:-.02em}
+.sea-grp em{font-style:normal;font-size:9.5px;font-weight:700;color:var(--ink3)}
+.sea-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sea-card{position:relative;background:#fff;border:1px solid rgba(20,26,36,.06);border-radius:14px;padding:9px 10px 9px 12px;
+  box-shadow:0 3px 10px -8px rgba(20,26,36,.55);overflow:hidden}
+.sea-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e3}
+.sea-card.ok:before{background:#158f5f}
+.sea-card.warn:before{background:#e08a00}
+.sea-card.high:before{background:#e5484d}
+.sea-top{display:flex;align-items:center;gap:4px}
+.sea-top b{font-size:12.5px;font-weight:800;letter-spacing:-.03em}
+.sea-badge{margin-left:auto;font-size:9px;font-weight:800;border-radius:20px;padding:2px 6px;white-space:nowrap;letter-spacing:-.02em}
+.sea-badge.ok{background:#e7f7ef;color:#158f5f}
+.sea-badge.warn{background:#fff5e2;color:#b06f00}
+.sea-badge.high{background:#fdecec;color:#d33a3f}
+.sea-badge.na{background:#f1f3f8;color:var(--ink3)}
+.sea-wave{display:flex;align-items:baseline;gap:2px;margin-top:2px}
+.sea-wave b{font-size:20px;font-weight:800;letter-spacing:-.045em;line-height:1.1}
+.sea-wave i{font-style:normal;font-size:11px;font-weight:800;color:var(--ink2)}
+.sea-wave small{margin-left:3px;font-size:9.5px;font-weight:700;color:var(--ink3)}
+.sea-meta{margin-top:2px;font-size:10.5px;font-weight:700;color:var(--ink2);letter-spacing:-.02em}
+.sea-meta span{font-weight:600;color:var(--ink3)}
+.sea-max{margin-top:1px;font-size:9.5px;font-weight:600;color:var(--ink3);letter-spacing:-.02em;white-space:nowrap}
+.sea-max b{font-weight:800;color:var(--ink2)}
+.sea-legend{display:flex;flex-wrap:wrap;gap:4px 10px;margin:11px 2px 0;font-size:9.5px;font-weight:700;color:var(--ink3)}
+.sea-legend i{width:7px;height:7px;border-radius:2px;display:inline-block;margin-right:4px}
+.sea-links{display:grid;gap:8px;margin-top:6px}
+.sea-link{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-decoration:none;color:var(--ink)}
+.sea-link .em{font-size:17px;flex-shrink:0}
+.sea-link .tx{flex:1;min-width:0}
+.sea-link .tx b{display:block;font-size:12.5px;font-weight:800;letter-spacing:-.02em}
+.sea-link .tx small{display:block;font-size:10.5px;color:var(--ink3);margin-top:1px}
+.sea-link .ar{color:var(--ink3);font-size:13px;flex-shrink:0}
+.sea-note{margin:11px 0 2px;padding:9px 11px;border-radius:12px;background:#f2f5fb;border:1px solid #e5ebf5;font-size:10px;line-height:1.65;color:var(--ink3)}
+.sea-note b{color:var(--ink2)}
+.sea-skel{height:96px;border-radius:14px;background:linear-gradient(100deg,#eef1f7 18%,#f8fafd 40%,#eef1f7 62%);background-size:220% 100%;animation:seaShimmer 1.15s linear infinite}
+@keyframes seaShimmer{from{background-position:120% 0}to{background-position:-120% 0}}
+.sea-err{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 16px;text-align:center;font-size:11.5px;line-height:1.7;color:var(--ink3)}
+.sea-err span{display:block;font-size:26px;margin-bottom:6px;opacity:.8}
+.sea-err button{margin-top:10px;background:#eaf7fc;color:#0b6d8f;border:1px solid #d5edf8;border-radius:20px;padding:7px 14px;font-size:11.5px;font-weight:800}
+.sea-stale{margin:0 2px 8px;font-size:10px;font-weight:700;color:#b06f00;background:#fff5e2;border:1px solid #ffe3ae;border-radius:10px;padding:6px 9px;line-height:1.5}
 .type-fixed{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:12px;background:#fff8ec;border:1.5px solid #ffe2b5;font-size:14px;font-weight:800;color:#96590a}
 .type-fixed .em{font-size:16px}
 
@@ -3964,6 +4027,205 @@ function islandBarHtml(sp) {
     '<i class="em">' + (s.mini || s.em) + "</i>" + esc(e.memberName) + (cols > 1 ? '<span class="rg">' + range + "</span>" : "") + "</div>";
 }
 
+/* =====================================================================
+   🌊 섬 파고 · 배편 — 인천 8개 섬(영흥도 제외) 실시간 파고·풍속
+   · 파고·파주기는 Open-Meteo Marine API, 기온·풍속은 Open-Meteo Forecast API
+   · 8개 섬 좌표를 쉼표로 묶어 다중 좌표 1콜씩(총 2콜)로 받습니다. 키 불필요·무료.
+   · 10분 캐시. 실패해도 배편·운항정보 링크는 그대로 남습니다.
+   ===================================================================== */
+const SEA_ISLANDS = [
+  { name: "백령도", lat: 37.95, lon: 124.66, area: "서해 5도" },
+  { name: "대청도", lat: 37.82, lon: 124.70, area: "서해 5도" },
+  { name: "소청도", lat: 37.77, lon: 124.74, area: "서해 5도" },
+  { name: "연평도", lat: 37.66, lon: 125.70, area: "서해 5도" },
+  { name: "덕적도", lat: 37.23, lon: 126.15, area: "인천 앞바다" },
+  { name: "자월도", lat: 37.25, lon: 126.31, area: "인천 앞바다" },
+  { name: "이작도", lat: 37.18, lon: 126.25, area: "인천 앞바다" },
+  { name: "승봉도", lat: 37.17, lon: 126.29, area: "인천 앞바다" }
+];
+const SEA_GROUPS = ["서해 5도", "인천 앞바다"];
+const SEA_LINKS = [
+  { em: "🚢", label: "가보고 싶은 섬", sub: "여객선 예매 · 섬 여행", url: "https://island.haewoon.co.kr/" },
+  { em: "⚓", label: "인천항 여객선 운항정보", sub: "KOMSA 운항·결항 확인", url: "https://www.komsa.or.kr/kor/sub02_02_01.do" }
+];
+const SEA_TTL = 10 * 60 * 1000;        /* 10분 캐시 */
+let seaCache = null;                   /* { at, items, stamp } */
+let seaBusy = false;
+let seaError = "";
+
+function seaBadge(w) {
+  if (typeof w !== "number") return { cls: "na", label: "정보없음" };
+  if (w >= 2.0) return { cls: "high", label: "높음" };
+  if (w >= 1.0) return { cls: "warn", label: "주의" };
+  return { cls: "ok", label: "양호" };
+}
+function seaNum(v) { return (typeof v === "number" && isFinite(v)) ? v.toFixed(1) : "–"; }
+function seaClock(t) {
+  const s = String(t || "");
+  if (s.length < 16) return "방금";
+  return Number(s.slice(5, 7)) + "/" + Number(s.slice(8, 10)) + " " + s.slice(11, 16);
+}
+function seaUrl(kind) {
+  const lat = SEA_ISLANDS.map(i => i.lat).join(",");
+  const lon = SEA_ISLANDS.map(i => i.lon).join(",");
+  if (kind === "marine") {
+    return "https://marine-api.open-meteo.com/v1/marine?latitude=" + lat + "&longitude=" + lon +
+      "&current=wave_height,wave_period&hourly=wave_height&forecast_days=2&timezone=Asia%2FSeoul";
+  }
+  return "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+    "&current=temperature_2m,wind_speed_10m,wind_gusts_10m&wind_speed_unit=ms&timezone=Asia%2FSeoul";
+}
+/* 12초 안에 응답이 없으면 중단 */
+function seaGet(url) {
+  const ac = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = ac ? setTimeout(() => ac.abort(), 12000) : null;
+  const opt = ac ? { signal: ac.signal, cache: "no-store" } : { cache: "no-store" };
+  return fetch(url, opt).then(r => {
+    if (!r.ok) throw new Error("연결 오류 " + r.status);
+    return r.json();
+  }).then(j => { if (timer) clearTimeout(timer); return j; },
+         e => { if (timer) clearTimeout(timer); throw e; });
+}
+
+async function seaLoad() {
+  if (seaBusy) return;
+  seaBusy = true;
+  seaError = "";
+  paintSea();
+  try {
+    const res = await Promise.all([seaGet(seaUrl("marine")), seaGet(seaUrl("weather"))]);
+    const mArr = Array.isArray(res[0]) ? res[0] : [res[0]];
+    const wArr = Array.isArray(res[1]) ? res[1] : [res[1]];
+    const today = ymd(new Date());
+    const tom = ymd(new Date(Date.now() + 86400000));
+    const items = SEA_ISLANDS.map((isl, i) => {
+      const m = mArr[i] || {}, w = wArr[i] || {};
+      const cur = m.current || {}, wc = w.current || {};
+      const times = (m.hourly && m.hourly.time) || [];
+      const waves = (m.hourly && m.hourly.wave_height) || [];
+      const maxOn = ds => {
+        let mx = null;
+        for (let k = 0; k < times.length; k++) {
+          if (String(times[k]).slice(0, 10) !== ds) continue;
+          const v = waves[k];
+          if (typeof v !== "number") continue;
+          if (mx === null || v > mx) mx = v;
+        }
+        return mx;
+      };
+      return {
+        name: isl.name, area: isl.area,
+        wave: typeof cur.wave_height === "number" ? cur.wave_height : null,
+        period: typeof cur.wave_period === "number" ? cur.wave_period : null,
+        temp: typeof wc.temperature_2m === "number" ? wc.temperature_2m : null,
+        wind: typeof wc.wind_speed_10m === "number" ? wc.wind_speed_10m : null,
+        gust: typeof wc.wind_gusts_10m === "number" ? wc.wind_gusts_10m : null,
+        todayMax: maxOn(today), tomMax: maxOn(tom)
+      };
+    });
+    const stamp = (mArr[0] && mArr[0].current && mArr[0].current.time) || "";
+    seaCache = { at: Date.now(), items: items, stamp: stamp };
+  } catch (e) {
+    const nm = (e && e.name) || "", msg = (e && e.message) || "";
+    if (nm === "AbortError") seaError = "응답이 늦어 시간 초과";
+    else if (/Failed to fetch|NetworkError|ERR_/i.test(msg)) seaError = "네트워크 연결을 확인해 주세요";
+    else seaError = msg || "네트워크 오류";
+  }
+  seaBusy = false;
+  paintSea();
+}
+
+function seaCardHtml(i) {
+  const b = seaBadge(i.wave);
+  const wind = i.wind !== null && i.wind !== undefined ? seaNum(i.wind) + " m/s" : "–";
+  return '<div class="sea-card ' + b.cls + '">' +
+    '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
+    '<div class="sea-wave"><b>' + seaNum(i.wave) + "</b><i>m</i><small>지금 파고</small></div>" +
+    '<div class="sea-meta">💨 ' + wind + (i.temp !== null && i.temp !== undefined ? ' <span>· ' + seaNum(i.temp) + "°</span>" : "") + "</div>" +
+    '<div class="sea-max">오늘 최고 <b>' + seaNum(i.todayMax) + 'm</b> · 내일 <b>' + seaNum(i.tomMax) + "m</b></div>" +
+    "</div>";
+}
+
+function seaBodyHtml() {
+  const d = seaCache;
+  const stale = d && Date.now() - d.at > SEA_TTL;
+  let hd = '<div class="sea-hd"><span class="dot"></span>';
+  if (seaBusy) hd += d ? "새로 받는 중… (" + seaClock(d.stamp) + " 기준)" : "파고·풍속을 받아오는 중…";
+  else if (d) hd += seaClock(d.stamp) + " 기준 · Open-Meteo";
+  else hd += "연결하지 못했어요";
+  hd += '<button class="rf" id="seaRefresh"' + (seaBusy ? " disabled" : "") + ">" + (seaBusy ? "⏳ 받는 중" : "🔄 새로고침") + "</button></div>";
+
+  let cards = "";
+  if (d) {
+    SEA_GROUPS.forEach(g => {
+      const list = d.items.filter(i => i.area === g);
+      if (!list.length) return;
+      cards += '<div class="sea-grp">' + esc(g) + "<em>" + list.length + "곳</em></div>" +
+        '<div class="sea-grid">' + list.map(seaCardHtml).join("") + "</div>";
+    });
+  } else if (seaError) {
+    cards = '<div class="sea-err"><span>📡</span>파고 정보를 받지 못했어요.<br>' + esc(seaError) +
+      '<br><button id="seaRetry">다시 시도</button></div>';
+  } else {
+    cards = '<div class="sea-grid">' + Array(4).fill('<div class="sea-skel"></div>').join("") + "</div>";
+  }
+
+  let sum = "";
+  if (d) {
+    const cnt = { ok: 0, warn: 0, high: 0, na: 0 };
+    d.items.forEach(i => { cnt[seaBadge(i.wave).cls]++; });
+    sum = '<div class="sea-sum">' +
+      '<div><b class="ok">' + cnt.ok + '</b><span>양호</span></div>' +
+      '<div><b class="warn">' + cnt.warn + '</b><span>주의</span></div>' +
+      '<div><b class="high">' + cnt.high + '</b><span>높음·결항주의</span></div>' +
+    "</div>";
+  }
+
+  const staleBar = (d && stale && !seaBusy)
+    ? '<div class="sea-stale">' + (seaError ? "새 정보를 못 받아 지난 값을 보여 줍니다. " : "10분 넘은 값이에요. ") + "[새로고침]을 눌러 주세요.</div>" : "";
+
+  const links = SEA_LINKS.map(l =>
+    '<a class="sea-link" href="' + l.url + '" target="_blank" rel="noopener">' +
+      '<span class="em">' + l.em + '</span>' +
+      '<span class="tx"><b>' + esc(l.label) + '</b><small>' + esc(l.sub) + '</small></span>' +
+      '<span class="ar">›</span></a>').join("");
+
+  return hd + sum + staleBar + cards +
+    '<div class="sea-legend">' +
+      '<span><i style="background:#158f5f"></i>1.0m 미만 양호</span>' +
+      '<span><i style="background:#e08a00"></i>1.0~1.9m 주의</span>' +
+      '<span><i style="background:#e5484d"></i>2.0m 이상 높음·결항주의</span>' +
+    "</div>" +
+    '<div class="sec-title" style="margin:16px 4px 8px">🚢 배편 · 운항정보</div>' +
+    '<div class="sea-links">' + links + "</div>" +
+    '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (참고용 · 실제 결항은 운항정보 확인)<br>' +
+      "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.</div>";
+}
+
+function paintSea() {
+  const wrap = $("#seaWrap");
+  if (!wrap) return;
+  wrap.innerHTML = seaBodyHtml();
+  const rf = $("#seaRefresh", wrap);
+  if (rf) rf.addEventListener("click", () => { if (!seaBusy) seaLoad(); });
+  const rt = $("#seaRetry", wrap);
+  if (rt) rt.addEventListener("click", () => { if (!seaBusy) seaLoad(); });
+}
+
+function openSeaSheet() {
+  seaError = "";
+  openSheet({
+    title: "🌊 섬 파고 · 배편",
+    body: '<div id="seaWrap">' + seaBodyHtml() + "</div>",
+    onMount: () => {
+      paintSea();
+      if (seaBusy) return;
+      const fresh = seaCache && Date.now() - seaCache.at < SEA_TTL;
+      if (!fresh) seaLoad();
+    }
+  });
+}
+
 function renderDuty() {
   const v = $("#view-duty");
   const mode = CAL_MODES[S.calMode] ? S.calMode : "duty";
@@ -4111,6 +4373,11 @@ function renderDuty() {
     '<div class="cal-tabs">' +
       ["duty", "island"].map(k => '<button data-calmode="' + k + '" class="' + k + (k === mode ? " on" : "") + '"><span class="em">' + CAL_MODES[k].em + "</span>" + CAL_MODES[k].label + "</button>").join("") +
     "</div>" +
+    '<button class="wave-strip" id="waveBtn" aria-label="섬 파고와 배편 열기">' +
+      '<span class="em">🌊</span>' +
+      '<span class="tx"><b>섬 파고 · 배편</b><small>인천 8개 섬 실시간 파고·풍속 · 여객선 예매</small></span>' +
+      '<span class="go">열기 ›</span>' +
+    "</button>" +
     '<div class="sum-grid">' +
       '<div class="sum"><div class="lb">' + (isDuty ? "🏢 오늘 당직" : "⛴️ 오늘 섬·교육") + '</div><div class="val">' + c1val +
         "<small>" + esc(c1small) + "</small></div></div>" +
@@ -4140,6 +4407,7 @@ function renderDuty() {
 
   $$("[data-calmode]", v).forEach(b => b.addEventListener("click", () => { S.calMode = b.dataset.calmode; renderDuty(); }));
   $("#calAdd").addEventListener("click", () => openScheduleSheet(todayStr));
+  const wb = $("#waveBtn"); if (wb) wb.addEventListener("click", () => openSeaSheet());
   $("#calPrev").addEventListener("click", () => { S.cursor = new Date(y, m - 1, 1); renderDuty(); });
   $("#calNext").addEventListener("click", () => { S.cursor = new Date(y, m + 1, 1); renderDuty(); });
   $("#calToday").addEventListener("click", () => { S.cursor = new Date(); renderDuty(); });
