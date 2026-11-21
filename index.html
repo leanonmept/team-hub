@@ -476,7 +476,28 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .mhits{display:flex;justify-content:center;margin:0 0 4px}
 .mhits span{background:#eef3ff;color:var(--brand-d);font-size:10.5px;font-weight:800;padding:4px 11px;border-radius:20px}
 
-/* ============ 📸 사진 태그 · 여러 장 올리기 ============ */
+/* ============ 📸 사진 폴더 ============ */
+.foldwrap{display:flex;align-items:flex-start;gap:7px;margin:0 -1px;padding:2px 1px 9px}
+.foldbar{display:flex;gap:7px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.foldbar::-webkit-scrollbar{display:none}
+.fchip{
+  display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:20px;background:#fff;
+  border:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--ink2);white-space:nowrap;flex-shrink:0;
+}
+.fchip .cn{font-style:normal;font-size:10.5px;font-weight:800;opacity:.62}
+.fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fchip.add{background:#eef4ff;color:var(--brand-d);border:1px dashed #b9cbff;box-shadow:0 0 0 4px rgba(238,244,255,.9)}
+.foldtools{
+  display:flex;align-items:center;gap:6px;margin:0 0 11px;padding:8px 10px;border-radius:12px;
+  background:#f7f9fd;border:1px solid #e7edf8;flex-wrap:wrap;
+}
+.foldtools b{font-size:12px;color:var(--ink);margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foldtools button{font-size:11.5px;font-weight:800;color:var(--ink2);background:#fff;border:1px solid var(--line);padding:5px 9px;border-radius:9px}
+.foldtools button.danger{color:var(--danger);border-color:#f6d4d5}
+.foldtools .hint{font-size:10.5px;color:var(--ink3)}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+
+/* ============ 📸 사진 · 여러 장 올리기 ============ */
 .chip .cn{font-style:normal;font-size:10.5px;font-weight:800;opacity:.62;margin-left:3px}
 .pcell .ptg{
   position:absolute;right:5px;top:5px;font-size:10px;line-height:1;
@@ -1376,10 +1397,10 @@ const S = {
   noticeFilter: "all",
   noticeQuery: "",            // 🔍 공지 검색어 (제목·본문·작성자)
   chatQuery: "",              // 🔍 대화 검색어 (내용·이름)
-  photoTag: "전체",            // 📸 사진 태그 필터 · '전체'|'섬 출장'|'회식'|'일상'
+  photoFolder: "all",          // 📸 사진 폴더 필터 · 'all'(전체) | 'none'(미분류) | 폴더 이름
   cursor: new Date(),
   calMode: "duty",          // 'duty' | 'island'
-  roster: { excluded: [], customMembers: [], teamName: "", kakaoRestKey: "", kakaoJsKey: "" }, // 당직 명단 + 팀 이름·카카오 검색/지도 키(관리자가 바꾸면 전원에게 실시간)
+  roster: { excluded: [], customMembers: [], teamName: "", kakaoRestKey: "", kakaoJsKey: "", photoFolders: [] }, // 당직 명단 + 팀 이름·카카오 검색/지도 키·사진 폴더(관리자가 바꾸면 전원에게 실시간)
   events: [],               // 행사일(당직 없음) [{id,date,title}]
   subs: [],
   commentSubs: {},
@@ -1703,9 +1724,9 @@ function seedDemo() {
     { id: "p2", imageData: demoPhoto("사무실 풍경", "#0e8a9c", "#158f5f"), caption: "새로 정리한 사무실 자리", tag: "일상", author_id: "u_junho", author_name: "이준호", likes: ["u_seoyeon", "u_admin"], createdAt: now - 26 * 3600000, comments: [] },
     { id: "p3", imageData: demoPhoto("간식 타임", "#e0713a", "#c2417a"), caption: "관리자님이 쏘신 간식 🍩", tag: "일상", author_id: "u_mina", author_name: "최민아", likes: ["u_admin", "u_seoyeon", "u_junho", "u_hyunwoo", "u_jisu"], createdAt: now - 2 * D, comments: [{ id: "pc2", author_id: "u_yerin", author_name: "강예린", body: "감사합니다 잘 먹었습니다 🙏", createdAt: now - 2 * D + 3600000 }] },
     { id: "p4", imageData: demoPhoto("야근 인증", "#4b5563", "#2f6bf6"), caption: "야근 중인 사무실 (불 꺼진 복도)", tag: "일상", author_id: "u_dohyun", author_name: "윤도현", likes: ["u_mina"], createdAt: now - 3 * D, comments: [] },
-    { id: "p5", imageData: demoPhoto("단체 회식", "#b08217", "#e0713a"), caption: "분기 회식 날 🍶", tag: "회식", author_id: "u_admin", author_name: "김영환", likes: ["u_seoyeon", "u_junho", "u_mina", "u_yerin", "u_dohyun", "u_jisu", "u_hyunwoo"], createdAt: now - 6 * D, comments: [] },
+    { id: "p5", imageData: demoPhoto("단체 회식", "#b08217", "#e0713a"), caption: "분기 회식 날 🍶", tag: "회식", folder: "분기 회식", author_id: "u_admin", author_name: "김영환", likes: ["u_seoyeon", "u_junho", "u_mina", "u_yerin", "u_dohyun", "u_jisu", "u_hyunwoo"], createdAt: now - 6 * D, comments: [] },
     { id: "p6", imageData: demoPhoto("민원 창구", "#6b53d8", "#0e8a9c"), caption: "새로 바뀐 민원 창구 안내판", tag: "일상", author_id: "u_yerin", author_name: "강예린", likes: ["u_admin", "u_seoyeon"], createdAt: now - 9 * D, comments: [] },
-    { id: "p7", imageData: demoPhoto("연평도 섬 출장", "#1c6f8c", "#2f6bf6"), caption: "연평도 섬 출장 · 배 위에서 ⛴️", tag: "섬 출장", author_id: "u_hyunwoo", author_name: "정현우", likes: ["u_admin", "u_mina", "u_jisu"], createdAt: now - 12 * D, comments: [] }
+    { id: "p7", imageData: demoPhoto("연평도 섬 출장", "#1c6f8c", "#2f6bf6"), caption: "연평도 섬 출장 · 배 위에서 ⛴️", tag: "섬 출장", folder: "11월 백령도 출장", author_id: "u_hyunwoo", author_name: "정현우", likes: ["u_admin", "u_mina", "u_jisu"], createdAt: now - 12 * D, comments: [] }
   ];
 
   const messages = [
@@ -1748,7 +1769,10 @@ function seedDemo() {
   ];
 
   return { users: users, announcements: announcements, duty: duty, photos: photos, messages: messages,
-           roster: { excluded: [], customMembers: [] }, events: events, restaurants: restaurants, seededAt: now, v: 4 };
+           roster: { excluded: [], customMembers: [], photoFolders: [
+             { name: "11월 백령도 출장", by: "u_hyunwoo", at: now - 13 * D },
+             { name: "분기 회식", by: "u_admin", at: now - 7 * D }
+           ] }, events: events, restaurants: restaurants, seededAt: now, v: 5 };
 }
 
 function demoRead() { try { return JSON.parse(localStorage.getItem(DEMO_KEY) || "null"); } catch (e) { return null; } }
@@ -1767,6 +1791,21 @@ function demoGet() {
   if (!d.v || d.v < 4) {
     (d.users || []).forEach(u => { if (typeof u.avatarData !== "string") u.avatarData = ""; });
     d.v = 4;
+    demoWrite(d);
+  }
+  /* v5: 사진 태그 → 폴더 — 기존 데모 데이터에도 폴더 샘플 2개를 넣어 첫인상·테스트가 자연스럽게 */
+  if (!d.v || d.v < 5) {
+    d.roster = Object.assign({}, d.roster || {});
+    if (!Array.isArray(d.roster.photoFolders) || !d.roster.photoFolders.length) {
+      d.roster.photoFolders = [
+        { name: "11월 백령도 출장", by: "u_hyunwoo", at: Date.now() - 13 * 86400000 },
+        { name: "분기 회식", by: "u_admin", at: Date.now() - 7 * 86400000 }
+      ];
+    }
+    (d.photos || []).forEach(p => {
+      if (typeof p.folder !== "string") p.folder = p.id === "p7" ? "11월 백령도 출장" : p.id === "p5" ? "분기 회식" : "";
+    });
+    d.v = 5;
     demoWrite(d);
   }
   return d;
@@ -1798,9 +1837,10 @@ function syncDemo() {
   });
   S.restaurants = (d.restaurants || []).map(r => Object.assign({}, r, { likes: Array.isArray(r.likes) ? r.likes : [] }));
   S.duty = (d.duty || []).slice();
-  S.roster = Object.assign({ excluded: [], customMembers: [], teamName: "", kakaoRestKey: "", kakaoJsKey: "" }, d.roster || {});
+  S.roster = Object.assign({ excluded: [], customMembers: [], teamName: "", kakaoRestKey: "", kakaoJsKey: "", photoFolders: [] }, d.roster || {});
   if (!Array.isArray(S.roster.excluded)) S.roster.excluded = [];
   if (!Array.isArray(S.roster.customMembers)) S.roster.customMembers = [];
+  if (!Array.isArray(S.roster.photoFolders)) S.roster.photoFolders = [];
   if (typeof S.roster.teamName !== "string") S.roster.teamName = "";
   if (typeof S.roster.kakaoRestKey !== "string") S.roster.kakaoRestKey = "";
   if (typeof S.roster.kakaoJsKey !== "string") S.roster.kakaoJsKey = "";
@@ -5158,52 +5198,284 @@ function monthList(rows, isDuty, events) {
 /* =====================================================================
    11. 사진공유
    ===================================================================== */
-/* 📸 사진 앨범 태그 — 전체(필터용) · 섬 출장 · 회식 · 일상 */
-const PTAGS = [
-  { k: "전체", em: "" },
-  { k: "섬 출장", em: "⛴️" },
-  { k: "회식", em: "🍻" },
-  { k: "일상", em: "📷" }
-];
-/* 태그가 없던 기존 사진은 일상으로 봅니다(전체에서는 그대로 다 보입니다) */
-function photoTagOf(p) {
-  const t = String((p && p.tag) || "").trim();
-  return (t === "섬 출장" || t === "회식" || t === "일상") ? t : "일상";
+/* 📸 사진 폴더 — 고정 분류(태그) 대신 사용자가 직접 만든 폴더로 정리합니다.
+   · 사진 문서의 folder 필드(폴더 이름) 하나로 전 팀원에게 공유됩니다. (보안 규칙 변경·재게시 불필요)
+   · 관리자·당직 관리 권한자가 만든 폴더는 duty_roster_config/config.photoFolders 에 들어가
+     사진이 한 장도 없어도 승인된 팀원 모두에게 바로 보입니다.
+   · 일반 팀원이 만든 폴더는 이 기기에 먼저 남고, 그 폴더로 사진을 올리면 folder 필드로 공유됩니다.
+   · 폴더가 없던 예전 사진(tag 만 있는 사진)은 '전체'와 '미분류'에 그대로 보입니다. */
+const PF_LOCAL_KEY = "teamhub.photoFolders.v1";
+const PF_MAX = 40;
+function pfClean(n) { return String(n == null ? "" : n).replace(/\s+/g, " ").trim().slice(0, 24); }
+function photoFolderOf(p) { return String((p && p.folder) || "").trim(); }
+/* 팀 공유 폴더 목록 — duty_roster_config/config.photoFolders */
+function pfCfg() {
+  const a = S.roster && S.roster.photoFolders;
+  return Array.isArray(a) ? a.filter(f => f && pfClean(f.name)) : [];
 }
-function tagEmoji(t) { return t === "섬 출장" ? "⛴️" : t === "회식" ? "🍻" : "📷"; }
-function photoTagLabel(t) { const x = PTAGS.find(v => v.k === t); return x ? (x.em ? x.em + " " : "") + x.k : t; }
+/* 이 기기에서만 만든 폴더 목록(일반 팀원이 만든 폴더) — localStorage */
+function pfLocal() {
+  try {
+    const a = JSON.parse(localStorage.getItem(PF_LOCAL_KEY) || "[]");
+    return Array.isArray(a) ? a.filter(f => f && pfClean(f.name)) : [];
+  } catch (e) { return []; }
+}
+function pfSetLocal(arr) {
+  try { localStorage.setItem(PF_LOCAL_KEY, JSON.stringify(arr)); } catch (e) {}
+}
+/* 지금 보이는 폴더 = 공유 폴더 + 이 기기 폴더 + 사진에 붙은 폴더 (이름 가나다순) */
+function photoFolders() {
+  const map = {};
+  const put = (name, meta) => {
+    const n = pfClean(name);
+    if (!n) return;
+    if (!map[n]) map[n] = { name: n, by: "", at: 0, count: 0 };
+    if (meta && meta.by && !map[n].by) { map[n].by = String(meta.by); map[n].at = Number(meta.at) || 0; }
+  };
+  pfCfg().forEach(f => put(f.name, f));
+  pfLocal().forEach(f => put(f.name, f));
+  S.photos.forEach(p => put(photoFolderOf(p), null));
+  const list = Object.keys(map).map(k => map[k]);
+  S.photos.forEach(p => { const n = photoFolderOf(p); if (n && map[n]) map[n].count++; });
+  list.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  return list;
+}
+/* 폴더 이름 변경·비우기·삭제는 관리자 또는 그 폴더를 만든 사람만 */
+function pfCanEdit(f) {
+  if (!f) return false;
+  if (canManageDuty() || isAdmin()) return true;
+  return !!(f.by && f.by === myUid());
+}
+/* 공유 폴더 목록 저장 — 관리자·당직 관리 권한자만 (duty_roster_config/config.photoFolders) */
+async function pfSaveCfg(list) {
+  const arr = list.map(f => ({ name: pfClean(f.name), by: String(f.by || ""), at: Number(f.at) || Date.now() }))
+    .filter(f => f.name).slice(0, PF_MAX);
+  if (S.mode === "demo") {
+    demoMutate(d => { d.roster = Object.assign({}, d.roster || {}, { photoFolders: arr, updatedAt: Date.now() }); });
+    S.roster = Object.assign({}, S.roster, { photoFolders: arr });
+  } else {
+    const { doc, setDoc, serverTimestamp } = FB.f;
+    const payload = { photoFolders: arr, updatedAt: serverTimestamp(), updatedBy: myUid() };
+    /* 이 기기가 설정 문서를 아직 받지 못했으면 새로 만들 때도 규칙(excluded is list)을 통과하도록 */
+    if (!LOADED.roster) payload.excluded = [];
+    await setDoc(doc(FB.db, "duty_roster_config", "config"), payload, { merge: true });
+    S.roster = Object.assign({}, S.roster, { photoFolders: arr });
+  }
+}
+/* 폴더 만들기 — 관리 권한자는 전 팀원에게 공유, 일반 팀원은 이 기기 + 업로드 폴더로 */
+async function pfCreate(name) {
+  const n = pfClean(name);
+  if (!n) { toast("폴더 이름을 입력해 주세요"); return ""; }
+  if (photoFolders().some(f => f.name === n)) { toast("이미 있는 폴더예요"); return n; }
+  if (photoFolders().length >= PF_MAX) { toast("폴더는 " + PF_MAX + "개까지 만들 수 있어요"); return ""; }
+  const entry = { name: n, by: myUid(), at: Date.now() };
+  try {
+    if (canManageDuty()) {
+      await pfSaveCfg(pfCfg().concat([entry]));
+      toast("‘" + n + "’ 폴더를 만들었어요 · 팀원 모두에게 보여요");
+    } else {
+      pfSetLocal(pfLocal().concat([entry]));
+      toast("‘" + n + "’ 폴더를 만들었어요 · 사진을 올리면 팀원에게도 보여요");
+    }
+  } catch (e) {
+    /* 저장에 실패해도 이 기기 폴더로는 바로 쓸 수 있게 */
+    pfSetLocal(pfLocal().concat([entry]));
+    toast(fbErrMsg(e));
+  }
+  return n;
+}
+/* 사진 한 장의 폴더 바꾸기 — 올린 사람·관리자만 (보안 규칙과 같은 조건) */
+async function dbSetPhotoFolder(id, folder) {
+  const f = pfClean(folder);
+  const p = S.photos.find(x => x.id === id);
+  if (!p) return false;
+  if (!(p.author_id === myUid() || isAdmin())) { toast("올린 사람·관리자만 폴더를 바꿀 수 있어요"); return false; }
+  if (S.mode === "demo") {
+    demoMutate(d => { const q = d.photos.find(x => x.id === id); if (q) q.folder = f; });
+  } else {
+    const { doc, updateDoc } = FB.f;
+    await updateDoc(doc(FB.db, "photos", id), { folder: f });
+    p.folder = f;
+  }
+  return true;
+}
+/* 폴더에 담긴 내가 바꿀 수 있는 사진을 다른 폴더(기본: 미분류)로 옮깁니다 */
+async function pfMoveOut(name, to) {
+  const list = S.photos.filter(p => photoFolderOf(p) === name);
+  let ok = 0, no = 0;
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    if (!(p.author_id === myUid() || isAdmin())) { no++; continue; }
+    try { if (await dbSetPhotoFolder(p.id, to)) ok++; else no++; }
+    catch (e) { no++; }
+  }
+  return { ok: ok, no: no };
+}
+async function pfRename(oldName, newName) {
+  const n = pfClean(newName);
+  if (!n) { toast("폴더 이름을 입력해 주세요"); return false; }
+  if (n === oldName) return false;
+  if (photoFolders().some(f => f.name === n)) { toast("같은 이름의 폴더가 이미 있어요"); return false; }
+  const r = await pfMoveOut(oldName, n);
+  const cfg = pfCfg();
+  if (cfg.some(f => f.name === oldName) && canManageDuty()) {
+    await pfSaveCfg(cfg.map(f => f.name === oldName ? Object.assign({}, f, { name: n }) : f));
+  }
+  const lc = pfLocal();
+  if (lc.some(f => f.name === oldName)) pfSetLocal(lc.map(f => f.name === oldName ? Object.assign({}, f, { name: n }) : f));
+  if (r.no) toast(r.ok + "장을 옮겼어요 · " + r.no + "장은 올린 사람만 바꿀 수 있어 이름이 남습니다");
+  else toast("폴더 이름을 ‘" + n + "’(으)로 바꿨어요");
+  return true;
+}
+async function pfEmpty(name) {
+  const r = await pfMoveOut(name, "");
+  if (!r.ok && !r.no) { toast("옮길 사진이 없어요"); return; }
+  toast("사진 " + r.ok + "장을 미분류로 옮겼어요" + (r.no ? " · " + r.no + "장은 올린 사람만 옮길 수 있어요" : ""));
+}
+async function pfDelete(name) {
+  const r = await pfMoveOut(name, "");
+  const cfg = pfCfg();
+  if (cfg.some(f => f.name === name) && canManageDuty()) await pfSaveCfg(cfg.filter(f => f.name !== name));
+  const lc = pfLocal();
+  if (lc.some(f => f.name === name)) pfSetLocal(lc.filter(f => f.name !== name));
+  if (S.photoFolder === name) S.photoFolder = "all";
+  if (r.no) toast("폴더를 지웠지만 " + r.no + "장은 올린 사람만 옮길 수 있어 ‘" + name + "’에 남아 있어요");
+  else toast("‘" + name + "’ 폴더를 지웠어요" + (r.ok ? " · 사진 " + r.ok + "장은 미분류로 옮겼어요" : ""));
+}
+/* 폴더 칩 위 버튼(이름 변경·사진 비우기·폴더 삭제) */
+function pfAction(kind, f) {
+  if (!f) return;
+  if (!pfCanEdit(f)) return toast("만든 사람·관리자만 바꿀 수 있어요");
+  if (kind === "rename") return pfRenameSheet(f.name);
+  if (kind === "empty") {
+    if (!f.count) return toast("이 폴더에는 사진이 없어요");
+    if (!confirm("‘" + f.name + "’ 폴더의 사진 " + f.count + "장을 미분류로 옮길까요?\n(폴더는 그대로 남습니다)")) return;
+    pfEmpty(f.name).then(() => renderPhotos()).catch(e => toast(fbErrMsg(e)));
+    return;
+  }
+  if (kind === "del") {
+    if (!confirm("‘" + f.name + "’ 폴더를 지울까요?" + (f.count ? "\n사진 " + f.count + "장은 미분류로 옮겨집니다." : ""))) return;
+    pfDelete(f.name).then(() => renderPhotos()).catch(e => toast(fbErrMsg(e)));
+  }
+}
+function pfNewSheet() {
+  openSheet({
+    title: "새 폴더 만들기",
+    body:
+      '<div class="field"><label>폴더 이름</label>' +
+        '<input type="text" id="pfNameIn" maxlength="24" placeholder="예: 11월 백령도, 연말 회식" autocomplete="off"></div>' +
+      '<div class="hint" style="margin:2px 2px 0;line-height:1.65">' +
+        (canManageDuty()
+          ? "만든 폴더는 팀 설정에 저장되어 팀원 모두에게 바로 보여요. 사진이 없어도 목록에 남습니다."
+          : "이 기기에 먼저 만들어 두고, 그 폴더로 사진을 올리면 팀원 모두에게 보여요.") + "</div>",
+    footer: '<button class="btn" id="pfNameSave">폴더 만들기</button>',
+    onMount: root => {
+      const inp = $("#pfNameIn", root);
+      const btn = $("#pfNameSave", root);
+      const save = async () => {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        const n = await pfCreate(inp.value);
+        btn.disabled = false;
+        if (n) { S.photoFolder = n; closeSheet(); renderPhotos(); }
+        else inp.focus();
+      };
+      btn.addEventListener("click", save);
+      inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
+      setTimeout(() => inp.focus(), 120);
+    }
+  });
+}
+function pfRenameSheet(oldName) {
+  openSheet({
+    title: "폴더 이름 바꾸기",
+    body:
+      '<div class="field"><label>폴더 이름</label>' +
+        '<input type="text" id="pfRnIn" maxlength="24" value="' + esc(oldName) + '" autocomplete="off"></div>' +
+      '<div class="hint" style="margin:2px 2px 0;line-height:1.65">이 폴더에 담긴 사진도 새 이름으로 함께 옮겨집니다. 올린 사람이 다른 사진은 그대로 남습니다.</div>',
+    footer: '<button class="btn" id="pfRnSave">이름 바꾸기</button>',
+    onMount: root => {
+      const inp = $("#pfRnIn", root);
+      const btn = $("#pfRnSave", root);
+      const save = async () => {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        const ok = await pfRename(oldName, inp.value);
+        btn.disabled = false;
+        if (ok) { if (S.photoFolder === oldName) S.photoFolder = pfClean(inp.value); closeSheet(); renderPhotos(); }
+        else inp.focus();
+      };
+      btn.addEventListener("click", save);
+      inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } });
+      setTimeout(() => { inp.focus(); inp.select(); }, 120);
+    }
+  });
+}
 
 function renderPhotos() {
   const v = $("#view-photos");
   const all = S.photos.slice().sort((a, b) => b.createdAt - a.createdAt);
-  const f = S.photoTag || "전체";
-  const list = f === "전체" ? all : all.filter(p => photoTagOf(p) === f);
-  const sub = f === "전체" ? all.length + "장 · 우리 팀의 순간들" : list.length + "장 · " + photoTagLabel(f);
+  const folders = photoFolders();
+  /* 필터: 'all'(전체) · 'none'(미분류) · 폴더 이름 */
+  let sel = S.photoFolder || "all";
+  if (sel !== "all" && sel !== "none" && !folders.some(f => f.name === sel)) sel = "all";
+  S.photoFolder = sel;
+  const uncat = all.filter(p => !photoFolderOf(p)).length;
+  const cur = folders.find(f => f.name === sel) || null;
+  const list = sel === "all" ? all : sel === "none" ? all.filter(p => !photoFolderOf(p)) : all.filter(p => photoFolderOf(p) === sel);
+  const sub = sel === "all" ? all.length + "장 · 폴더 " + folders.length + "개"
+    : sel === "none" ? uncat + "장 · 미분류"
+    : list.length + "장 · 📁 " + sel;
+  const bar =
+    '<div class="foldwrap"><div class="foldbar">' +
+      '<button class="fchip' + (sel === "all" ? " on" : "") + '" data-pf="all">전체<i class="cn">' + all.length + "</i></button>" +
+      folders.map((f, i) =>
+        '<button class="fchip' + (sel === f.name ? " on" : "") + '" data-pf="' + i + '">📁 ' + esc(f.name) +
+        '<i class="cn">' + f.count + "</i></button>").join("") +
+      (uncat ? '<button class="fchip' + (sel === "none" ? " on" : "") + '" data-pf="none">🗂️ 미분류<i class="cn">' + uncat + "</i></button>" : "") +
+    "</div>" +
+      '<button class="fchip add" id="pfNew">＋ 새 폴더</button>' +
+    "</div>" +
+    (cur
+      ? '<div class="foldtools"><b>📁 ' + esc(cur.name) + "</b>" +
+          (pfCanEdit(cur)
+            ? '<button data-pfdo="rename">이름 변경</button><button data-pfdo="empty">사진 비우기</button>' +
+              '<button data-pfdo="del" class="danger">폴더 삭제</button>'
+            : '<span class="hint">만든 사람·관리자만 바꿀 수 있어요</span>') +
+        "</div>"
+      : "");
   v.innerHTML =
     '<div class="vhead"><div><h2>사진공유</h2><div class="sub">' + sub + "</div></div></div>" +
+    bar +
     '<div class="phead"><span class="cnt">📷 자동 압축 저장 (가로 960px · JPEG)</span>' +
       '<button class="upbtn" id="btnUpload">' + ICON.plus + " 올리기</button></div>" +
-    '<div class="chips">' + PTAGS.map(t => {
-        const n = t.k === "전체" ? all.length : all.filter(p => photoTagOf(p) === t.k).length;
-        return '<button class="chip' + (f === t.k ? " on" : "") + '" data-ptag="' + t.k + '">' +
-          (t.em ? t.em + " " : "") + t.k + '<i class="cn">' + n + "</i></button>";
-      }).join("") + "</div>" +
     (list.length
       ? '<div class="pgrid">' + list.map(p =>
           '<button class="pcell" data-photo="' + p.id + '">' +
             '<img src="' + p.imageData + '" alt="' + esc(p.caption || "사진") + '" loading="lazy">' +
             '<span class="pav">' + avatarHtml(p.author_name, "xs", p.author_id) + "</span>" +
-            '<span class="ptg">' + tagEmoji(photoTagOf(p)) + "</span>" +
+            (photoFolderOf(p) ? '<span class="ptg">📁</span>' : "") +
             (p.caption ? '<span class="pcap">' + esc(p.caption) + "</span>" : "") +
             '<span class="plike">' + ICON.heart + " " + (p.likes || []).length + "</span>" +
           "</button>").join("") + "</div>"
-      : '<div class="empty"><span>🖼️</span>' + (f === "전체"
+      : '<div class="empty"><span>🖼️</span>' + (sel === "all"
           ? "아직 사진이 없습니다.<br>첫 사진을 올려보세요."
-          : "‘" + esc(f) + "’ 사진이 아직 없습니다.<br>올릴 때 태그를 골라 모아볼 수 있어요.") + "</div>");
+          : sel === "none"
+            ? "미분류 사진이 없습니다.<br>모두 폴더에 정리되어 있어요."
+            : "‘" + esc(sel) + "’ 폴더가 비어 있어요.<br>올리기에서 이 폴더를 골라 사진을 담아보세요.") + "</div>");
 
   $("#btnUpload").addEventListener("click", openUpload);
-  $$("[data-ptag]", v).forEach(b => b.addEventListener("click", () => { S.photoTag = b.dataset.ptag; renderPhotos(); }));
+  $("#pfNew").addEventListener("click", pfNewSheet);
+  $$("[data-pf]", v).forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.pf;
+    S.photoFolder = k === "all" ? "all" : k === "none" ? "none" : ((folders[Number(k)] && folders[Number(k)].name) || "all");
+    renderPhotos();
+  }));
+  $$("[data-pfdo]", v).forEach(b => b.addEventListener("click", () => pfAction(b.dataset.pfdo, cur)));
   $$("[data-photo]", v).forEach(b => b.addEventListener("click", () => openPhoto(b.dataset.photo)));
+  /* 선택한 폴더가 잘려 보이지 않도록 폴더 바를 그 폴더 쪽으로 살짝 옮깁니다 */
+  const onChip = $(".foldbar .fchip.on", v);
+  if (onChip && sel !== "all") { try { onChip.scrollIntoView({ inline: "center", block: "nearest" }); } catch (e) {} }
 }
 
 function compressImage(file, maxW, quality) {
@@ -5243,10 +5515,11 @@ function openUpload() {
       '<button class="btn up-pick" id="pickBtn" style="margin-bottom:2px">📷 사진 선택 (여러 장 가능)</button>' +
       '<div id="prevBox"><div class="upempty">아직 선택한 사진이 없습니다.<br>한 번에 ' + MAX + '장까지 고를 수 있어요.</div></div>' +
       '<div class="upprog" id="upProg"></div>' +
-      '<div class="field" style="margin-top:14px"><label>태그</label>' +
-        '<div class="chips" style="padding-bottom:2px">' +
-          ["섬 출장", "회식", "일상"].map(t =>
-            '<button type="button" class="chip' + (t === "일상" ? " on" : "") + '" data-utag="' + t + '">' + tagEmoji(t) + " " + t + "</button>").join("") +
+      '<div class="field" style="margin-top:14px"><label>폴더</label>' +
+        '<div class="chips wrap" id="pfChips" style="padding-bottom:2px"></div>' +
+        '<div id="pfNewRow" style="display:none;margin-top:8px;gap:6px;align-items:center">' +
+          '<input type="text" id="pfNewIn" maxlength="24" placeholder="새 폴더 이름 (예: 11월 백령도)" autocomplete="off" style="flex:1;min-width:0">' +
+          '<button type="button" class="btn" id="pfNewOk" style="padding:9px 12px;font-size:12px;flex-shrink:0">만들기</button>' +
         "</div></div>" +
       '<div class="field" style="margin-top:10px"><label>한 줄 메모 (선택 · 여러 장 공통)</label>' +
         '<input type="text" id="capIn" maxlength="60" placeholder="예: 11월 팀 워크숍"></div>' +
@@ -5254,13 +5527,47 @@ function openUpload() {
     footer: '<button class="btn" id="upSave" disabled>사진 올리기</button>',
     onMount: root => {
       let picked = [];        // { data, kb, done }
-      let tag = "일상";
+      /* 지금 보고 있는 폴더가 있으면 기본 선택, 없으면 미분류(폴더 없음) */
+      let folder = (S.photoFolder && S.photoFolder !== "all" && S.photoFolder !== "none") ? S.photoFolder : "";
       let busy = false;
       const fi = $("#fileIn", root);
       const box = $("#prevBox", root);
       const prog = $("#upProg", root);
       const saveBtn = $("#upSave", root);
       const capIn = $("#capIn", root);
+      const pfChips = $("#pfChips", root);
+      const pfNewRow = $("#pfNewRow", root);
+      const drawFolders = () => {
+        const fs = photoFolders();
+        if (folder && !fs.some(f => f.name === folder)) folder = "";
+        pfChips.innerHTML =
+          '<button type="button" class="chip' + (folder === "" ? " on" : "") + '" data-uf="">🗂️ 미분류</button>' +
+          fs.map(f => '<button type="button" class="chip' + (folder === f.name ? " on" : "") + '" data-uf="' + esc(f.name) + '">📁 ' + esc(f.name) + "</button>").join("") +
+          '<button type="button" class="chip" id="ufNew">＋ 새 폴더 직접 입력</button>';
+        $$("[data-uf]", pfChips).forEach(b => b.addEventListener("click", () => {
+          if (busy) return;
+          folder = b.dataset.uf || "";
+          drawFolders();
+        }));
+        $("#ufNew", pfChips).addEventListener("click", () => {
+          if (busy) return;
+          pfNewRow.style.display = "flex";
+          $("#pfNewIn", root).focus();
+        });
+      };
+      const mkFolder = async () => {
+        if (busy) return;
+        const inp = $("#pfNewIn", root);
+        const n = await pfCreate(inp.value);
+        if (!n) { inp.focus(); return; }
+        folder = n;
+        inp.value = "";
+        pfNewRow.style.display = "none";
+        drawFolders();
+      };
+      $("#pfNewOk", root).addEventListener("click", mkFolder);
+      $("#pfNewIn", root).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); mkFolder(); } });
+      drawFolders();
 
       const syncBtn = () => {
         const left = picked.filter(p => !p.done).length;
@@ -5310,12 +5617,6 @@ function openUpload() {
         drawGrid();
       });
 
-      $$("[data-utag]", root).forEach(b => b.addEventListener("click", () => {
-        if (busy) return;
-        tag = b.dataset.utag;
-        $$("[data-utag]", root).forEach(x => x.classList.toggle("on", x === b));
-      }));
-
       saveBtn.addEventListener("click", async () => {
         const todo = picked.filter(p => !p.done);
         if (!todo.length || busy) return;
@@ -5328,7 +5629,7 @@ function openUpload() {
           saveBtn.textContent = label;
           prog.textContent = label;
           try {
-            await dbAddPhoto(todo[i].data, cap, tag);
+            await dbAddPhoto(todo[i].data, cap, folder);
             todo[i].done = true; ok++;
             drawGrid();
           } catch (e) { fail = e; break; }
@@ -5343,7 +5644,7 @@ function openUpload() {
           return;
         }
         closeSheet();
-        S.photoTag = tag;               // 올린 사진이 바로 보이도록 그 태그로 필터를 맞춥니다
+        S.photoFolder = folder || "none";   // 올린 사진이 바로 보이도록 그 폴더로 필터를 맞춥니다
         renderPhotos();
         toast(ok > 1 ? ok + "장의 사진을 올렸습니다" : "사진을 올렸습니다");
       });
@@ -5374,8 +5675,11 @@ function openPhoto(id) {
       "</div>" +
       '<div style="background:#fff;border-radius:22px 22px 0 0;padding:14px 16px calc(14px + var(--safe-b));max-height:44%;overflow-y:auto;flex-shrink:0">' +
         (p.caption ? '<div style="font-size:14px;font-weight:700;margin-bottom:9px">' + esc(p.caption) + "</div>" : "") +
-        '<div style="display:flex;align-items:center;gap:7px;margin:0 0 10px"><span class="tag gray">' + photoTagLabel(photoTagOf(p)) + "</span>" +
-          '<span style="font-size:11px;color:var(--ink3)">앨범 태그</span></div>' +
+        '<div style="display:flex;align-items:center;gap:7px;margin:0 0 10px;flex-wrap:wrap">' +
+          '<span class="tag gray">' + (photoFolderOf(p) ? "📁 " + esc(photoFolderOf(p)) : "🗂️ 미분류") + "</span>" +
+          (mine || isAdmin() ? '<button id="phMove" style="font-size:11.5px;font-weight:800;color:var(--brand-d);background:#eef4ff;padding:5px 9px;border-radius:9px">폴더 옮기기</button>' : "") +
+        "</div>" +
+        '<div id="phFoldRow" class="chips wrap" style="display:none;margin:0 0 10px"></div>' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
           '<button id="phLike" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:' + (liked ? "#e5484d" : "var(--ink2)") + '">' +
             (liked ? ICON.heart : ICON.heartO) + " 좋아요 " + (p.likes || []).length + "</button>" +
@@ -5391,6 +5695,24 @@ function openPhoto(id) {
     "</div>";
 
   $("#lbClose").addEventListener("click", () => { layer.innerHTML = ""; });
+  /* 올린 사람·관리자는 사진을 다른 폴더로 옮겨 정리할 수 있습니다 */
+  let busyMove = false;
+  const mv = $("#phMove");
+  if (mv) mv.addEventListener("click", () => {
+    const row = $("#phFoldRow");
+    if (row.style.display !== "none") { row.style.display = "none"; return; }
+    const fs = photoFolders();
+    row.innerHTML = '<button type="button" class="chip' + (photoFolderOf(p) ? "" : " on") + '" data-phf="">🗂️ 미분류</button>' +
+      fs.map(f => '<button type="button" class="chip' + (photoFolderOf(p) === f.name ? " on" : "") + '" data-phf="' + esc(f.name) + '">📁 ' + esc(f.name) + "</button>").join("");
+    row.style.display = "flex";
+    $$("[data-phf]", row).forEach(b => b.addEventListener("click", async () => {
+      if (busyMove) return;
+      busyMove = true;
+      try { await dbSetPhotoFolder(p.id, b.dataset.phf || ""); openPhoto(p.id); toast("폴더를 옮겼어요"); }
+      catch (e) { toast(fbErrMsg(e)); }
+      busyMove = false;
+    }));
+  });
   $("#phLike").addEventListener("click", async () => {
     try { await dbToggleLike(p.id); openPhoto(p.id); } catch (e) { toast(fbErrMsg(e)); }
   });
@@ -5410,9 +5732,10 @@ function openPhoto(id) {
   $("#phCmtIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); send(); } });
 }
 
-async function dbAddPhoto(imageData, caption, tag) {
-  const t = photoTagOf({ tag: tag });
-  const doc = { imageData: imageData, caption: caption || "", tag: t, author_id: myUid(), author_name: S.user.name, likes: [], comments: [], createdAt: Date.now() };
+async function dbAddPhoto(imageData, caption, folder) {
+  const f = pfClean(folder);
+  const doc = { imageData: imageData, caption: caption || "", author_id: myUid(), author_name: S.user.name, likes: [], comments: [], createdAt: Date.now() };
+  if (f) doc.folder = f;
   if (S.mode === "demo") {
     demoMutate(d => { d.photos.unshift(Object.assign({ id: uid() }, doc)); });
   } else {
@@ -6417,7 +6740,7 @@ function startSubs() {
   S.subs.push(onSnapshot(query(collection(FB.db, "photos"), orderBy("createdAt", "desc"), limit(60)), snap => {
     S.photos = snap.docs.map(d => {
       const v = d.data() || {};
-      return { id: d.id, imageData: v.imageData || "", caption: v.caption || "", tag: v.tag || "", author_id: v.author_id || v.author_uid || "",
+      return { id: d.id, imageData: v.imageData || "", caption: v.caption || "", folder: typeof v.folder === "string" ? v.folder : "", tag: v.tag || "", author_id: v.author_id || v.author_uid || "",
         author_name: v.author_name || "", likes: v.likes || [], comments: v.comments || [], createdAt: toMs(v.createdAt) };
     });
     if (S.tab === "photos") renderPhotos();
@@ -6454,13 +6777,15 @@ function applyRosterDoc(v) {
     msOff: Array.isArray(d.msOff) ? d.msOff : [],
     teamName: typeof d.teamName === "string" ? d.teamName.trim().slice(0, 20) : "",
     kakaoRestKey: typeof d.kakaoRestKey === "string" ? d.kakaoRestKey.trim().slice(0, 100) : "",
-    kakaoJsKey: typeof d.kakaoJsKey === "string" ? d.kakaoJsKey.trim().slice(0, 100) : ""
+    kakaoJsKey: typeof d.kakaoJsKey === "string" ? d.kakaoJsKey.trim().slice(0, 100) : "",
+    photoFolders: Array.isArray(d.photoFolders) ? d.photoFolders.filter(f => f && typeof f.name === "string") : []
   };
   LOADED.roster = true;
   /* 관리자가 바꾼 팀 이름이 오면 상단 헤더·설정·대화방을 바로 갱신 */
   if (S.roster.teamName) setTeamName(S.roster.teamName);
   if (S.tab === "duty") renderDuty();
   if (S.tab === "team") renderTeam();
+  if (S.tab === "photos") renderPhotos();
   autoAssignNextMonth();
 }
 
