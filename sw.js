@@ -9,7 +9,7 @@
    · Firebase·기상청 API·카카오 등 외부 주소는 절대 건드리지 않습니다(그대로 네트워크).
    · SW 로직이나 캐시 목록을 바꾸면 SW_VERSION 을 올려 주세요.
    ===================================================================== */
-const SW_VERSION = "th-2026-11-26-5";
+const SW_VERSION = "th-2026-11-26-6";
 const CACHE = "teamhub-" + SW_VERSION;
 const SCOPE_PATH = new URL(self.registration.scope).pathname;   /* 예: /team-hub/ */
 const SHELL_INDEX = new URL("./index.html", self.location.href).href;
@@ -32,6 +32,65 @@ function tellClients(type, extra) {
     list.forEach(c => { try { c.postMessage(Object.assign({ type: type, version: SW_VERSION }, extra || {})); } catch (e) {} });
   });
 }
+
+/* ---------- 🔔 웹 푸시 알림 ----------
+   Worker(teamhub-push)가 보낸 암호화 페이로드를 브라우저가 복호화해 push 이벤트로 전달합니다.
+   { title, body, url, type, tag } — url 은 앱 안의 화면(#notices·#duty)까지 지정합니다. */
+self.addEventListener("push", event => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) {
+    try { d = { title: "우리팀 허브", body: event.data ? event.data.text() : "" }; } catch (e2) { d = {}; }
+  }
+  const title = d.title || "우리팀 허브";
+  const body = d.body || "새 소식이 있어요";
+  const url = d.url || "./#notices";
+  const opts = {
+    body: body,
+    icon: "./icon-192.png",
+    badge: "./icon-192.png",
+    tag: d.tag || ("th-" + (d.type || "notice")),
+    renotify: true,
+    requireInteraction: false,
+    data: { url: url, type: d.type || "notice", at: Date.now() },
+    vibrate: [80, 40, 80],
+    timestamp: Date.now()
+  };
+  event.waitUntil(self.registration.showNotification(title, opts));
+});
+
+/* 알림을 누르면 — 열려 있는 앱이 있으면 그 창을 띄우고 해당 화면으로, 없으면 새로 엽니다 */
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const raw = data.url || "./#notices";
+  let target = self.registration.scope;
+  let hash = "";
+  try {
+    const u = new URL(raw, self.location.href);
+    target = u.href;
+    hash = u.hash || "";
+  } catch (e) {}
+  event.waitUntil((async () => {
+    const list = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    if (list && list.length) {
+      const c = list[0];
+      try { await c.focus(); } catch (e) {}
+      try { c.postMessage({ type: "th-open", hash: hash, url: target }); } catch (e) {}
+      /* 앱 화면이 아닌 다른 페이지를 보고 있을 때만 이동 (같은 앱이면 탭만 전환) */
+      try {
+        const same = c.url && c.url.split("#")[0] === target.split("#")[0];
+        if (!same && c.navigate) await c.navigate(target);
+      } catch (e) {}
+      return;
+    }
+    try { await self.clients.openWindow(target); } catch (e) {}
+  })());
+});
+
+/* 구독이 브라우저 쪽에서 갱신되면 앱에 알려 다시 등록하게 합니다 */
+self.addEventListener("pushsubscriptionchange", event => {
+  event.waitUntil(tellClients("th-push-changed"));
+});
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {

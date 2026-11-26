@@ -258,6 +258,23 @@ input,textarea,select{outline:none}
   white-space:nowrap;
 }
 .badge.live{background:var(--ok-soft);color:var(--ok);border-color:#c9eeda}
+/* 🔔 알림(웹 푸시) 버튼 — 켜져 있으면 파랗게 */
+.hdr-bell{
+  width:34px;height:34px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  color:#7b8698;background:rgba(255,255,255,.7);border:1px solid rgba(20,26,36,.07);position:relative;
+}
+.hdr-bell:active{transform:scale(.94)}
+.hdr-bell.on{color:#2f6bf6;background:#e9f0ff;border-color:#cfe0ff}
+.hdr-bell .bd{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:#2f6bf6;display:none}
+.hdr-bell.on .bd{display:block}
+/* 알림 설정 시트 */
+.push-st{display:flex;gap:12px;align-items:center;padding:14px;border-radius:14px;background:#f7f9fd;border:1px solid var(--line);margin-bottom:12px}
+.push-st .pem{font-size:24px;line-height:1;flex-shrink:0}
+.push-st b{display:block;font-size:14.5px;margin-bottom:3px}
+.push-st p{margin:0;font-size:12px;color:var(--ink3);line-height:1.5}
+.push-note{font-size:12px;color:var(--ink3);line-height:1.7}
+.push-ios{margin-top:10px;padding:12px 13px;border-radius:13px;background:#fff8e8;border:1px solid #ffe3ae;font-size:12.5px;line-height:1.75;color:#8a5a00}
+.push-ios b{color:#7a4d00}
 .avatar{
   width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;
@@ -1434,6 +1451,10 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
         <span id="hdrSub">행정지원팀</span>
       </div>
       <span class="badge" id="modeBadge">미리보기 모드</span>
+      <button id="btnBell" class="hdr-bell" aria-label="알림 설정" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.6a6 6 0 1 0-12 0c0 4.3-1.6 5.6-2.2 6.1-.2.2 0 .8.4.8h15.6c.4 0 .6-.6.4-.8-.6-.5-2.2-1.8-2.2-6.1z"/><path d="M9.6 19a2.5 2.5 0 0 0 4.8 0"/></svg>
+        <span class="bd"></span>
+      </button>
       <button id="btnProfile" aria-label="팀원관리 · 내 프로필" style="display:flex;align-items:center;gap:6px">
         <span class="avatar" id="myAvatar">김</span>
         <span id="avatarPendingDot" class="hidden">0</span>
@@ -2361,6 +2382,8 @@ function defaultStartUid(fromDs) {
 /* 계획 적용 — onlyEmpty: 이미 등록된 날짜는 건드리지 않음(다음 달 생성) */
 async function applyDutyPlan(rows, onlyEmpty) {
   let created = 0, replaced = 0, kept = 0;
+  PUSH_MUTE++;            /* 한 달치 일괄 배정 — 알림은 따로 한 번만 */
+  try {
   for (const r of rows) {
     const existing = S.duty.filter(e => e.type === "duty" && entryStart(e) === r.ds);
     if (existing.some(e => e.memberId === r.uid)) { kept++; continue; }
@@ -2368,6 +2391,19 @@ async function applyDutyPlan(rows, onlyEmpty) {
     for (const e of existing) await dbDeleteEntry(e.id);
     await dbSaveEntry({ startDate: r.ds, endDate: r.ds, type: "duty", memberId: r.uid, memberName: r.name, memo: "" });
     existing.length ? replaced++ : created++;
+  }
+  } finally { PUSH_MUTE--; }
+  /* 🔔 나머지 팀원에게는 한 번만 알립니다(한 명씩 쏘면 알림이 쏟아져요) */
+  if (created + replaced > 0) {
+    try {
+      pushNotify({
+        type: "duty",
+        title: "📅 당직 배정이 바뀌었어요",
+        body: "새로 " + (created + replaced) + "일이 잡혔어요 · 앱에서 내 당직을 확인해 주세요",
+        url: "./#duty",
+        tag: "th-duty-plan"
+      });
+    } catch (e) {}
   }
   return { created: created, replaced: replaced, kept: kept };
 }
@@ -3101,11 +3137,12 @@ async function dbSaveEntry(data, existingId, prevEntry) {
   const payload = Object.assign({}, data, extra);
   /* 🛡️ 당직은 하루 1명 — 같은 날짜에 남아 있는 다른 당직 항목도 함께 정리 */
   const dupIds = [];
+  const dupNames = [];
   if (data.type === "duty") {
     (S.duty || []).forEach(x => {
       if (!x || x.type !== "duty") return;
       if (x.id === newId || x.id === existingId) return;
-      if (entryStart(x) === data.startDate) dupIds.push(x.id);
+      if (entryStart(x) === data.startDate) { dupIds.push(x.id); if (x.memberName) dupNames.push(x.memberName); }
     });
   }
   if (S.mode === "demo") {
@@ -3118,6 +3155,10 @@ async function dbSaveEntry(data, existingId, prevEntry) {
     if (existingId && existingId !== newId) { try { await deleteDoc(doc(FB.db, "duty_schedules", existingId)); } catch (e) {} }
     for (const id of dupIds) { try { await deleteDoc(doc(FB.db, "duty_schedules", id)); } catch (e) {} }
     await setDoc(doc(FB.db, "duty_schedules", newId), Object.assign({}, payload, { createdBy: myUid(), createdAt: serverTimestamp() }));
+  }
+  /* 🔔 담당자에게 알림 — 새 배정·변경·교대 (본인 제외) */
+  if (data.type === "duty" || data.type === "day_island" || data.type === "overnight_island" || data.type === "edu") {
+    try { pushNotifyEntry(data, prevEntry, dupNames); } catch (e) { console.warn("pushNotifyEntry:", e && e.message); }
   }
 }
 async function dbDeleteEntry(id) {
@@ -3516,6 +3557,14 @@ async function dbCreateNote(data) {
   } else {
     const { collection, addDoc, serverTimestamp } = FB.f;
     await addDoc(collection(FB.db, "announcements"), Object.assign({}, doc, { createdAt: serverTimestamp(), author_uid: myUid() }));
+    /* 🔔 새 공지 — 팀 전체(나 제외)에게 푸시 */
+    pushNotify({
+      type: "notice",
+      title: data.is_important ? "📢 중요 공지" : "📢 새 공지",
+      body: data.title || "새 공지가 올라왔어요",
+      url: "./#notices",
+      tag: "th-notice"
+    });
   }
 }
 async function dbUpdateNote(id, data) {
@@ -6887,6 +6936,8 @@ function renderTeam() {
         '<span style="font-size:11.5px;font-weight:800;color:var(--brand-d)">' + (kakaoCustomJsKey() ? "변경" : "설정") + '</span></button>'
       : "") +
     (isAdmin() && S.mode === "demo" ? '<button class="set-item" id="setReset"><div class="si"><b>미리보기 데이터 초기화</b><p>샘플 공지·사진·대화를 처음 상태로 되돌립니다</p></div></button>' : "") +
+    '<button class="set-item" id="setPush"><div class="si"><b>🔔 알림</b><p>' + esc(pushSettingText()) + '</p></div>' +
+      '<span class="badge ' + (pushIsOn() ? "live" : "") + '">' + (pushIsOn() ? "ON" : "OFF") + '</span></button>' +
     '<button class="set-item" id="setLogout"><div class="si" style="color:var(--danger)"><b>로그아웃</b><p>' + esc((S.user.empId ? "사번 " + S.user.empId : "") || S.user.email || "") + "</p></div></button>" +
     '<div style="text-align:center;font-size:10.5px;color:var(--ink3);margin:18px 0 8px;line-height:1.7">우리팀 허브<br>' +
       (S.mode === "live" ? "Firebase 실시간 동기화" : "미리보기 모드 (데이터는 이 기기에만 저장)") + "</div>";
@@ -6963,6 +7014,8 @@ function renderTeam() {
   const setKakaoJsBtn = $("#setKakaoJs");
   if (setKakaoJsBtn) setKakaoJsBtn.addEventListener("click", openKakaoJsKeySheet);
   $("#setGuide").addEventListener("click", openGuideSheet);
+  const setPushBtn = $("#setPush");
+  if (setPushBtn) setPushBtn.addEventListener("click", openPushSheet);
   $("#setLogout").addEventListener("click", doLogout);
   const rs = $("#setReset");
   if (rs) rs.addEventListener("click", () => {
@@ -7589,6 +7642,12 @@ function bindServiceWorker() {
   navigator.serviceWorker.addEventListener("message", ev => {
     const d = ev.data || {};
     if (d.type === "th-shell-updated") { showAppUpdate(); return; }
+    if (d.type === "th-open") {
+      const t = String(d.hash || "").replace("#", "");
+      if (S.user && ["notices", "duty", "photos", "rest", "chat"].indexOf(t) >= 0) setTab(t);
+      return;
+    }
+    if (d.type === "th-push-changed") { pushSync(); return; }
     if (d.type === "th-sw-activated") {
       let prev = null;
       try { prev = localStorage.getItem(SWVER_KEY); } catch (e) { prev = null; }
@@ -7596,6 +7655,232 @@ function bindServiceWorker() {
       /* 처음 설치 때는 안내하지 않고, 실제로 버전이 바뀌었을 때만 */
       if (prev && prev !== String(d.version || "")) showAppUpdate();
     }
+  });
+}
+
+/* =====================================================================
+   13-2. 🔔 웹 푸시 알림 — Cloudflare Worker(teamhub-push) + VAPID
+   · 아이폰: iOS 16.4+ 에서 '홈 화면에 추가'한 앱(PWA)만 푸시를 받을 수 있어요.
+   · 구독은 서버(KV)에 저장되고, 새 공지·내 일정 변경 때 Worker 가 푸시를 보냅니다.
+   ===================================================================== */
+const PUSH_WORKER = "https://teamhub-push.dudghks1210.workers.dev";
+const PUSH_VAPID_PUBLIC = "BJgN4r2npkGtxajTBg5-dUaw6ie8yfG5m5zD8A8iow6RRXEHizNjWl_jDfdTz1I9W89XF9x_vf2WLdADmLFud_o";
+const PUSH_NOTIFY_KEY = "dDxKpzlkM5SNgnPgMRP_uoZgFLXvBNLH";   /* 가벼운 남용 방지용(공개 코드) */
+const PUSH_ON_KEY = "teamhub.push.on";
+let PUSH_BUSY = false;
+let PUSH_MUTE = 0;            /* 일괄 배정 중 알림 폭주 방지 */
+
+function pushIsIOS() {
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+function pushStandalone() {
+  try {
+    return navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  } catch (e) { return false; }
+}
+function pushSupported() {
+  return ("serviceWorker" in navigator) && ("PushManager" in window) && window.isSecureContext !== false;
+}
+function pushPerm() {
+  try { return (typeof Notification === "undefined") ? "unsupported" : Notification.permission; } catch (e) { return "unsupported"; }
+}
+function pushWanted() { try { return localStorage.getItem(PUSH_ON_KEY) === "1"; } catch (e) { return false; } }
+function pushSetWanted(on) { try { on ? localStorage.setItem(PUSH_ON_KEY, "1") : localStorage.removeItem(PUSH_ON_KEY); } catch (e) {} }
+function pushIsOn() { return pushSupported() && pushWanted() && pushPerm() === "granted"; }
+function pushKeyBytes() {
+  const s = String(PUSH_VAPID_PUBLIC).replace(/-/g, "+").replace(/_/g, "/");
+  const p = s + "=".repeat((4 - (s.length % 4)) % 4);
+  const raw = atob(p);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function pushReg() {
+  if (!("serviceWorker" in navigator)) return null;
+  try { return await navigator.serviceWorker.ready; } catch (e) { return null; }
+}
+async function pushCurrent() {
+  const reg = await pushReg();
+  if (!reg || !reg.pushManager) return null;
+  try { return await reg.pushManager.getSubscription(); } catch (e) { return null; }
+}
+/* 서버에 구독 저장(이미 있으면 갱신) */
+async function pushSubscribe() {
+  const reg = await pushReg();
+  if (!reg || !reg.pushManager) throw new Error("알림 기능을 준비하지 못했어요");
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushKeyBytes() });
+  const json = sub.toJSON ? sub.toJSON() : { endpoint: sub.endpoint, keys: { p256dh: "", auth: "" } };
+  const r = await fetch(PUSH_WORKER + "/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid: myUid(), empId: (S.user && S.user.empId) || "", name: (S.user && S.user.name) || "", subscription: json })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || ("구독 저장 실패(" + r.status + ")"));
+  pushSetWanted(true);
+  return sub;
+}
+/* 알림 켜기 */
+async function pushEnable() {
+  if (PUSH_BUSY) return false;
+  if (!pushSupported()) { openPushSheet(); return false; }
+  if (pushPerm() === "denied") {
+    toast("알림이 차단되어 있어요. 설정에서 알림을 허용해 주세요");
+    return false;
+  }
+  if (pushPerm() === "default") {
+    let p = "denied";
+    try { p = await Notification.requestPermission(); } catch (e) { p = "denied"; }
+    if (p !== "granted") { toast("알림 권한을 허용하지 않아 켤 수 없어요"); pushRender(); return false; }
+  }
+  PUSH_BUSY = true;
+  try {
+    await pushSubscribe();
+    toast("알림을 켰어요 🔔");
+    return true;
+  } catch (e) {
+    toast("알림을 켜지 못했어요: " + (e && e.message ? e.message : e));
+    return false;
+  } finally { PUSH_BUSY = false; pushRender(); }
+}
+/* 알림 끄기 */
+async function pushDisable() {
+  if (PUSH_BUSY) return false;
+  PUSH_BUSY = true;
+  try {
+    const sub = await pushCurrent();
+    if (sub) {
+      try {
+        await fetch(PUSH_WORKER + "/unsubscribe", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: myUid() })
+        });
+      } catch (e) {}
+      try { await sub.unsubscribe(); } catch (e) {}
+    }
+    pushSetWanted(false);
+    toast("알림을 껐어요");
+    return true;
+  } finally { PUSH_BUSY = false; pushRender(); }
+}
+/* 앱을 열 때마다 구독을 서버와 맞춰 둡니다(엔드포인트가 바뀌어도 계속 받도록) */
+async function pushSync() {
+  try {
+    if (!pushSupported()) { pushRender(); return; }
+    if (!pushWanted() || pushPerm() !== "granted") { pushRender(); return; }
+    const sub = await pushCurrent();
+    if (sub) await pushSubscribe();
+    pushRender();
+  } catch (e) { console.warn("pushSync:", e && e.message); pushRender(); }
+}
+function pushSettingText() {
+  if (!pushSupported()) return (pushIsIOS() && !pushStandalone()) ? "아이폰은 홈 화면에 추가한 뒤 켤 수 있어요" : "이 브라우저는 알림을 지원하지 않아요";
+  if (pushPerm() === "denied") return "브라우저 설정에서 알림을 허용해 주세요";
+  return pushIsOn() ? "새 공지·내 일정 알림 받는 중" : "새 공지·내 당직 변경을 알림으로 받기";
+}
+function pushRender() {
+  const b = $("#btnBell");
+  if (!b) return;
+  const live = pushIsOn();
+  b.classList.toggle("on", live);
+  b.setAttribute("aria-label", live ? "알림 켜짐" : "알림 설정");
+}
+/* 알림 설정 시트 */
+function openPushSheet() {
+  const supported = pushSupported();
+  const perm = pushPerm();
+  const ios = pushIsIOS(), stand = pushStandalone();
+  const on = pushIsOn();
+  let icon = "🔔", title = "알림 꺼짐", desc = "새 공지와 내 일정 변경을 알려 드릴 수 있어요.", btn = "알림 켜기";
+  if (on) { title = "알림 켜짐"; desc = "이 기기로 새 공지·내 일정 알림이 옵니다."; btn = "알림 끄기"; }
+  if (perm === "denied") { icon = "🚫"; title = "알림이 차단되어 있어요"; desc = "브라우저 설정에서 이 사이트의 알림을 허용으로 바꿔 주세요."; btn = ""; }
+  if (!supported) { icon = "📵"; title = "이 브라우저는 푸시 알림을 지원하지 않아요"; desc = "홈 화면에 추가한 앱이나 크롬에서 켜 주세요."; btn = ""; }
+
+  let iosNote = "";
+  if (ios && !stand) {
+    iosNote = '<div class="push-ios"><b>📱 아이폰은 이렇게 켜요</b><br>' +
+      "아이폰은 하단 공유(□↑) → '홈 화면에 추가'로 여신 뒤 알림을 켜 주세요.<br>" +
+      "(사파리 일반 창에서는 알림 기능이 열리지 않아요 · iOS 16.4 이상)" +
+      '</div>';
+  }
+
+  openSheet({
+    title: "🔔 알림",
+    body:
+      '<div class="push-st"><div class="pem">' + icon + '</div><div><b>' + title + '</b><p>' + desc + '</p></div></div>' +
+      '<div class="push-note">· <b>새 공지</b>가 올라오면 알려 드려요.<br>' +
+      "· <b>내 당직·섬·교육 일정</b>이 생기거나 바뀌면 그 담당자에게만 알려 드려요.<br>" +
+      "· 내가 쓴 공지·일정은 나에게는 오지 않아요." +
+      '</div>' + iosNote,
+    footer: btn ? '<button class="btn" id="pushToggle">' + btn + '</button>' : '<button class="btn ghost" id="pushClose">닫기</button>',
+    onMount: root => {
+      const t = $("#pushToggle", root);
+      if (t) t.addEventListener("click", async () => {
+        t.disabled = true;
+        const ok = pushIsOn() ? await pushDisable() : await pushEnable();
+        t.disabled = false;
+        if (ok) closeSheet();
+        else { closeSheet(); setTimeout(openPushSheet, 120); }
+      });
+      const c = $("#pushClose", root);
+      if (c) c.addEventListener("click", closeSheet);
+    }
+  });
+}
+/* 서버로 알림 발송 요청 (실패해도 앱 동작은 그대로) */
+async function pushNotify(payload) {
+  if (S.mode !== "live" || PUSH_MUTE > 0) return null;
+  try {
+    const body = Object.assign({ excludeUid: myUid() }, payload || {});
+    const r = await fetch(PUSH_WORKER + "/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-teamhub-key": PUSH_NOTIFY_KEY },
+      body: JSON.stringify(body),
+      keepalive: true
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!j.ok) console.warn("pushNotify:", r.status, j);
+    return j;
+  } catch (e) { console.warn("pushNotify:", e && e.message); return null; }
+}
+/* 당직·섬·교육 일정 알림 — 담당자(바뀌면 이전 담당자까지)에게 */
+function pushNotifyEntry(data, prevEntry, dupMembers) {
+  if (S.mode !== "live" || PUSH_MUTE > 0) return;
+  const st = STATUS[data.type] || STATUS.duty;
+  const ds = String(data.startDate || "");
+  const when = ds.length >= 10 ? (Number(ds.slice(5, 7)) + "/" + Number(ds.slice(8, 10))) : ds;
+  const label = st.label || "일정";
+  const newName = data.memberName || "";
+  const prevName = (prevEntry && prevEntry.memberName) || "";
+  if (newName) {
+    pushNotify({
+      type: data.type || "duty",
+      title: (st.em || "📅") + " " + label + (prevName && prevName !== newName ? " 변경" : " 배정"),
+      body: when + " " + label + (prevName && prevName !== newName ? " — " + newName + " 님으로 변경" : " — " + newName + " 님"),
+      url: "./#duty",
+      targetNames: [newName]
+    });
+  }
+  if (prevName && prevName !== newName) {
+    pushNotify({
+      type: data.type || "duty",
+      title: (st.em || "📅") + " " + label + " 변경",
+      body: when + " " + label + " 담당이 " + (newName || "다른 팀원") + " 님으로 바뀌었어요",
+      url: "./#duty",
+      targetNames: [prevName]
+    });
+  }
+  (dupMembers || []).forEach(nm => {
+    if (!nm || nm === newName || nm === prevName) return;
+    pushNotify({
+      type: data.type || "duty",
+      title: (st.em || "📅") + " " + label + " 변경",
+      body: when + " " + label + " 담당이 " + (newName || "다른 팀원") + " 님으로 바뀌었어요",
+      url: "./#duty",
+      targetNames: [nm]
+    });
   });
 }
 
@@ -7753,6 +8038,13 @@ function route() {
   if (!S.seenChatAt) S.seenChatAt = Date.now();
   seenLoad();
   renderAll();
+  /* 🔔 알림을 눌러 열었으면 그 화면으로 (#notices / #duty …) */
+  try {
+    const ht = (location.hash || "").replace("#", "");
+    if (["notices", "duty", "photos", "rest", "chat"].indexOf(ht) >= 0 && ht !== S.tab) setTab(ht);
+  } catch (e) {}
+  /* 🔔 알림 구독을 서버와 맞춰 두기(주소가 바뀌어도 계속 받도록) */
+  pushSync();
   /* 매월 24일 00:00(KST) 이후 첫 접속이면 다음 달 당직을 자동 배정 */
   autoAssignNextMonth();
 }
@@ -8126,6 +8418,9 @@ function bindGlobal() {
 
   /* 상단 프로필 아이콘 → 팀원관리(내 프로필 · 승인 대기). 프로필 변경은 그 안의 [프로필 변경]에서 */
   $("#btnProfile").addEventListener("click", () => { setTab("team"); const v = $("#view-team"); if (v) v.scrollTop = 0; });
+  /* 🔔 상단 종 아이콘 → 알림 설정 */
+  const bell = $("#btnBell");
+  if (bell) { bell.addEventListener("click", openPushSheet); pushRender(); }
 
   window.addEventListener("storage", e => {
     if (S.mode === "demo" && (e.key === DEMO_KEY || e.key === SESSION_KEY)) {
