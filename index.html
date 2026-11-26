@@ -7506,9 +7506,8 @@ function openMemberSheet(id) {
       '<div class="hint" id="mPosHint" style="margin:0 2px 10px">직책(' + esc(m.position || "-") + ')과 앱 권한은 별개입니다.</div>' +
       (canSetPos ? '<div class="hr"></div>' +
         (canManage
-          ? '<div class="sec-title" style="margin-top:0">직책 · 권한 관리</div>'
-          : '<div class="sec-title" style="margin-top:0">내 직책</div>') +
-        '<div class="field" style="margin-bottom:10px"><label>직책</label><select id="mPos">' + posOptions(m.position) + "</select></div>" +
+          ? '<div class="sec-title" style="margin-top:0">직책 · 권한 관리</div><div class="field" style="margin-bottom:10px"><label>직책</label><select id="mPos">' + posOptions(m.position) + "</select></div>"
+          : '<div class="field" style="margin-bottom:6px"><label>내 직책 바꾸기</label><select id="mPos">' + posOptions(m.position) + "</select></div>") +
         (canManage
           ? '<div style="display:flex;flex-direction:column;gap:8px">' +
             '<button class="btn ghost sm" id="mRole" style="width:100%">' + (mAdm ? "관리자 권한 해제" : "관리자 권한 부여") + "</button>" +
