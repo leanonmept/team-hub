@@ -3156,8 +3156,9 @@ async function dbSaveEntry(data, existingId, prevEntry) {
     for (const id of dupIds) { try { await deleteDoc(doc(FB.db, "duty_schedules", id)); } catch (e) {} }
     await setDoc(doc(FB.db, "duty_schedules", newId), Object.assign({}, payload, { createdBy: myUid(), createdAt: serverTimestamp() }));
   }
-  /* 🔔 담당자에게 알림 — 새 배정·변경·교대 (본인 제외) */
-  if (data.type === "duty" || data.type === "day_island" || data.type === "overnight_island" || data.type === "edu") {
+  /* 🔔 담당자에게 알림 — 새 배정·변경·교대 (본인 제외)
+     섬·교육 일정은 알림을 보내지 않습니다(당직만). */
+  if ((data.type || "duty") === "duty") {
     try { pushNotifyEntry(data, prevEntry, dupNames); } catch (e) { console.warn("pushNotifyEntry:", e && e.message); }
   }
 }
@@ -7493,7 +7494,8 @@ function seenLoad() {
   NEWSEEN.newNotes = []; NEWSEEN.dutyNew = []; NEWSEEN.dutyChanged = []; NEWSEEN.dutyGone = []; NEWSEEN.flash = false;
   let v = null;
   try { v = JSON.parse(localStorage.getItem(seenKey()) || "null"); } catch (e) { v = null; }
-  if (v && typeof v === "object") {
+  /* v2 — 섬·교육 일정을 새 소식에서 빼면서, 예전 기준은 한 번만 조용히 다시 잡습니다 */
+  if (v && typeof v === "object" && Number(v.v) >= 2) {
     NEWSEEN.base = true;
     NEWSEEN.noticeAt = Number(v.noticeAt) || 0;
     NEWSEEN.duty = (v.duty && typeof v.duty === "object") ? v.duty : {};
@@ -7505,6 +7507,7 @@ function myDutyStamp() {
   const out = {};
   (S.duty || []).forEach(e => {
     if (e.memberId !== myUid()) return;
+    if ((e.type || "duty") !== "duty") return;   /* 섬·교육 일정은 새 소식 대상이 아님 */
     out[e.id] = Math.max(Number(e.updatedAt) || 0, Number(e.createdAt) || 0, 1);
   });
   return out;
@@ -7517,7 +7520,7 @@ function noticesStamp() {
 function seenSave() {
   try {
     localStorage.setItem(seenKey(), JSON.stringify({
-      v: 1, at: Date.now(), noticeAt: NEWSEEN.noticeAt, duty: NEWSEEN.duty, dismissed: NEWSEEN.dismissed
+      v: 2, at: Date.now(), noticeAt: NEWSEEN.noticeAt, duty: NEWSEEN.duty, dismissed: NEWSEEN.dismissed
     }));
   } catch (e) { /* 저장 공간 부족 등 — 배지만 못 쓸 뿐 앱은 정상 동작 */ }
 }
@@ -7548,14 +7551,17 @@ function seenScan() {
   NEWSEEN.dutyNew = []; NEWSEEN.dutyChanged = []; NEWSEEN.dutyGone = [];
   (S.duty || []).forEach(e => {
     if (e.memberId !== myUid()) return;
+    if ((e.type || "duty") !== "duty") return;   /* 섬·교육 일정은 새 소식 대상이 아님 */
     const st = cur[e.id] || 0;
     if (!(e.id in NEWSEEN.duty)) NEWSEEN.dutyNew.push(e);
     else if (st > (Number(NEWSEEN.duty[e.id]) || 0)) NEWSEEN.dutyChanged.push(e);
   });
   Object.keys(NEWSEEN.duty).forEach(id => {
     if (id in cur) return;
-    const gone = (S.duty || []).find(x => x.id === id) || { id: id, startDate: "", type: "duty" };
-    NEWSEEN.dutyGone.push(gone);
+    const found = (S.duty || []).find(x => x.id === id);
+    /* 남아 있는데 섬·교육으로 바뀐 일정은 알리지 않습니다(기준에는 당직만 담깁니다) */
+    if (found && (found.type || "duty") !== "duty") return;
+    NEWSEEN.dutyGone.push(found || { id: id, startDate: "", type: "duty" });
   });
 
   /* 탭을 열었을 때(setTab)만 '확인함'으로 기록합니다.
@@ -7798,7 +7804,7 @@ async function pushSync() {
 function pushSettingText() {
   if (!pushSupported()) return (pushIsIOS() && !pushStandalone()) ? "아이폰은 홈 화면에 추가한 뒤 켤 수 있어요" : "이 브라우저는 알림을 지원하지 않아요";
   if (pushPerm() === "denied") return "브라우저 설정에서 알림을 허용해 주세요";
-  return pushIsOn() ? "새 공지·내 일정 알림 받는 중" : "새 공지·내 당직 변경을 알림으로 받기";
+  return pushIsOn() ? "새 공지·내 당직 알림 받는 중" : "새 공지·내 당직 변경을 알림으로 받기";
 }
 function pushRender() {
   const b = $("#btnBell");
@@ -7813,8 +7819,8 @@ function openPushSheet() {
   const perm = pushPerm();
   const ios = pushIsIOS(), stand = pushStandalone();
   const on = pushIsOn();
-  let icon = "🔔", title = "알림 꺼짐", desc = "새 공지와 내 일정 변경을 알려 드릴 수 있어요.", btn = "알림 켜기";
-  if (on) { title = "알림 켜짐"; desc = "이 기기로 새 공지·내 일정 알림이 옵니다."; btn = "알림 끄기"; }
+  let icon = "🔔", title = "알림 꺼짐", desc = "새 공지와 내 당직 변경을 알려 드릴 수 있어요.", btn = "알림 켜기";
+  if (on) { title = "알림 켜짐"; desc = "이 기기로 새 공지·내 당직 알림이 옵니다."; btn = "알림 끄기"; }
   if (perm === "denied") { icon = "🚫"; title = "알림이 차단되어 있어요"; desc = "브라우저 설정에서 이 사이트의 알림을 허용으로 바꿔 주세요."; btn = ""; }
   if (!supported) { icon = "📵"; title = "이 브라우저는 푸시 알림을 지원하지 않아요"; desc = "홈 화면에 추가한 앱이나 크롬에서 켜 주세요."; btn = ""; }
 
@@ -7831,7 +7837,8 @@ function openPushSheet() {
     body:
       '<div class="push-st"><div class="pem">' + icon + '</div><div><b>' + title + '</b><p>' + desc + '</p></div></div>' +
       '<div class="push-note">· <b>새 공지</b>가 올라오면 알려 드려요.<br>' +
-      "· <b>내 당직·섬·교육 일정</b>이 생기거나 바뀌면 그 담당자에게만 알려 드려요.<br>" +
+      "· <b>내 당직</b>이 생기거나 바뀌면 그 담당자에게만 알려 드려요.<br>" +
+      "· <b>섬·교육 일정</b>은 알림을 보내지 않아요(앱에서 확인).<br>" +
       "· 내가 쓴 공지·일정은 나에게는 오지 않아요." +
       '</div>' + iosNote,
     footer: btn ? '<button class="btn" id="pushToggle">' + btn + '</button>' : '<button class="btn ghost" id="pushClose">닫기</button>',
@@ -7864,9 +7871,12 @@ async function pushNotify(payload) {
     return j;
   } catch (e) { console.warn("pushNotify:", e && e.message); return null; }
 }
-/* 당직·섬·교육 일정 알림 — 담당자(바뀌면 이전 담당자까지)에게 */
+/* 당직 일정 알림 — 담당자(바뀌면 이전 담당자까지)에게
+   섬(당일·1박)·교육 일정은 알리지 않습니다(앱 안 배지도 같습니다). */
 function pushNotifyEntry(data, prevEntry, dupMembers) {
   if (S.mode !== "live" || PUSH_MUTE > 0) return;
+  if ((data.type || "duty") !== "duty") return;                /* 당직만 */
+  if (prevEntry && (prevEntry.type || "duty") !== "duty") return;
   const st = STATUS[data.type] || STATUS.duty;
   const ds = String(data.startDate || "");
   const when = ds.length >= 10 ? (Number(ds.slice(5, 7)) + "/" + Number(ds.slice(8, 10))) : ds;
