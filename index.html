@@ -799,6 +799,10 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sea-hd .dot{width:6px;height:6px;border-radius:50%;background:#1189b6;box-shadow:0 0 0 3px rgba(17,137,182,.15);flex-shrink:0}
 .sea-hd .rf{margin-left:auto;font-size:10.5px;font-weight:800;color:#0b6d8f;background:#eaf7fc;border:1px solid #d5edf8;border-radius:20px;padding:4px 9px;white-space:nowrap;letter-spacing:-.02em}
 .sea-hd .rf[disabled]{opacity:.5}
+/* 자료 출처(상단) — 기상청 공공누리 제1유형 */
+.sea-src{margin:0 2px 9px;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em;line-height:1.55}
+.sea-src b{color:var(--ink2)}
+.sea-src a{color:#0b6d8f;text-decoration:none;border-bottom:1px dotted #9fd3e6}
 .sea-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
 .sea-sum div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 4px;text-align:center}
 .sea-sum b{display:block;font-size:16px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
@@ -847,6 +851,7 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sr-w{font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.04em}
 .sr-w b{font-size:16px;font-weight:800;line-height:1.15}
 .sr-w i{font-style:normal;font-size:10px;font-weight:800;color:var(--ink2);margin-left:1px}
+.sr-w b.rng{font-size:13px;letter-spacing:-.055em}
 .sr-nw{font-size:10px;font-weight:800;color:var(--ink3);letter-spacing:-.05em;white-space:nowrap}
 .sr-split{font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.03em;white-space:nowrap;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .sr-split em{font-style:normal;color:#c47c00;font-weight:800}
@@ -4518,20 +4523,34 @@ function islandBarHtml(sp) {
 
 /* =====================================================================
    🌊 섬 파고 · 배편 — 인천 8개 섬(영흥도 제외) 실시간 파고·풍속
-   · 파고·파주기는 Open-Meteo Marine API, 기온·풍속은 Open-Meteo Forecast API
-   · 8개 섬 좌표를 쉼표로 묶어 다중 좌표 1콜씩(총 2콜)로 받습니다. 키 불필요·무료.
-   · 10분 캐시. 실패해도 배편·운항정보 링크는 그대로 남습니다.
+   · 1~5일: 기상청 단기예보(getVilageFcst) — WAV 파고·WSD 풍속·TMP 기온·SKY/PTY 날씨·PCP 강수량·POP 강수확률
+   · 6~10일: 기상청 중기해상예보(getMidSeaFcst 12A20000 파고 A~B·해상날씨) + 중기기온(getMidTa 11A00101)
+             + 중기육상예보(getMidLandFcst 11B00000) 강수확률
+   · 11~16일: Open-Meteo 예보(weather_code·precipitation_sum·강수확률·풍속·기온, 파고는 해양예보 범위까지)
+   · 격자 nx·ny는 기상청 Lambert 격자 변환식(서울 60/127·인천 55/124 검증)으로 8개 섬 실측값을 씁니다.
+   · 출처: 기상청 단기·중기예보(공공데이터포털, 공공누리 제1유형: 출처표시) · Open-Meteo
+   · 공공데이터포털 Decoding 인증키 사용 · apis.data.go.kr CORS 허용 확인 · 10분 캐시
    ===================================================================== */
 const SEA_ISLANDS = [
-  { name: "백령도", lat: 37.95, lon: 124.66, area: "서해 5도" },
-  { name: "대청도", lat: 37.82, lon: 124.70, area: "서해 5도" },
-  { name: "소청도", lat: 37.77, lon: 124.74, area: "서해 5도" },
-  { name: "연평도", lat: 37.66, lon: 125.70, area: "서해 5도" },
-  { name: "덕적도", lat: 37.23, lon: 126.15, area: "인천 앞바다" },
-  { name: "자월도", lat: 37.25, lon: 126.31, area: "인천 앞바다" },
-  { name: "이작도", lat: 37.18, lon: 126.25, area: "인천 앞바다" },
-  { name: "승봉도", lat: 37.17, lon: 126.29, area: "인천 앞바다" }
+  { name: "백령도", lat: 37.95, lon: 124.66, area: "서해 5도", nx: 20, ny: 135 },
+  { name: "대청도", lat: 37.82, lon: 124.70, area: "서해 5도", nx: 21, ny: 132 },
+  { name: "소청도", lat: 37.77, lon: 124.74, area: "서해 5도", nx: 21, ny: 131 },
+  { name: "연평도", lat: 37.66, lon: 125.70, area: "서해 5도", nx: 38, ny: 129 },
+  { name: "덕적도", lat: 37.23, lon: 126.15, area: "인천 앞바다", nx: 46, ny: 119 },
+  { name: "자월도", lat: 37.25, lon: 126.31, area: "인천 앞바다", nx: 48, ny: 120 },
+  { name: "이작도", lat: 37.18, lon: 126.25, area: "인천 앞바다", nx: 47, ny: 118 },
+  { name: "승봉도", lat: 37.17, lon: 126.29, area: "인천 앞바다", nx: 48, ny: 118 }
 ];
+/* 공공데이터포털 기상청 단기·중기예보 (Decoding 인증키) */
+const SEA_KMA_KEY = "a6934d1127ae8e68b24d50f0f0e2945d3c9a2632b7023c49722ecda8bd9d69c4";
+const SEA_KMA_BASE = "https://apis.data.go.kr/1360000/";
+const SEA_KMA_SHORT = SEA_KMA_BASE + "VilageFcstInfoService_2.0/getVilageFcst";
+const SEA_KMA_MIDSEA = SEA_KMA_BASE + "MidFcstInfoService/getMidSeaFcst";
+const SEA_KMA_MIDTA = SEA_KMA_BASE + "MidFcstInfoService/getMidTa";
+const SEA_KMA_MIDLAND = SEA_KMA_BASE + "MidFcstInfoService/getMidLandFcst";
+const SEA_MID_SEA_REG = "12A20000";   /* 중기해상예보 서해중부 먼바다 */
+const SEA_MID_TA_REG = "11A00101";    /* 중기기온 백령도(서해5도) 지점 */
+const SEA_MID_LAND_REG = "11B00000";  /* 중기육상예보 수도권 — 중기 강수확률 참고 */
 const SEA_GROUPS = ["서해 5도", "인천 앞바다"];
 const SEA_LINKS = [
   /* 2025-03-31 '가보고 싶은 섬(island.haewoon.co.kr)'이 종료되어 KSA 여객선예매로 이전했습니다. */
@@ -4604,26 +4623,260 @@ function seaGet(url) {
          e => { if (timer) clearTimeout(timer); throw e; });
 }
 
+/* ---------- 기상청 격자·발표시각·값 변환 ---------- */
+function seaPad(n) { n = Number(n) || 0; return (n < 10 ? "0" : "") + n; }
+/* KST(UTC+9) 기준 날짜·시각 — 기기 시간대와 무관하게 섬 기준으로 맞춥니다 */
+function seaKstParts(ms) {
+  const t = new Date((typeof ms === "number" ? ms : Date.now()) + 9 * 3600 * 1000);
+  const y = t.getUTCFullYear(), mo = t.getUTCMonth() + 1, d = t.getUTCDate();
+  return { y: y, mo: mo, d: d, h: t.getUTCHours(), mi: t.getUTCMinutes(),
+    ds: y + "-" + seaPad(mo) + "-" + seaPad(d), d8: "" + y + seaPad(mo) + seaPad(d) };
+}
+function seaAddDays(ds, n) {
+  const p = String(ds || "").split("-");
+  const t = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]) + Number(n || 0)));
+  return t.getUTCFullYear() + "-" + seaPad(t.getUTCMonth() + 1) + "-" + seaPad(t.getUTCDate());
+}
+/* 단기예보 발표시각 02·05·08·11·14·17·20·23시 — 발표 20분 뒤부터 조회 */
+function seaKmaShortBase(nowMs) {
+  const now = (typeof nowMs === "number" ? nowMs : Date.now()) - 20 * 60 * 1000;
+  const p = seaKstParts(now);
+  const slots = [23, 20, 17, 14, 11, 8, 5, 2];
+  for (let back = 0; back < 3; back++) {
+    for (let i = 0; i < slots.length; i++) {
+      if (Date.UTC(p.y, p.mo - 1, p.d - back, slots[i] - 9, 0, 0) <= now) {
+        const ds = seaAddDays(p.ds, -back);
+        return { ds: ds, d8: ds.replace(/-/g, ""), hh: seaPad(slots[i]) + "00" };
+      }
+    }
+  }
+  return { ds: p.ds, d8: p.d8, hh: "0200" };
+}
+/* 중기예보 발표시각 06·18시 — 발표 1시간 뒤부터 조회 */
+function seaKmaMidBase(nowMs) {
+  const now = (typeof nowMs === "number" ? nowMs : Date.now()) - 60 * 60 * 1000;
+  const p = seaKstParts(now);
+  if (p.h >= 18) return { ds: p.ds, d8: p.d8, hh: "1800" };
+  if (p.h >= 6) return { ds: p.ds, d8: p.d8, hh: "0600" };
+  const ds = seaAddDays(p.ds, -1);
+  return { ds: ds, d8: ds.replace(/-/g, ""), hh: "1800" };
+}
+function seaKmaUrl(base, rows, q) {
+  return base + "?serviceKey=" + SEA_KMA_KEY + "&pageNo=1&numOfRows=" + rows + "&dataType=JSON&" + q;
+}
+function seaKmaItems(j) {
+  const r = (j && j.response) || {};
+  const hd = r.header || {};
+  if (hd.resultCode !== undefined && String(hd.resultCode) !== "00") {
+    throw new Error("기상청 응답 " + String(hd.resultCode) + (hd.resultMsg ? " " + hd.resultMsg : ""));
+  }
+  const it = (r.body && r.body.items && r.body.items.item) || [];
+  return Array.isArray(it) ? it : [it];
+}
+/* PCP 문자열 → mm ("강수없음" 0 · "1.0~4.9mm" 2.95 · "50.0mm 이상" 50) */
+function seaPcp(v) {
+  const s = String(v === null || v === undefined ? "" : v).trim();
+  if (!s || s === "0" || s.indexOf("강수없음") >= 0) return 0;
+  const nums = (s.replace(/[^0-9.]/g, " ").trim().split(/\s+/) || []).map(Number).filter(n => isFinite(n));
+  if (!nums.length) return 0;
+  return (Math.min.apply(null, nums) + Math.max.apply(null, nums)) / 2;
+}
+/* SKY(1 맑음·3 구름많음·4 흐림) + PTY(0 없음·1 비·2 비/눈·3 눈·4 소나기) → WMO 코드 */
+function seaKmaCode(pty, sky) {
+  const p = Number(pty), s = Number(sky);
+  if (p === 1) return 63;
+  if (p === 2) return 66;
+  if (p === 3) return 73;
+  if (p === 4) return 81;
+  if (p >= 5) return 61;
+  if (s === 1) return 0;
+  if (s === 3) return 2;
+  if (s === 4) return 3;
+  return null;
+}
+/* 중기 해상날씨 문구("흐리고 비" 등) → 순위·아이콘 코드 */
+function seaKmaWxRank(t) {
+  const s = String(t || "");
+  if (/비|눈|소나기/.test(s)) return 3;
+  if (/흐림/.test(s)) return 2;
+  if (/구름많/.test(s)) return 1;
+  if (/맑음/.test(s)) return 0;
+  return -1;
+}
+function seaKmaWorst(a, b) {
+  return seaKmaWxRank(b) > seaKmaWxRank(a) ? String(b) : String(a || b || "");
+}
+function seaKmaWxCode(t) {
+  const s = String(t || "");
+  if (!s) return null;
+  if (/눈/.test(s)) return /비/.test(s) ? 66 : 73;
+  if (/비|소나기/.test(s)) return 63;
+  if (/흐림/.test(s)) return 3;
+  if (/구름많/.test(s)) return 2;
+  if (/맑음/.test(s)) return 0;
+  return null;
+}
+/* 단기예보 응답 → { hrs: {"YYYY-MM-DD HH": {ds,hh,wav,wind,tmp,sky,pty,pop,pcp}}, days: {ds:{...}} } */
+function seaKmaShort(arr) {
+  const hrs = {}, days = {};
+  const dayOf = ds => days[ds] || (days[ds] = {
+    ds: ds, wavMax: null, am: null, pm: null, n: 0, wind: null,
+    tmax: null, tmin: null, tmx: null, tmn: null,
+    rain: null, prob: null, pty: 0, sky: 0, code: null
+  });
+  (arr || []).forEach(x => {
+    const d8 = String(x.fcstDate || "");
+    if (!/^\d{8}$/.test(d8)) return;
+    const ds = d8.slice(0, 4) + "-" + d8.slice(4, 6) + "-" + d8.slice(6, 8);
+    const hh = Number(String(x.fcstTime || "00").slice(0, 2));
+    const c = x.category, v = x.fcstValue, n = Number(v);
+    const key = ds + " " + seaPad(hh);
+    const o = hrs[key] || (hrs[key] = { ds: ds, hh: hh });
+    const d = dayOf(ds);
+    if (c === "WAV") { if (isFinite(n) && n > 0) o.wav = n; }
+    else if (c === "WSD") { if (isFinite(n) && n >= 0) o.wind = n; }
+    else if (c === "TMP") { if (isFinite(n)) o.tmp = n; }
+    else if (c === "SKY") { if (isFinite(n)) o.sky = n; }
+    else if (c === "PTY") { if (isFinite(n)) o.pty = n; }
+    else if (c === "POP") { if (isFinite(n)) o.pop = n; }
+    else if (c === "PCP") { o.pcp = seaPcp(v); }
+    if (c === "TMX" && isFinite(n)) d.tmx = n;
+    else if (c === "TMN" && isFinite(n)) d.tmn = n;
+    else if (c === "PCP") d.rain = (d.rain === null ? 0 : d.rain) + seaPcp(v);
+    else if (c === "POP" && isFinite(n)) d.prob = d.prob === null ? n : Math.max(d.prob, n);
+  });
+  Object.keys(hrs).forEach(k => {
+    const o = hrs[k], d = days[o.ds];
+    if (!d) return;
+    if (typeof o.wav === "number") {
+      if (d.wavMax === null || o.wav > d.wavMax) d.wavMax = o.wav;
+      d.n++;
+      if (o.hh >= 6 && o.hh <= 12 && (d.am === null || o.wav > d.am)) d.am = o.wav;
+      if (o.hh >= 12 && o.hh <= 18 && (d.pm === null || o.wav > d.pm)) d.pm = o.wav;
+    }
+    if (typeof o.wind === "number" && (d.wind === null || o.wind > d.wind)) d.wind = o.wind;
+    if (typeof o.tmp === "number") {
+      if (d.tmax === null || o.tmp > d.tmax) d.tmax = o.tmp;
+      if (d.tmin === null || o.tmp < d.tmin) d.tmin = o.tmp;
+    }
+    if (o.hh >= 6 && o.hh <= 18) {
+      if (typeof o.pty === "number" && o.pty > d.pty) d.pty = o.pty;
+      if (typeof o.sky === "number" && o.sky > d.sky) d.sky = o.sky;
+    }
+  });
+  Object.keys(days).forEach(ds => {
+    const d = days[ds];
+    d.code = seaKmaCode(d.pty, d.sky);
+    if (d.tmx === null) d.tmx = d.tmax;
+    if (d.tmn === null) d.tmn = d.tmin;
+  });
+  return { hrs: hrs, days: days };
+}
+/* 그날 현재 시각과 가장 가까운 단기예보 시간값 */
+function seaKmaHourNear(sh, ds, mins) {
+  if (!sh || !sh.hrs) return null;
+  let best = null, diff = 1e9;
+  Object.keys(sh.hrs).forEach(k => {
+    const o = sh.hrs[k];
+    if (o.ds !== ds) return;
+    const gap = Math.abs(o.hh * 60 - mins);
+    if (gap < diff) { diff = gap; best = o; }
+  });
+  return best;
+}
+/* 중기예보 3건(해상·기온·육상) → { ds: {wmin,wmax,amMin,amMax,pmMin,pmMax,wtext,code,prob,tmin,tmax} }
+   N일째 = 발표일 + (N-1)일. 파고가 없는 날(값 0)은 건너뜁니다. */
+function seaKmaMid(seaArr, taArr, landArr, base) {
+  const s = (seaArr && seaArr[0]) || {};
+  const t = (taArr && taArr[0]) || {};
+  const l = (landArr && landArr[0]) || {};
+  const out = {};
+  const num = v => { const n = Number(v); return isFinite(n) ? n : null; };
+  for (let k = 3; k <= 10; k++) {
+    const ds = seaAddDays(base.ds, k - 1);
+    let amA = null, amB = null, pmA = null, pmB = null, wfAm = "", wfPm = "", prob = null;
+    if (k <= 7) {
+      amA = num(s["wh" + k + "AAm"]); amB = num(s["wh" + k + "BAm"]);
+      pmA = num(s["wh" + k + "APm"]); pmB = num(s["wh" + k + "BPm"]);
+      wfAm = String(s["wf" + k + "Am"] || "");
+      wfPm = String(s["wf" + k + "Pm"] || "");
+      const p1 = num(l["rnSt" + k + "Am"]), p2 = num(l["rnSt" + k + "Pm"]);
+      if (p1 !== null || p2 !== null) prob = Math.max(p1 === null ? 0 : p1, p2 === null ? 0 : p2);
+    } else {
+      amA = num(s["wh" + k + "A"]); amB = num(s["wh" + k + "B"]);
+      pmA = amA; pmB = amB;
+      wfAm = String(s["wf" + k] || "");
+      prob = num(l["rnSt" + k]);
+    }
+    if (!(amB > 0) && !(pmB > 0)) continue;
+    const mins = [amA, pmA].filter(v => typeof v === "number" && v > 0);
+    const maxs = [amB, pmB].filter(v => typeof v === "number" && v > 0);
+    const wtext = seaKmaWorst(wfAm, wfPm);
+    out[ds] = {
+      ds: ds,
+      wmin: mins.length ? Math.min.apply(null, mins) : null,
+      wmax: Math.max.apply(null, maxs),
+      amMin: amA, amMax: amB, pmMin: pmA, pmMax: pmB,
+      wtext: wtext, code: seaKmaWxCode(wtext), prob: prob,
+      tmin: num(t["taMin" + k]), tmax: num(t["taMax" + k])
+    };
+  }
+  return out;
+}
+
 async function seaLoad() {
   if (seaBusy) return;
   seaBusy = true;
   seaError = "";
   paintSea();
   try {
-    /* 기상(api.open-meteo.com)과 해양(marine-api.open-meteo.com)을 따로 받습니다.
-       한쪽이 타임아웃·실패해도 다른 쪽 데이터는 그대로 보여 주려고 allSettled를 씁니다.
-       둘 다 실패했을 때만 오류 화면입니다. */
-    const settled = await Promise.allSettled([seaGet(seaUrl("marine")), seaGet(seaUrl("weather"))]);
-    const mRes = settled[0], wRes = settled[1];
-    const mOk = !!mRes && mRes.status === "fulfilled";
-    const wOk = !!wRes && wRes.status === "fulfilled";
-    if (!mOk && !wOk) throw ((mRes && mRes.reason) || (wRes && wRes.reason) || new Error("네트워크 오류"));
-    const mArr = mOk ? (Array.isArray(mRes.value) ? mRes.value : [mRes.value]) : [];
-    const wArr = wOk ? (Array.isArray(wRes.value) ? wRes.value : [wRes.value]) : [];
-    /* 날짜 축은 API 응답(Asia/Seoul)에서 뽑습니다. 브라우저 시간대와 무관하게 섬 기준 날짜로 맞습니다. */
-    const axis = (((wArr[0] && wArr[0].hourly && wArr[0].hourly.time) ||
-      (mArr[0] && mArr[0].hourly && mArr[0].hourly.time) || []).map(t => String(t).slice(0, 10)));
-    const days = axis.filter((v, i, a) => /^\d{4}-\d{2}-\d{2}$/.test(v) && a.indexOf(v) === i).slice(0, SEA_DAYS);
+    const nowMs = Date.now();
+    const sb = seaKmaShortBase(nowMs);
+    const mb = seaKmaMidBase(nowMs);
+    /* ① 기상청 단기예보 8콜 · ② 중기예보 3콜 · ③ Open-Meteo 2콜을 한꺼번에 받습니다.
+       하나가 타임아웃·실패해도 나머지는 그대로 보여 주려고 allSettled를 씁니다. */
+    const jobs = SEA_ISLANDS.map(isl => seaGet(seaKmaUrl(SEA_KMA_SHORT, 1000,
+      "base_date=" + sb.d8 + "&base_time=" + sb.hh + "&nx=" + isl.nx + "&ny=" + isl.ny)));
+    jobs.push(seaGet(seaUrl("marine")));
+    jobs.push(seaGet(seaUrl("weather")));
+    jobs.push(seaGet(seaKmaUrl(SEA_KMA_MIDSEA, 10, "regId=" + SEA_MID_SEA_REG + "&tmFc=" + mb.d8 + mb.hh)));
+    jobs.push(seaGet(seaKmaUrl(SEA_KMA_MIDTA, 10, "regId=" + SEA_MID_TA_REG + "&tmFc=" + mb.d8 + mb.hh)));
+    jobs.push(seaGet(seaKmaUrl(SEA_KMA_MIDLAND, 10, "regId=" + SEA_MID_LAND_REG + "&tmFc=" + mb.d8 + mb.hh)));
+    const settled = await Promise.allSettled(jobs);
+    const val = i => (settled[i] && settled[i].status === "fulfilled") ? settled[i].value : null;
+
+    /* 기상청 단기예보 — 섬별 파싱 (한 섬이 실패해도 다른 섬은 그대로) */
+    const shorts = [];
+    let shortOk = 0;
+    for (let i = 0; i < SEA_ISLANDS.length; i++) {
+      let r = null;
+      const j = val(i);
+      if (j) { try { r = seaKmaShort(seaKmaItems(j)); } catch (e) { r = null; } }
+      if (r && Object.keys(r.days).length) shortOk++;
+      shorts.push(r);
+    }
+    /* 기상청 중기예보 — 3~10일 뒤 (해상 파고·해상날씨 · 중기기온 · 강수확률) */
+    const jSea = val(10), jTa = val(11), jLand = val(12);
+    let mid = null;
+    if (jSea) {
+      try {
+        mid = seaKmaMid(seaKmaItems(jSea), jTa ? seaKmaItems(jTa) : [], jLand ? seaKmaItems(jLand) : [], mb);
+      } catch (e) { mid = null; }
+    }
+    const midOk = !!(mid && Object.keys(mid).length);
+
+    /* Open-Meteo — 11~16일을 잇고, 기상청이 실패한 자리의 대체값 */
+    const mRes = val(8), wRes = val(9);
+    const mOk = !!mRes, wOk = !!wRes;
+    if (!mOk && !wOk && !shortOk && !midOk) throw new Error("기상 데이터를 하나도 받지 못했어요");
+    const mArr = mOk ? (Array.isArray(mRes) ? mRes : [mRes]) : [];
+    const wArr = wOk ? (Array.isArray(wRes) ? wRes : [wRes]) : [];
+
+    /* 날짜 축 — 오늘(KST)부터 16일. API 응답이 없어도 축은 그대로 만듭니다. */
+    const kstNow = seaKstParts(nowMs);
+    const days = [];
+    for (let k = 0; k < SEA_DAYS; k++) days.push(seaAddDays(kstNow.ds, k));
+
     const items = SEA_ISLANDS.map((isl, i) => {
       const m = mArr[i] || {}, w = wArr[i] || {};
       const cur = m.current || {}, wc = w.current || {};
@@ -4673,27 +4926,77 @@ async function seaLoad() {
           tmin: tmap[ds] && typeof tmap[ds].min === "number" ? tmap[ds].min : null,
           code: tmap[ds] && typeof tmap[ds].code === "number" ? tmap[ds].code : null,
           rain: tmap[ds] && typeof tmap[ds].rain === "number" ? tmap[ds].rain : null,
-          prob: tmap[ds] && typeof tmap[ds].prob === "number" ? tmap[ds].prob : null
+          prob: tmap[ds] && typeof tmap[ds].prob === "number" ? tmap[ds].prob : null,
+          src: "om"
         };
       });
+      /* 기상청 단기예보 — 오늘~5일 (중기보다 상세하므로 우선) */
+      const sh = shorts[i] || null;
+      if (sh) {
+        days.forEach(ds => {
+          const d = sh.days[ds];
+          if (!d) return;
+          const o = per[ds];
+          if (typeof d.wavMax === "number") { o.max = d.wavMax; o.am = d.am; o.pm = d.pm; o.n = d.n; }
+          if (typeof d.wind === "number") o.wind = d.wind;
+          if (typeof d.tmax === "number") o.tmax = d.tmax;
+          if (typeof d.tmin === "number") o.tmin = d.tmin;
+          if (d.code !== null && d.code !== undefined) o.code = d.code;
+          if (d.rain !== null) o.rain = d.rain;
+          if (d.prob !== null) o.prob = d.prob;
+          if (typeof d.wavMax === "number" || d.code !== null || d.wind !== null) o.src = "kma";
+        });
+      }
+      /* 기상청 중기예보 — 6~10일 (단기예보가 있는 날은 건너뜀) */
+      if (mid) {
+        days.forEach(ds => {
+          const d = mid[ds];
+          if (!d || per[ds].src === "kma") return;
+          const o = per[ds];
+          o.max = d.wmax; o.wmin = d.wmin;
+          o.amMin = d.amMin; o.amMax = d.amMax; o.pmMin = d.pmMin; o.pmMax = d.pmMax;
+          o.am = d.amMax; o.pm = d.pmMax; o.n = null;
+          o.wind = null; o.gust = null; o.rain = null;
+          if (d.prob !== null) o.prob = d.prob;
+          if (d.code !== null) o.code = d.code;
+          o.wtext = d.wtext;
+          if (d.tmax !== null) o.tmax = d.tmax;
+          if (d.tmin !== null) o.tmin = d.tmin;
+          o.src = "mid";
+        });
+      }
+      /* 지금 값 — 단기예보의 현재 시각에 가장 가까운 시간값, 없으면 Open-Meteo current */
+      const nowHr = seaKmaHourNear(sh, kstNow.ds, kstNow.h * 60 + kstNow.mi);
+      const tdy = sh && sh.days[kstNow.ds] ? sh.days[kstNow.ds] : null;
       const maxOf = ds => (per[ds] && typeof per[ds].max === "number") ? per[ds].max : null;
       return {
         name: isl.name, area: isl.area,
-        wave: typeof cur.wave_height === "number" ? cur.wave_height : null,
+        wave: nowHr && typeof nowHr.wav === "number" ? nowHr.wav : (typeof cur.wave_height === "number" ? cur.wave_height : null),
         period: typeof cur.wave_period === "number" ? cur.wave_period : null,
-        temp: typeof wc.temperature_2m === "number" ? wc.temperature_2m : null,
-        wind: typeof wc.wind_speed_10m === "number" ? wc.wind_speed_10m : null,
+        temp: nowHr && typeof nowHr.tmp === "number" ? nowHr.tmp : (typeof wc.temperature_2m === "number" ? wc.temperature_2m : null),
+        wind: nowHr && typeof nowHr.wind === "number" ? nowHr.wind : (typeof wc.wind_speed_10m === "number" ? wc.wind_speed_10m : null),
         gust: typeof wc.wind_gusts_10m === "number" ? wc.wind_gusts_10m : null,
-        code: typeof wc.weather_code === "number" ? wc.weather_code : null,
-        rain: typeof wc.precipitation === "number" ? wc.precipitation : null,
+        code: nowHr && (typeof nowHr.pty === "number" || typeof nowHr.sky === "number")
+          ? seaKmaCode(nowHr.pty, nowHr.sky)
+          : (typeof wc.weather_code === "number" ? wc.weather_code : null),
+        rain: tdy && tdy.rain !== null ? tdy.rain : (typeof wc.precipitation === "number" ? wc.precipitation : null),
+        prob: tdy && tdy.prob !== null ? tdy.prob : null,
         days: per,
         todayMax: maxOf(days[0]), tomMax: maxOf(days[1])
       };
     });
-    const stamp = (mArr[0] && mArr[0].current && mArr[0].current.time) ||
-      (wArr[0] && wArr[0].current && wArr[0].current.time) || "";
-    seaCache = { at: Date.now(), items: items, stamp: stamp, days: days,
-      partial: !mOk ? "marine" : (!wOk ? "weather" : "") };
+
+    /* 안내 문구 — 어떤 자료를 못 받았는지 */
+    const warns = [];
+    if (shortOk === 0) warns.push("기상청 단기예보를 받지 못해 1~5일은 Open-Meteo 값으로 대신했어요.");
+    else if (shortOk < SEA_ISLANDS.length) warns.push("일부 섬(" + (SEA_ISLANDS.length - shortOk) + "곳)의 기상청 단기예보를 받지 못해 Open-Meteo 값으로 대신했어요.");
+    if (!midOk) warns.push("기상청 중기예보를 받지 못해 6~10일도 Open-Meteo 값으로 대신했어요.");
+    if (!mOk || !wOk) warns.push("Open-Meteo " + (!mOk ? "해양(파고)" : "기상(기온·풍속)") + " 정보를 받지 못해 11일 이후가 비어 있을 수 있어요.");
+
+    const stamp = sb.ds + " " + sb.hh.slice(0, 2) + ":" + sb.hh.slice(2);
+    seaCache = { at: Date.now(), items: items, stamp: stamp, days: days, warns: warns,
+      midStamp: midOk ? (mb.ds + " " + mb.hh.slice(0, 2) + ":" + mb.hh.slice(2)) : "",
+      srcs: { kma: shortOk, mid: midOk, om: mOk || wOk } };
   } catch (e) {
     const nm = (e && e.name) || "", msg = (e && e.message) || "";
     if (nm === "AbortError") seaError = "응답이 늦어 시간 초과";
@@ -4710,7 +5013,8 @@ function seaCardHtml(i, idx) {
   const wx = seaWx(i.code);
   const wind = i.wind !== null && i.wind !== undefined ? seaNum(i.wind) + " m/s" : "–";
   const rainTxt = (i.code !== null && i.code !== undefined)
-    ? wx.em + " " + wx.label + (i.rain !== null && i.rain !== undefined ? " · 💧 " + seaRain(i.rain) : "")
+    ? wx.em + " " + wx.label + (i.rain !== null && i.rain !== undefined ? " · 💧 " + seaRain(i.rain) : "") +
+      (typeof i.prob === "number" ? " " + Math.round(i.prob) + "%" : "")
     : "☁️ 날씨 미제공";
   return '<button type="button" class="sea-card tap ' + b.cls + '" data-si="' + idx + '" aria-label="' + esc(i.name) + ' 16일 파고·날씨 보기">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
@@ -4743,28 +5047,45 @@ function seaMd(ds) {
 function seaRowHtml(it, ds, k) {
   const s = (it.days && it.days[ds]) || {};
   const hasWave = typeof s.max === "number";
+  const isMid = s.src === "mid" && hasWave;
   const b = hasWave ? seaBadge(s.max) : seaWindBadge(s.wind);
-  const badge = hasWave && b.cls === "high" ? "높음·결항주의" : b.label;
+  const badge = hasWave && b.cls === "high" && !isMid ? "높음·결항주의" : b.label;
   /* 해양예보 마지막 날처럼 파고가 하루 일부 시간만 있는 경우 */
-  const partial = hasWave && k > 0 && typeof s.n === "number" && s.n < 24;
-  const tag = k === 0 ? "오늘" : k === 1 ? "내일" : "";
+  const partial = hasWave && !isMid && k > 0 && typeof s.n === "number" && s.n < 24;
+  const tag = k === 0 ? "오늘" : k === 1 ? "내일" : (isMid ? "중기" : "");
   const windTxt = typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–";
-  let l1, l2;
-  if (hasWave) {
+  let l1, l2, wxTxt, wet = false;
+  if (isMid) {
+    /* 6~10일째 — 기상청 중기해상예보: 최저~최고 파고 · 해상날씨·강수확률 + 중기기온 */
+    l1 = '<span class="sr-w"><b class="rng">' + seaNum(s.wmin) + "~" + seaNum(s.max) + '</b><i>m</i></span>' +
+      '<span class="sr-split">오전 ' + seaNum(s.amMin) + "~" + seaNum(s.amMax) + " · 오후 " + seaNum(s.pmMin) + "~" + seaNum(s.pmMax) + "</span>";
+    l2 = typeof s.tmax === "number"
+      ? "🌡 최저 " + seaTemp(s.tmin) + " · 최고 " + seaTemp(s.tmax)
+      : "🌡 기온 자료 없음";
+    const wm = seaWx(s.code);
+    wxTxt = (s.code !== null && s.code !== undefined ? wm.em + " " + (s.wtext || wm.label) : "날씨 미제공") +
+      (typeof s.prob === "number" ? ' · 💧 <em>' + Math.round(s.prob) + "%</em>" : "");
+    wet = seaKmaWxRank(s.wtext) === 3;
+  } else if (hasWave) {
+    const splitTxt = (s.am === null || s.am === undefined) && (s.pm === null || s.pm === undefined)
+      ? (typeof s.n === "number" ? s.n + "시간만 예보" : "")
+      : "오전 " + seaNum(s.am) + " · 오후 " + seaNum(s.pm) + (partial ? " <em>＊</em>" : "");
     l1 = '<span class="sr-w"><b>' + seaNum(s.max) + "</b><i>m</i></span>" +
-      '<span class="sr-split">오전 ' + seaNum(s.am) + " · 오후 " + seaNum(s.pm) + (partial ? " <em>＊</em>" : "") + "</span>";
+      '<span class="sr-split">' + splitTxt + "</span>";
     l2 = "💨 최대 " + windTxt;
   } else {
     l1 = '<span class="sr-nw">파고 미제공</span><span class="sr-split"></span>';
     l2 = "💨 최대 " + windTxt +
       (typeof s.tmax === "number" ? " · 🌡 " + seaTemp(s.tmax) + "/" + seaTemp(s.tmin) : "");
   }
-  /* 날씨·강수 — 기상 API가 실패한 날짜는 미제공으로 */
-  const wx = seaWx(s.code);
-  const wxTxt = (s.code !== null && s.code !== undefined)
-    ? wx.em + " " + wx.label + " · 💧 " + seaRain(s.rain) + (typeof s.prob === "number" ? ' <em>' + Math.round(s.prob) + "%</em>" : "")
-    : "날씨·강수 미제공";
-  const wet = s.code !== null && s.code !== undefined && typeof s.rain === "number" && s.rain > 0;
+  if (!isMid) {
+    /* 날씨·강수 — 기상 API가 실패한 날짜는 미제공으로 */
+    const wx = seaWx(s.code);
+    wxTxt = (s.code !== null && s.code !== undefined)
+      ? wx.em + " " + wx.label + " · 💧 " + seaRain(s.rain) + (typeof s.prob === "number" ? ' <em>' + Math.round(s.prob) + "%</em>" : "")
+      : "날씨·강수 미제공";
+    wet = s.code !== null && s.code !== undefined && typeof s.rain === "number" && s.rain > 0;
+  }
   return '<div class="sr ' + b.cls + (k === 0 ? " today" : "") + '">' +
     '<div class="sr-d"><b>' + seaMd(ds) + "</b>" + (tag ? "<span>" + tag + "</span>" : "") + "</div>" +
     '<div class="sr-m"><div class="sr-l1">' + l1 +
@@ -4830,9 +5151,15 @@ function seaBodyHtml() {
   const stale = d && Date.now() - d.at > SEA_TTL;
   let hd = '<div class="sea-hd"><span class="dot"></span>';
   if (seaBusy) hd += d ? "새로 받는 중… (" + seaClock(d.stamp) + " 기준)" : "파고·풍속을 받아오는 중…";
-  else if (d) hd += seaClock(d.stamp) + " 기준 · Open-Meteo";
+  else if (d) hd += seaClock(d.stamp) + " 발표 · 기상청 단기예보";
   else hd += "연결하지 못했어요";
   hd += '<button class="rf" id="seaRefresh"' + (seaBusy ? " disabled" : "") + ">" + (seaBusy ? "⏳ 받는 중" : "🔄 새로고침") + "</button></div>";
+
+  /* 출처 표시(상단) — 기상청 공공누리 제1유형(출처표시) · Open-Meteo */
+  const srcTop = '<div class="sea-src">자료 출처: ' +
+    '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener"><b>기상청</b></a>(단기·중기예보, ' +
+    '<a href="https://www.kogl.or.kr" target="_blank" rel="noopener">공공누리 제1유형</a>) · ' +
+    '<b>Open-Meteo</b>(11~16일)</div>';
 
   /* 선택 상태 — 데이터가 없거나 범위를 벗어나면 첫 번째 섬(백령도) */
   let sel = seaSel;
@@ -4858,11 +5185,9 @@ function seaBodyHtml() {
   const staleBar = (d && stale && !seaBusy)
     ? '<div class="sea-stale">' + (seaError ? "새 정보를 못 받아 지난 값을 보여 줍니다. " : "10분 넘은 값이에요. ") + "[새로고침]을 눌러 주세요.</div>" : "";
 
-  /* 한쪽 API만 실패한 경우 — 받은 값은 그대로 보여 주고 빠진 것만 알립니다 */
-  const partBar = (d && d.partial && !seaBusy)
-    ? '<div class="sea-stale">' + (d.partial === "weather"
-        ? "기상(기온·풍속) 정보는 지금 받지 못했어요. 파고는 그대로 보여 줍니다."
-        : "파고 정보를 받지 못했어요. 풍속·기온만 보여 줍니다.") + "</div>" : "";
+  /* 일부 자료를 받지 못한 경우 — 받은 값은 그대로 보여 주고 빠진 것만 알립니다 */
+  const partBar = (d && d.warns && d.warns.length && !seaBusy)
+    ? '<div class="sea-stale">' + d.warns.map(w => esc(w)).join("<br>") + "</div>" : "";
 
   const legend = '<div class="sea-legend">' +
       '<span><i style="background:#158f5f"></i>1.0m 미만 양호</span>' +
@@ -4878,11 +5203,18 @@ function seaBodyHtml() {
       '<span class="tx"><b>' + esc(l.label) + '</b></span>' +
       '<span class="ar">›</span></a>').join("");
 
-  return hd + partBar + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
-    '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 16일 · 파고는 해양예보 최대 9일) · 실제 결항은 운항정보 확인<br>' +
-      "10일째부터는 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
-      "날씨·강수는 <b>Open-Meteo</b> 일자별 예보값입니다 · 💧 강수량은 하루 합계, %는 그날 강수확률(최대) · 비·눈이 예보된 날은 파란색으로 표시합니다.<br>" +
-      "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.</div>";
+  return hd + srcTop + partBar + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
+    '<div class="sea-note">기상 자료: <b>기상청 단기예보</b>(오늘~5일: 파고·풍속·기온·날씨·강수) + ' +
+      "<b>기상청 중기해상예보·중기기온</b>(6~10일: 파고 최저~최고·해상날씨) + " +
+      "<b>Open-Meteo</b>(11~16일: 날씨·강수·풍속·기온, 파고는 해양예보 범위까지) · 실제 결항은 운항정보 확인<br>" +
+      "💧 강수량은 하루 합계, %는 그날 강수확률(최대) · 비·눈이 예보된 날은 파란색으로 표시합니다.<br>" +
+      "6~10일 파고·날씨는 기상청 <b>중기해상예보(서해중부 먼바다)</b> 값이라 8개 섬이 같고, 최저~최고 범위로 나옵니다. 강수확률은 수도권 육상예보, 기온은 백령도 지점 값이에요.<br>" +
+      "11일 이후 파고 예보가 없으면 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
+      "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.<br>" +
+      '<b>자료 출처: 기상청(단기·중기예보, 공공누리 제1유형) · Open-Meteo(11~16일)</b> — ' +
+      '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener">기상청</a> · ' +
+      '<a href="https://www.kogl.or.kr" target="_blank" rel="noopener">공공누리</a> · ' +
+      "공공누리 제1유형은 출처를 밝히면 자유롭게 이용할 수 있습니다.</div>";
 }
 
 function paintSea() {
@@ -6813,7 +7145,7 @@ function openGuideSheet() {
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 14px">회원가입 후에는 <b>승인 대기</b> 상태가 됩니다. 관리자가 [팀원] 탭에서 승인하면 공지·당직·사진·대화를 모두 쓸 수 있습니다.</p>' +
       '<div class="sec-title">2. 달력</div>' +
       '<p style="font-size:13px;line-height:1.7;color:var(--ink2);margin:0 0 10px">[당직] 탭 위쪽에서 <b>🏢 당직</b>과 <b>⛴️ 섬·교육</b> 달력을 전환하며 봅니다. 날짜나 [등록] 버튼을 눌러 일정을 등록합니다.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">[⛴️ 섬·교육] 달력 위의 <b>🌊 섬 파고 · 배편</b>을 누르면 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉) 중 <b>섬을 고르는 칩</b>과 함께 그 섬의 <b>오늘부터 16일치 날짜 리스트</b>가 나옵니다. 위쪽 <b>전체(오늘)</b> 칩을 누르면 오늘 8개 섬의 지금 파고를 한 번에 비교하고, 섬 카드를 누르면 그 섬의 16일 리스트로 바로 넘어갑니다. 날짜별로 파고가 있는 날(최대 9일)은 <b>그날 최고 파고·오전/오후 파고·최대 풍속</b>과 <b>양호/주의/높음·결항주의</b> 배지가, 그 뒤 날은 <b>파고 미제공</b>과 함께 <b>최대 풍속·최고/최저 기온</b>이 나옵니다. 시트 맨 위 <b>여객선 예매(KSA)</b>·<b>인천항 여객선 운항정보(KOMSA)</b> 버튼으로 바로 갈 수 있습니다. 파고는 Open-Meteo 예보값이라 참고용이고, 실제 결항은 운항정보에서 확인합니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">[⛴️ 섬·교육] 달력 위의 <b>🌊 섬 파고 · 배편</b>을 누르면 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉) 중 <b>섬을 고르는 칩</b>과 함께 그 섬의 <b>오늘부터 16일치 날짜 리스트</b>가 나옵니다. 위쪽 <b>전체(오늘)</b> 칩을 누르면 오늘 8개 섬의 지금 파고를 한 번에 비교하고, 섬 카드를 누르면 그 섬의 16일 리스트로 바로 넘어갑니다. 1~5일은 <b>기상청 단기예보</b>로 <b>그날 최고 파고·오전/오후 파고·최대 풍속·기온·날씨·강수량·강수확률</b>을, 6~10일은 <b>기상청 중기해상예보</b>로 <b>최저~최고 파고·해상날씨·강수확률·중기기온</b>을, 11~16일은 <b>Open-Meteo</b>로 날씨·강수·풍속·기온을 보여 줍니다. 모두 <b>양호/주의/높음·결항주의</b> 배지가 붙고, 파고가 없는 날은 <b>최대 풍속·최고/최저 기온</b>이 나옵니다. 시트 맨 위 <b>여객선 예매(KSA)</b>·<b>인천항 여객선 운항정보(KOMSA)</b> 버튼과 맨 아래 <b>자료 출처(기상청·공공누리 제1유형, Open-Meteo)</b> 표기를 확인할 수 있습니다. 파고는 격자 예보값이라 참고용이고, 실제 결항은 운항정보에서 확인합니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🏢 당직 달력은 당직 일정만, ⛴️ 섬·교육 달력은 당일 섬·1박 섬·교육 일정만 보여줍니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날 당직은 취소되고, 달력 칸 전체가 <b>연보라색</b>으로 칠해지며 등록한 행사명이 표시됩니다(공휴일의 연분홍과 구분).</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
