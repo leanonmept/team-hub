@@ -2727,7 +2727,7 @@ function openRosterSheet(editId) {
     const off = ex.indexOf(m.uid) >= 0;
     const no = off ? "–" : String(order[m.uid] || "");
     const ex1 = execNameOf(m.uid);
-    const meta = (m.custom ? (customNameIsMember(m.name) ? "가입 회원과 같은 이름 · 순번 제외" : "직접 추가") : ((ex1 ? "🖋️ " + ex1 + " · " : "") + (m.position || "-"))) + (off ? " · 명단 제외" : "");
+    const meta = (m.custom ? (customNameIsMember(m.name) ? "가입 회원과 같은 이름 · 순번 제외" : "직접 추가") : (m.position || "-")) + (off ? " · 명단 제외" : "");
     if (admin && editId && editId === m.uid) {
       return '<div class="rrow editing">' +
         '<span class="no">✏️</span>' +
