@@ -666,6 +666,22 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
   background:var(--danger);color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
   padding:0 4px;border:1.5px solid #fff;
 }
+/* 🔔 새 소식이 있을 때 살짝 커졌다 작아지는 신호 */
+.tabbar .dotn.flash{animation:dotFlash 1.5s ease-in-out 3}
+@keyframes dotFlash{0%,100%{transform:scale(1)}50%{transform:scale(1.3);box-shadow:0 0 0 5px rgba(229,72,77,.16)}}
+/* 🔔 상단 새 소식 안내 배너 */
+.newbanner{
+  display:flex;align-items:center;gap:8px;flex-shrink:0;padding:8px 12px 8px 14px;
+  background:linear-gradient(90deg,#eaf1ff,#f4edff);border-bottom:1px solid #dfe4f8;
+  animation:nbDown .22s cubic-bezier(.22,1,.36,1);
+}
+.newbanner.hidden{display:none}
+@keyframes nbDown{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
+.newbanner .nb-main{flex:1;min-width:0;display:flex;align-items:center;gap:7px;text-align:left}
+.newbanner .nb-em{font-size:14px;line-height:1;flex-shrink:0}
+.newbanner .nb-tx{font-size:12.5px;font-weight:800;letter-spacing:-.03em;color:#1f3a7a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.newbanner .nb-x{flex-shrink:0;width:22px;height:22px;border-radius:8px;color:#5c6577;font-size:11.5px;font-weight:800;background:rgba(255,255,255,.75)}
+.newbanner .nb-x:active{background:#fff}
 /* 상단 프로필 아이콘 오른쪽 위 — 승인 대기 알림 */
 #btnProfile{position:relative}
 #avatarPendingDot{
@@ -877,6 +893,28 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sea-badge.warn{background:#fff5e2;color:#b06f00}
 .sea-badge.high{background:#fdecec;color:#d33a3f}
 .sea-badge.na{background:#f1f3f8;color:var(--ink3)}
+/* ⛴️ 오늘 실제 운항 (KOMSA) */
+.sea-ferry{margin:0 0 9px;padding:9px 10px 8px;border-radius:14px;background:#fff;border:1px solid var(--line);box-shadow:0 3px 10px -9px rgba(20,26,36,.55)}
+.sf-hd{display:flex;align-items:center;gap:5px;font-size:11.5px;letter-spacing:-.03em}
+.sf-hd b{font-weight:800}
+.sf-hd span{font-size:9px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
+.sf-rf{margin-left:auto;font-size:10px;font-weight:800;color:#0b6d8f;background:#eaf7fc;border:1px solid #d5edf8;border-radius:20px;padding:3px 8px}
+.sf-chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px}
+.sf-chip{display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:10px;padding:5px 2px;border:1.5px solid transparent;background:#f4f6fa;min-width:0}
+.sf-chip .nm{font-size:9.5px;font-weight:800;color:var(--ink2);letter-spacing:-.03em}
+.sf-chip b{font-size:10.5px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
+.sf-chip.ok{background:#e7f7ef;border-color:#c9eeda}.sf-chip.ok b{color:#158f5f}
+.sf-chip.warn{background:#fff5e2;border-color:#ffe3ae}.sf-chip.warn b{color:#b06f00}
+.sf-chip.high{background:#fdecec;border-color:#f8cfd0}.sf-chip.high b{color:#d33a3f}
+.sf-chip.na{background:#f1f3f8}.sf-chip.na b{color:var(--ink3)}
+.sf-chip.on{box-shadow:0 0 0 2px rgba(47,107,246,.35)}
+.sf-note{margin-top:6px;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em;line-height:1.5}
+.sf-note .sf-rf{display:inline-block;margin-left:4px;vertical-align:middle}
+.sea-ferry-line{margin-top:2px;font-size:10px;font-weight:800;letter-spacing:-.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sea-ferry-line.ok{color:#158f5f}.sea-ferry-line.warn{color:#b06f00}.sea-ferry-line.high{color:#d33a3f}.sea-ferry-line.na{color:var(--ink3)}
+.sf-big{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px;padding:7px 9px;border-radius:11px;font-size:11px;font-weight:800;letter-spacing:-.03em}
+.sf-big.ok{background:#e7f7ef;color:#158f5f}.sf-big.warn{background:#fff5e2;color:#b06f00}.sf-big.high{background:#fdecec;color:#d33a3f}.sf-big.na{background:#f1f3f8;color:var(--ink3)}
+.sf-big small{font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
 .sea-wave{display:flex;align-items:baseline;gap:2px;margin-top:2px}
 .sea-wave b{font-size:20px;font-weight:800;letter-spacing:-.045em;line-height:1.1}
 .sea-wave i{font-style:normal;font-size:11px;font-weight:800;color:var(--ink2)}
@@ -1402,6 +1440,15 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
       </button>
     </header>
 
+    <!-- 🔔 새 공지·내 당직 변경 안내 (탭하면 해당 화면으로) -->
+    <div class="newbanner hidden" id="newBanner" data-tab="notices">
+      <button class="nb-main" id="newBannerGo" type="button">
+        <span class="nb-em" id="newBannerEm">🔔</span>
+        <span class="nb-tx" id="newBannerTx"></span>
+      </button>
+      <button class="nb-x" id="newBannerX" type="button" aria-label="안내 닫기">✕</button>
+    </div>
+
     <div class="views">
       <section class="view active" id="view-notices"></section>
       <section class="view" id="view-duty"></section>
@@ -1420,6 +1467,7 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
       <button data-tab="duty">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.2v3.6M16 3.2v3.6M3.5 10h17"/></svg>
         <span class="tl">당직</span>
+        <span class="dotn hidden" id="dotDuty">0</span>
       </button>
       <button data-tab="photos">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="8.8" cy="9.8" r="1.6"/><path d="m4.5 17 4.7-4.4a1.8 1.8 0 0 1 2.4 0l5.2 4.7"/><path d="m14.6 15 1.4-1.3a1.8 1.8 0 0 1 2.4 0l1.8 1.6"/></svg>
@@ -1465,7 +1513,7 @@ const SESSION_KEY = "teamhub.session";
 
 /* ---------- 2. 상태 ---------- */
 /* 실시간 구독으로 데이터가 한 번이라도 도착했는지 (당직 자동 배정 전제 조건) */
-const LOADED = { members: false, duty: false, roster: false };
+const LOADED = { members: false, duty: false, roster: false, ann: false };
 const S = {
   mode: "demo",            // 'demo' | 'live'
   cfg: {},
@@ -1952,7 +2000,7 @@ function syncDemo() {
   S.events = (d.events || []).map(e => ({ id: e.id || e.date, date: e.date || e.id, title: e.title || "", createdAt: e.createdAt || Date.now() }));
   S.photos = (d.photos || []).slice();
   S.messages = (d.messages || []).slice().sort((a, b) => a.createdAt - b.createdAt);
-  LOADED.members = LOADED.duty = LOADED.roster = true;
+  LOADED.members = LOADED.duty = LOADED.roster = LOADED.ann = true;
   if (S.user) {
     const me = d.users.find(u => u.uid === S.user.uid);
     if (me) S.user = Object.assign({}, me);
@@ -4566,6 +4614,154 @@ let seaError = "";
 let seaSel = 0;                        /* 0..7 선택한 섬, -1 = 전체(오늘) */
 const SEA_ALL = -1;
 
+/* =====================================================================
+   ⛴️ 오늘 실제 여객선 운항 — 한국해양교통안전공단(KOMSA) · 공공데이터포털
+   · 오픈API 15142302 '운항 스케줄 정보'(apis.data.go.kr/B554035/oprt-schd-info-v2)
+     → 운항구분(정상·증선·증회·비운·통제·대기)과 통제사유를 줍니다.
+   · 인천 8개 섬(백령·대청·소청·연평·덕적·자월·이작·승봉) 항로의 오늘 편만 골라
+     '정상운항 / 일부 통제 / 통제 / 비운항'으로 요약합니다.
+   · 5분마다 갱신되는 자료라 5분 캐시를 쓰고, 실패해도 파고·날씨는 그대로 보입니다.
+   ===================================================================== */
+const SEA_FERRY_URL = "https://apis.data.go.kr/B554035/oprt-schd-info-v2/get-oprt-schd-info-v2";
+const SEA_FERRY_TTL = 5 * 60 * 1000;
+const SEA_FERRY_PORTS = {
+  "백령도": ["백령"], "대청도": ["대청"], "소청도": ["소청"], "연평도": ["연평"],
+  "덕적도": ["덕적"], "자월도": ["자월"], "이작도": ["이작"], "승봉도": ["승봉"]
+};
+/* 대청도는 인천-백령 여객선이 경유하는 섬이라 운항 스케줄에 대청이 따로 나오지 않습니다.
+   → 백령 항로 편으로 대신 보여 주고, 기준을 함께 적습니다. */
+const SEA_FERRY_ALIAS = { "대청도": { ports: ["백령"], label: "인천-백령 항로 경유" } };
+let seaFerry = null;          /* { at, ymd, total, byIsland } */
+let seaFerryBusy = false;
+let seaFerryErr = "";
+function seaFerryNorm(s) { return String(s == null ? "" : s).replace(/[\s\u00b7\u2027\u318d\u30fb\u2219]/g, ""); }
+function seaFerryItems(j) {
+  const r = (j && j.response) || {};
+  const hd = r.header || {};
+  const code = hd.resultCode === undefined ? "200" : String(hd.resultCode);
+  if (code !== "00" && code !== "200" && code !== "0") {
+    throw new Error("운항정보 응답 " + code + (hd.resultMsg ? " " + hd.resultMsg : ""));
+  }
+  const b = r.body || {};
+  const it = b.items;
+  if (!it) return [];
+  const arr = Array.isArray(it) ? it : (Array.isArray(it.item) ? it.item : (it.item ? [it.item] : []));
+  return arr.filter(x => x && typeof x === "object");
+}
+function seaFerryUrl(ymd, page, rows) {
+  return SEA_FERRY_URL + "?serviceKey=" + SEA_KMA_KEY + "&pageNo=" + page + "&numOfRows=" + rows +
+    "&dataType=JSON&rlvtYmd=" + ymd;
+}
+/* 하루치 전체 — 1000행씩, totalCount 까지(최대 3콜) */
+async function seaFerryFetch(ymd) {
+  const first = await seaGet(seaFerryUrl(ymd, 1, 1000));
+  let rows = seaFerryItems(first);
+  const total = Number(((first && first.response && first.response.body) || {}).totalCount) || rows.length;
+  for (let p = 2; p <= 3 && rows.length < total; p++) {
+    try {
+      const j = await seaGet(seaFerryUrl(ymd, p, 1000));
+      const more = seaFerryItems(j);
+      if (!more.length) break;
+      rows = rows.concat(more);
+    } catch (e) { break; }
+  }
+  return rows;
+}
+/* 섬별 집계 — ① 출항지·도착지(항구명) ② 항구가 같은 순환·직항 항로는 항로명으로 */
+function seaFerryAgg(rows) {
+  const out = {};
+  SEA_ISLANDS.forEach(isl => { out[isl.name] = { ok: 0, ctrl: 0, skip: 0, delay: 0, total: 0, direct: 0, reasons: {}, via: "" }; });
+  (rows || []).forEach(r => {
+    const se = String(r.nvg_se_nm || "").trim();
+    const reason = String(r.cntrl_rsn_nm || r.nnavi_rsn_nm || r.cnls_etc_rsn || "").trim();
+    const op = seaFerryNorm(r.oport_nm), de = seaFerryNorm(r.dest_nm);
+    const route = seaFerryNorm(r.nvg_seawy_nm || "") + "|" + seaFerryNorm(r.lcns_seawy_nm || "");
+    SEA_ISLANDS.forEach(isl => {
+      const ports = SEA_FERRY_PORTS[isl.name] || [];
+      const key = seaFerryNorm(isl.name.replace(/도$/, ""));
+      const direct = ports.some(p => op.indexOf(p) >= 0 || de.indexOf(p) >= 0);
+      const viaRoute = !direct && !!key && route.indexOf(key) >= 0;
+      const alias = (!direct && !viaRoute) ? SEA_FERRY_ALIAS[isl.name] : null;
+      const aliasHit = !!(alias && alias.ports.some(p => op.indexOf(p) >= 0 || de.indexOf(p) >= 0));
+      if (!direct && !viaRoute && !aliasHit) return;
+      const a = out[isl.name];
+      a.total++;
+      if (direct) a.direct++;
+      if (se === "통제") a.ctrl++;
+      else if (se === "비운") a.skip++;
+      else if (se === "대기" || se === "지연") a.delay++;
+      else a.ok++;
+      if (reason && (se === "통제" || se === "비운")) a.reasons[reason] = (a.reasons[reason] || 0) + 1;
+      if (!a.via) {
+        if (viaRoute) a.via = String(r.nvg_seawy_nm || "") + " 항로 기준";
+        else if (aliasHit) a.via = alias.label;
+      }
+    });
+  });
+  /* 직접 기항하는 편이 있으면 굳이 '경유·순환' 기준을 적지 않습니다 */
+  Object.keys(out).forEach(k => { if (out[k].direct) out[k].via = ""; });
+  return out;
+}
+function seaFerryOf(name) { return (seaFerry && seaFerry.byIsland && seaFerry.byIsland[name]) || null; }
+function seaFerryReason(a) {
+  if (!a) return "";
+  const ks = Object.keys(a.reasons || {}).sort((x, y) => a.reasons[y] - a.reasons[x]);
+  return ks.length ? ks[0] : "";
+}
+function seaFerryStatus(name) {
+  if (!seaFerry && !seaFerryErr) return { cls: "na", label: "", sub: "" };   /* 아직 받는 중 */
+  if (seaFerryErr && !seaFerry) return { cls: "na", label: "운항정보 못 받음", sub: "" };
+  const a = seaFerryOf(name);
+  if (!a || !a.total) return { cls: "na", label: "운항정보 없음", sub: "" };
+  const reason = seaFerryReason(a);
+  const cnt = p => p + "편";
+  let s;
+  if (a.ctrl && !a.ok) s = { cls: "high", label: "통제", sub: cnt(a.ctrl) + (reason ? " · " + reason : "") };
+  else if (a.ctrl && a.ok) s = { cls: "warn", label: "일부 통제", sub: "통제 " + a.ctrl + " · 정상 " + a.ok + (reason ? " · " + reason : "") };
+  else if (!a.ok && a.skip) s = { cls: "na", label: "비운항", sub: cnt(a.skip) + (reason ? " · " + reason : "") };
+  else if (a.ok) s = { cls: "ok", label: "정상운항", sub: cnt(a.ok) + (a.skip ? " · 비운 " + a.skip : "") };
+  else s = { cls: "na", label: "정보없음", sub: "" };
+  if (a.via) s.sub = (s.sub ? s.sub + " · " : "") + a.via;
+  return s;
+}
+async function seaFerryLoad(force) {
+  if (seaFerryBusy) return;
+  if (!force && seaFerry && Date.now() - seaFerry.at < SEA_FERRY_TTL) return;
+  seaFerryBusy = true;
+  if ($("#seaWrap")) paintSea();
+  try {
+    const ymd = seaKstParts(Date.now()).d8;
+    const rows = await seaFerryFetch(ymd);
+    seaFerry = { at: Date.now(), ymd: ymd, total: rows.length, byIsland: seaFerryAgg(rows) };
+    seaFerryErr = "";
+  } catch (e) {
+    seaFerryErr = (e && e.message) || "네트워크 오류";
+  }
+  seaFerryBusy = false;
+  if ($("#seaWrap")) paintSea();
+}
+/* 시트 상단 — 오늘 실제 운항 한 줄 요약 */
+function seaFerryStripHtml() {
+  let body;
+  if (!seaFerry && !seaFerryErr) body = '<div class="sf-note">오늘 운항정보를 받아오는 중…</div>';
+  else if (!seaFerry) body = '<div class="sf-note">오늘 운항정보를 못 받았어요(' + esc(seaFerryErr) + ')' +
+    ' <button type="button" class="sf-rf" id="seaFerryRetry">다시 시도</button></div>';
+  else {
+    body = '<div class="sf-chips">' + SEA_ISLANDS.map((isl, i) => {
+      const st = seaFerryStatus(isl.name);
+      const on = (seaSel === i) ? " on" : "";
+      return '<button type="button" class="sf-chip ' + st.cls + on + '" data-sf="' + i + '" aria-label="' + esc(isl.name) + " 오늘 " + esc(st.label) + '">' +
+        '<span class="nm">' + esc(isl.name.replace(/도$/, "")) + '</span><b>' + esc(st.label) + "</b></button>";
+    }).join("") + "</div>" +
+      '<div class="sf-note">' + esc(seaFerry.ymd.slice(4, 6)) + "/" + esc(seaFerry.ymd.slice(6, 8)) + " 출항 " + seaFerry.total + "편 중 섬 항로만 요약 · 5분마다 갱신" +
+      (seaFerryErr ? " · 새 값은 못 받아 지난 값을 보여 줌" : "") + "</div>";
+  }
+  return '<div class="sea-ferry">' +
+    '<div class="sf-hd">⛴️ <b>오늘 실제 운항</b><span>한국해양교통안전공단</span>' +
+      '<button type="button" class="sf-rf" id="seaFerryRefresh"' + (seaFerryBusy ? " disabled" : "") + ">" + (seaFerryBusy ? "⏳" : "🔄") + "</button></div>" +
+    body + "</div>";
+}
+
 function seaBadge(w) {
   if (typeof w !== "number") return { cls: "na", label: "정보없음" };
   if (w >= 2.0) return { cls: "high", label: "높음" };
@@ -5038,12 +5234,14 @@ function seaCardHtml(i, idx) {
     ? wx.em + " " + wx.label + (i.rain !== null && i.rain !== undefined ? " · 💧 " + seaRain(i.rain) : "") +
       (typeof i.prob === "number" ? " " + Math.round(i.prob) + "%" : "")
     : "☁️ 날씨 미제공";
+  const fs = seaFerryStatus(i.name);
   return '<button type="button" class="sea-card tap ' + b.cls + '" data-si="' + idx + '" aria-label="' + esc(i.name) + ' 16일 파고·날씨 보기">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
     '<div class="sea-wave"><b>' + seaNum(i.wave) + "</b>" + (i.wave !== null ? "<i>m</i>" : "") + "<small>지금 파고</small></div>" +
     '<div class="sea-meta">💨 ' + wind + (i.temp !== null && i.temp !== undefined ? ' <span>· ' + seaNum(i.temp) + "°</span>" : "") + "</div>" +
     '<div class="sea-rain' + (i.code !== null && i.code !== undefined && i.rain > 0 ? " wet" : "") + '">' + rainTxt + "</div>" +
     '<div class="sea-max">오늘 최고 <b>' + seaM(i.todayMax) + '</b> · 내일 <b>' + seaM(i.tomMax) + "</b></div>" +
+    (fs.label ? '<div class="sea-ferry-line ' + fs.cls + '">⛴️ ' + esc(fs.label) + (fs.sub ? " · " + esc(fs.sub) : "") + "</div>" : "") +
     '<div class="sea-more">16일 보기 ›</div>' +
     "</button>";
 }
@@ -5143,9 +5341,14 @@ function seaIslandHtml(it, d) {
       ? " · " + seaWx(it.code).em + " " + seaWx(it.code).label +
         (typeof it.rain === "number" && it.rain > 0 ? " " + seaRain(it.rain) : "")
       : "");
+  const fs = seaFerryStatus(it.name);
+  const ferryBig = fs.label
+    ? '<div class="sf-big ' + fs.cls + '"><span>⛴️ 오늘 실제 운항</span><b>' + esc(fs.label) + "</b>" +
+      (fs.sub ? "<small>" + esc(fs.sub) + "</small>" : "") + "</div>"
+    : "";
   return '<div class="sea-cur"><div class="ct"><b>' + esc(it.name) + "</b><small>" + esc(it.area) + "</small>" +
       '<span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
-      '<div class="cm">' + cur + "</div></div>" +
+      '<div class="cm">' + cur + "</div>" + ferryBig + "</div>" +
     '<div class="sea-cc">' +
       '<span class="ok">파고 양호 <b>' + ok + "</b></span>" +
       '<span class="warn">주의 <b>' + warn + "</b></span>" +
@@ -5187,6 +5390,7 @@ function seaBodyHtml() {
   const srcTop = '<div class="sea-src">자료 출처: ' +
     '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener"><b>기상청</b></a>(단기·중기예보, ' +
     '<a href="https://www.kogl.or.kr" target="_blank" rel="noopener">공공누리 제1유형</a>) · ' +
+    '<b>한국해양교통안전공단</b>(오늘 실제 운항) · ' +
     '<b>Open-Meteo</b>(11~16일)</div>';
 
   /* 선택 상태 — 데이터가 없거나 범위를 벗어나면 첫 번째 섬(백령도) */
@@ -5231,17 +5435,19 @@ function seaBodyHtml() {
       '<span class="tx"><b>' + esc(l.label) + '</b></span>' +
       '<span class="ar">›</span></a>').join("");
 
-  return hd + srcTop + partBar + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
+  return hd + srcTop + partBar + seaFerryStripHtml() + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
     '<div class="sea-note">기상 자료: <b>기상청 단기예보</b>(오늘~5일: 파고·풍속·기온·날씨·강수) + ' +
       "<b>기상청 중기해상예보·중기기온</b>(6~10일: 파고 최저~최고·해상날씨) + " +
-      "<b>Open-Meteo</b>(11~16일: 날씨·강수·풍속·기온, 파고는 해양예보 범위까지) · 실제 결항은 운항정보 확인<br>" +
+      "<b>Open-Meteo</b>(11~16일: 날씨·강수·풍속·기온, 파고는 해양예보 범위까지)<br>" +
+      "⛴️ <b>오늘 실제 운항</b>은 공공데이터포털 오픈API(15142302) <b>한국해양교통안전공단</b> 운항 스케줄 정보로, 정상·증선·증회는 <b>운항</b>, 통제는 <b>통제</b>, 비운은 <b>비운항</b>으로 묶어 섬별로 보여 줍니다(5분 갱신). 일부만 통제된 날은 '일부 통제'로 표시되고, 맨 아래에서 운항정보를 한 번 더 확인해 주세요.<br>" +
       "💧 강수량은 하루 합계, %는 그날 강수확률(최대) · 비·눈이 예보된 날은 파란색으로 표시합니다.<br>" +
       "6~10일 파고·날씨는 기상청 <b>중기해상예보(서해중부 먼바다)</b> 값이라 8개 섬이 같고, 최저~최고 범위로 나옵니다. 강수확률은 수도권 육상예보, 기온은 백령도 지점 값이에요.<br>" +
       "11일 이후 파고 예보가 없으면 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
       "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.<br>" +
-      '<b>자료 출처: 기상청(단기·중기예보, 공공누리 제1유형) · Open-Meteo(11~16일)</b> — ' +
+      '<b>자료 출처: 기상청(단기·중기예보, 공공누리 제1유형) · 한국해양교통안전공단(운항 정보, 공공데이터포털) · Open-Meteo(11~16일)</b> — ' +
       '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener">기상청</a> · ' +
       '<a href="https://www.kogl.or.kr" target="_blank" rel="noopener">공공누리</a> · ' +
+      '<a href="https://www.komsa.or.kr" target="_blank" rel="noopener">한국해양교통안전공단</a> · ' +
       "공공누리 제1유형은 출처를 밝히면 자유롭게 이용할 수 있습니다.</div>";
 }
 
@@ -5252,9 +5458,20 @@ function paintSea() {
   const st = bd ? bd.scrollTop : 0;
   wrap.innerHTML = seaBodyHtml();
   const rf = $("#seaRefresh", wrap);
-  if (rf) rf.addEventListener("click", () => { if (!seaBusy) seaLoad(); });
+  if (rf) rf.addEventListener("click", () => { if (!seaBusy) seaLoad(); if (!seaFerryBusy) seaFerryLoad(true); });
   const rt = $("#seaRetry", wrap);
   if (rt) rt.addEventListener("click", () => { if (!seaBusy) seaLoad(); });
+  /* ⛴️ 오늘 실제 운항 — 새로고침 · 다시 시도 · 섬 칩 */
+  const ff = $("#seaFerryRefresh", wrap);
+  if (ff) ff.addEventListener("click", () => { if (!seaFerryBusy) seaFerryLoad(true); });
+  const fr = $("#seaFerryRetry", wrap);
+  if (fr) fr.addEventListener("click", () => { if (!seaFerryBusy) seaFerryLoad(true); });
+  wrap.querySelectorAll("[data-sf]").forEach(el => el.addEventListener("click", () => {
+    const n = Number(el.getAttribute("data-sf"));
+    if (!isFinite(n) || n < 0 || n >= SEA_ISLANDS.length) return;
+    seaSel = n;
+    paintSea();
+  }));
   /* 섬 칩 · 전체(오늘) 카드 → 그 섬의 16일 리스트로 */
   wrap.querySelectorAll("[data-si]").forEach(el => el.addEventListener("click", () => {
     const n = Number(el.getAttribute("data-si"));
@@ -5273,6 +5490,7 @@ function openSeaSheet() {
     body: '<div id="seaWrap">' + seaBodyHtml() + "</div>",
     onMount: () => {
       paintSea();
+      seaFerryLoad();                   /* 5분 캐시 — 오늘 실제 운항(한국해양교통안전공단) */
       if (seaBusy) return;
       const fresh = seaCache && Date.now() - seaCache.at < SEA_TTL;
       if (!fresh) seaLoad();
@@ -7197,6 +7415,176 @@ function openGuideSheet() {
 }
 
 /* =====================================================================
+   13-b. 🔔 새 소식 — 새 공지 · 내 당직 변경
+   · 서버 푸시(유료 서버) 없이도, 앱을 열면 '마지막 확인 이후 새로 생긴 것'을
+     하단 탭 빨간 배지 + 상단 안내 배너로 바로 알려 줍니다.
+   · 마지막 확인 상태는 이 기기의 localStorage(사번 계정별)에 저장되어
+     앱을 껐다 켜도 유지됩니다.
+   ===================================================================== */
+const SEEN_PREFIX = "teamhub.seen.";
+const NEWSEEN = {
+  base: false,        /* 이 기기에 기준이 저장돼 있는지 */
+  armed: false,       /* 첫 스캔이 끝났는지(첫 스캔에서는 자동 확인처리하지 않음) */
+  noticeAt: 0,        /* 마지막으로 확인한 공지 작성시각 */
+  duty: {},           /* 내 일정 id → 마지막 수정시각 */
+  newNotes: [],       /* 새 공지 */
+  dutyNew: [],        /* 새로 잡힌 내 일정 */
+  dutyChanged: [],    /* 바뀐 내 일정 */
+  dutyGone: [],       /* 내게서 빠진 일정(교대·취소) */
+  dismissed: "",      /* 닫은 배너 서명 */
+  flash: false        /* 공지 탭 배지를 깜빡일지 */
+};
+function seenKey() { return SEEN_PREFIX + ((S.user && S.user.uid) || "guest"); }
+function seenLoad() {
+  NEWSEEN.base = false; NEWSEEN.armed = false; NEWSEEN.noticeAt = 0; NEWSEEN.duty = {}; NEWSEEN.dismissed = "";
+  NEWSEEN.newNotes = []; NEWSEEN.dutyNew = []; NEWSEEN.dutyChanged = []; NEWSEEN.dutyGone = []; NEWSEEN.flash = false;
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(seenKey()) || "null"); } catch (e) { v = null; }
+  if (v && typeof v === "object") {
+    NEWSEEN.base = true;
+    NEWSEEN.noticeAt = Number(v.noticeAt) || 0;
+    NEWSEEN.duty = (v.duty && typeof v.duty === "object") ? v.duty : {};
+    NEWSEEN.dismissed = typeof v.dismissed === "string" ? v.dismissed : "";
+    NEWSEEN.armed = true;
+  }
+}
+function myDutyStamp() {
+  const out = {};
+  (S.duty || []).forEach(e => {
+    if (e.memberId !== myUid()) return;
+    out[e.id] = Math.max(Number(e.updatedAt) || 0, Number(e.createdAt) || 0, 1);
+  });
+  return out;
+}
+function noticesStamp() {
+  let max = 0;
+  (S.announcements || []).forEach(a => { if (Number(a.createdAt) > max) max = Number(a.createdAt); });
+  return max;
+}
+function seenSave() {
+  try {
+    localStorage.setItem(seenKey(), JSON.stringify({
+      v: 1, at: Date.now(), noticeAt: NEWSEEN.noticeAt, duty: NEWSEEN.duty, dismissed: NEWSEEN.dismissed
+    }));
+  } catch (e) { /* 저장 공간 부족 등 — 배지만 못 쓸 뿐 앱은 정상 동작 */ }
+}
+function seenMarkNotices() {
+  NEWSEEN.noticeAt = Math.max(NEWSEEN.noticeAt, noticesStamp());
+  NEWSEEN.newNotes = [];
+  NEWSEEN.flash = false;
+}
+function seenMarkDuty() {
+  NEWSEEN.duty = myDutyStamp();
+  NEWSEEN.dutyNew = []; NEWSEEN.dutyChanged = []; NEWSEEN.dutyGone = [];
+}
+function seenMarkAll() { seenMarkNotices(); seenMarkDuty(); seenSave(); renderNewBanner(); renderDutyDot(); }
+function seenScan() {
+  if (!S.user || S.user.status !== "approved") return;
+  /* 이 기기 첫 실행 — 지금 있는 공지·내 당직을 '확인함' 기준으로 저장만 하고 배지는 띄우지 않음
+     (공지·당직 자료가 아직 도착하지 않았으면 기다렸다가 기준을 잡습니다) */
+  if (!NEWSEEN.base) {
+    if (!(LOADED.ann && LOADED.duty)) return;
+    NEWSEEN.base = true; NEWSEEN.armed = true; seenMarkAll(); return;
+  }
+
+  NEWSEEN.newNotes = (S.announcements || []).filter(a =>
+    Number(a.createdAt) > NEWSEEN.noticeAt && a.author_id !== myUid()
+  ).sort((a, b) => b.createdAt - a.createdAt);
+
+  const cur = myDutyStamp();
+  NEWSEEN.dutyNew = []; NEWSEEN.dutyChanged = []; NEWSEEN.dutyGone = [];
+  (S.duty || []).forEach(e => {
+    if (e.memberId !== myUid()) return;
+    const st = cur[e.id] || 0;
+    if (!(e.id in NEWSEEN.duty)) NEWSEEN.dutyNew.push(e);
+    else if (st > (Number(NEWSEEN.duty[e.id]) || 0)) NEWSEEN.dutyChanged.push(e);
+  });
+  Object.keys(NEWSEEN.duty).forEach(id => {
+    if (id in cur) return;
+    const gone = (S.duty || []).find(x => x.id === id) || { id: id, startDate: "", type: "duty" };
+    NEWSEEN.dutyGone.push(gone);
+  });
+
+  /* 탭을 열었을 때(setTab)만 '확인함'으로 기록합니다.
+     화면이 새로 뜰 때는 배너를 그대로 보여 주기 위해 여기서는 건드리지 않습니다. */
+  NEWSEEN.flash = NEWSEEN.newNotes.length > 0 && S.tab !== "notices";
+  renderNewBanner();
+  renderDutyDot();
+}
+function dutyShortLabel(e) {
+  const st = STATUS[e.type] || STATUS.duty;
+  const ds = entryStart(e);
+  return (ds ? shortDate(ds) + " " : "") + st.label;
+}
+function newBannerData() {
+  if (appUpdateReady) return { em: "🔄", tx: "새 버전이 있어요 · 눌러서 새로고침", tab: "__reload" };
+  const pick = arr => arr.slice().sort((a, b) => String(entryStart(a) || "9999-99-99") < String(entryStart(b) || "9999-99-99") ? -1 : 1)[0];
+  let dutyMsg = "";
+  if (NEWSEEN.dutyChanged.length) dutyMsg = "내 " + dutyShortLabel(pick(NEWSEEN.dutyChanged)) + " 일정이 바뀌었어요";
+  else if (NEWSEEN.dutyGone.length) dutyMsg = "내 " + dutyShortLabel(pick(NEWSEEN.dutyGone)) + " 일정이 교대·취소됐어요";
+  else if (NEWSEEN.dutyNew.length) dutyMsg = "내 " + dutyShortLabel(pick(NEWSEEN.dutyNew)) + " 일정이 잡혔어요";
+  const n = NEWSEEN.newNotes.length;
+  if (dutyMsg) return { em: "📅", tx: dutyMsg + (n ? " · 새 공지 " + n + "건" : ""), tab: "duty" };
+  if (n) return { em: "🔔", tx: "새 공지 " + n + "건 · " + String(NEWSEEN.newNotes[0].title || "").slice(0, 22), tab: "notices" };
+  return { em: "🔔", tx: "", tab: "notices" };
+}
+function newSig() {
+  if (appUpdateReady) return "__update";
+  return [NEWSEEN.dutyChanged.map(e => e.id).sort().join(","),
+          NEWSEEN.dutyGone.map(e => e.id).sort().join(","),
+          NEWSEEN.dutyNew.map(e => e.id).sort().join(","),
+          NEWSEEN.newNotes.map(a => a.id).sort().join(",")].join("|");
+}
+function renderNewBanner() {
+  const el = $("#newBanner");
+  if (!el) return;
+  const d = newBannerData();
+  const main = $("#scr-main");
+  const on = !!d.tx && newSig() !== NEWSEEN.dismissed && !!S.user && S.user.status === "approved"
+    && !!main && main.classList.contains("active");
+  el.classList.toggle("hidden", !on);
+  if (!on) return;
+  $("#newBannerEm").textContent = d.em;
+  $("#newBannerTx").textContent = d.tx;
+  el.dataset.tab = d.tab;
+}
+function renderDutyDot() {
+  const el = $("#dotDuty");
+  if (!el) return;
+  const n = NEWSEEN.dutyNew.length + NEWSEEN.dutyChanged.length + NEWSEEN.dutyGone.length;
+  el.textContent = n > 9 ? "9+" : n;
+  el.classList.toggle("hidden", !n || S.tab === "duty");
+}
+
+/* ---------- 오프라인 캐시(서비스 워커) 등록 · 새 버전 안내 ---------- */
+let appUpdateReady = false;
+const SWVER_KEY = "teamhub.swver";
+function showAppUpdate() {
+  appUpdateReady = true;
+  renderNewBanner();
+}
+function bindServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  const https = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if (!https) return;
+  const ready = () => navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" })
+    .then(reg => { reg.update().catch(() => {}); return reg; })
+    .catch(e => { console.warn("serviceWorker:", e && e.message); });
+  if (document.readyState === "complete") ready(); else window.addEventListener("load", ready);
+  navigator.serviceWorker.addEventListener("message", ev => {
+    const d = ev.data || {};
+    if (d.type === "th-shell-updated") { showAppUpdate(); return; }
+    if (d.type === "th-sw-activated") {
+      let prev = null;
+      try { prev = localStorage.getItem(SWVER_KEY); } catch (e) { prev = null; }
+      try { localStorage.setItem(SWVER_KEY, String(d.version || "")); } catch (e) {}
+      /* 처음 설치 때는 안내하지 않고, 실제로 버전이 바뀌었을 때만 */
+      if (prev && prev !== String(d.version || "")) showAppUpdate();
+    }
+  });
+}
+
+/* =====================================================================
    14. 탭 · 렌더 · 라우팅
    ===================================================================== */
 function renderAll() {
@@ -7214,8 +7602,11 @@ function renderCurrent() {
   else if (S.tab === "team") renderTeam();
 }
 function updateDots() {
+  /* 🔔 마지막 확인 이후 새 공지·내 당직 변경을 먼저 계산합니다 */
+  try { seenScan(); } catch (e) { console.warn("seenScan:", e && e.message); }
   const un = S.announcements.filter(a => !isRead(a.id)).length;
   const dn = $("#dotNotices"); dn.textContent = un > 9 ? "9+" : un; dn.classList.toggle("hidden", !un);
+  if (dn) dn.classList.toggle("flash", !!NEWSEEN.flash && S.tab !== "notices");
   const pend = S.members.filter(m => m.status === "pending").length;
   /* 팀원관리는 하단 탭에서 빠지고 상단 프로필 아이콘으로 이동 — 대기 인원은 그 위 빨간 배지로 */
   const dt = $("#dotTeam");
@@ -7238,7 +7629,15 @@ function setTab(t) {
   S.tab = t;
   $$(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + t));
   $$("#tabbar button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
-  if (t === "notices") S.seenNoticeAt = Date.now();
+  if (t === "notices") {
+    S.seenNoticeAt = Date.now();
+    /* 공지 화면을 열었으니 '새 공지'는 확인한 것으로 기록 */
+    if (NEWSEEN.base) { seenMarkNotices(); seenSave(); }
+  }
+  if (t === "duty") {
+    /* 당직 화면을 열었으니 '내 당직 변경'은 확인한 것으로 기록 */
+    if (NEWSEEN.base) { seenMarkDuty(); seenSave(); }
+  }
   if (t === "chat") { S.seenChatAt = Date.now(); }
   renderCurrent();
   updateDots();
@@ -7337,6 +7736,7 @@ function route() {
   $("#modeBadge").textContent = S.mode === "live" ? "실시간 연결" : "미리보기 모드";
   $("#modeBadge").className = "badge" + (S.mode === "live" ? " live" : "");
   if (!S.seenChatAt) S.seenChatAt = Date.now();
+  seenLoad();
   renderAll();
   /* 매월 24일 00:00(KST) 이후 첫 접속이면 다음 달 당직을 자동 배정 */
   autoAssignNextMonth();
@@ -7498,6 +7898,7 @@ function startSubs() {
           ? { question: v.poll.question || v.title || "", options: v.poll.options.map(String).slice(0, 6), multi: !!v.poll.multi }
           : null };
     });
+    LOADED.ann = true;
     snap.docs.forEach(d => subExtras(d.id));
     if (S.tab === "notices") renderNotices();
     updateDots();
@@ -7687,6 +8088,27 @@ function bindGlobal() {
 
   $$("#tabbar button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
 
+  /* 🔔 상단 새 소식 배너 — 누르면 해당 화면으로, ✕는 이번 소식만 닫기 */
+  const nb = $("#newBanner");
+  if (nb) {
+    $("#newBannerGo").addEventListener("click", () => {
+      const t = nb.dataset.tab || "notices";
+      if (t === "__reload") { location.reload(); return; }
+      appUpdateReady = false;
+      NEWSEEN.dismissed = "";
+      setTab(t);
+      NEWSEEN.dismissed = newSig();
+      seenSave();
+      renderNewBanner();
+    });
+    $("#newBannerX").addEventListener("click", () => {
+      appUpdateReady = false;
+      NEWSEEN.dismissed = newSig();
+      seenSave();
+      renderNewBanner();
+    });
+  }
+
   /* 상단 프로필 아이콘 → 팀원관리(내 프로필 · 승인 대기). 프로필 변경은 그 안의 [프로필 변경]에서 */
   $("#btnProfile").addEventListener("click", () => { setTab("team"); const v = $("#view-team"); if (v) v.scrollTop = 0; });
 
@@ -7730,6 +8152,7 @@ async function boot() {
 
   bindGlobal();
   applyModeUI();
+  bindServiceWorker();   /* 오프라인 캐시 — 앱을 꺼도 바로 뜨도록 */
 
   /* 첫 인증 판정 전까지는 로그인 폼 대신 부팅 화면을 보여 줍니다 */
   showBoot();
