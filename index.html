@@ -5056,6 +5056,12 @@ function seaWindBadge(w) {
   return { cls: "ok", label: "바람 양호" };
 }
 function seaTemp(v) { return (typeof v === "number" && isFinite(v)) ? Math.round(v) + "°" : "–"; }
+/* 그날 배지 — 단기는 최고 파고, 중기(최저~최고 범위)는 범위의 중간값 기준(최고 파고는 범위로 보입니다) */
+function seaDayBadge(s) {
+  if (!s || typeof s.max !== "number") return seaWindBadge(s ? s.wind : null);
+  if (s.src === "mid" && typeof s.wmin === "number") return seaBadge((s.wmin + s.max) / 2);
+  return seaBadge(s.max);
+}
 
 /* 날짜 표기 — 11/21(토) */
 function seaMd(ds) {
@@ -5070,7 +5076,7 @@ function seaRowHtml(it, ds, k) {
   const s = (it.days && it.days[ds]) || {};
   const hasWave = typeof s.max === "number";
   const isMid = s.src === "mid" && hasWave;
-  const b = hasWave ? seaBadge(s.max) : seaWindBadge(s.wind);
+  const b = seaDayBadge(s);
   const badge = hasWave && b.cls === "high" && !isMid ? "높음·결항주의" : b.label;
   /* 해양예보 마지막 날처럼 파고가 하루 일부 시간만 있는 경우 */
   const partial = hasWave && !isMid && k > 0 && typeof s.n === "number" && s.n < 24;
@@ -5125,7 +5131,7 @@ function seaIslandHtml(it, d) {
   const rows = days.map((ds, k) => {
     const s = (it.days && it.days[ds]) || {};
     if (typeof s.max === "number") {
-      const bb = seaBadge(s.max);
+      const bb = seaDayBadge(s);
       if (bb.cls === "ok") ok++; else if (bb.cls === "warn") warn++; else if (bb.cls === "high") high++;
     } else na++;
     return seaRowHtml(it, ds, k);
@@ -5217,7 +5223,7 @@ function seaBodyHtml() {
       '<span><i style="background:#e5484d"></i>2.0m 이상 높음·결항주의</span>' +
       '<span><i style="background:#cbd5e3"></i>파고 미제공 = 풍속·기온 참고</span>' +
     "</div>" +
-    (sel === SEA_ALL ? "" : '<div class="sea-legend" style="margin-top:4px"><span>＊ 그날 일부 시간대는 파고 예보 없음</span></div>');
+    (sel === SEA_ALL ? "" : '<div class="sea-legend" style="margin-top:4px"><span>＊ 그날 일부 시간대는 파고 예보 없음</span><span>중기(6~10일) 배지 = 최저~최고 범위의 중간값 기준</span></div>');
 
   const links = SEA_LINKS.map(l =>
     '<a class="sea-link cp" href="' + l.url + '" target="_blank" rel="noopener">' +
