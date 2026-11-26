@@ -851,6 +851,11 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sr-split{font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.03em;white-space:nowrap;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
 .sr-split em{font-style:normal;color:#c47c00;font-weight:800}
 .sr-l2{margin-top:1px;font-size:10px;font-weight:700;color:var(--ink2);letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sr-l3{margin-top:1px;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sr-l3 em{font-style:normal;color:#0b6d8f;font-weight:800}
+.sr-l3.wet{color:#0b6d8f}
+.sea-rain{margin-top:1px;font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sea-rain.wet{color:#0b6d8f}
 .sea-tip{margin:8px 2px 0;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
 .sea-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e3}
 .sea-card.ok:before{background:#158f5f}
@@ -4549,6 +4554,28 @@ function seaBadge(w) {
   return { cls: "ok", label: "양호" };
 }
 function seaNum(v) { return (typeof v === "number" && isFinite(v)) ? v.toFixed(1) : "–"; }
+/* WMO 날씨 코드 → 아이콘·한글 (Open-Meteo weather_code) */
+const SEA_WX = {
+  0: ["☀️", "맑음"], 1: ["🌤️", "대체로 맑음"], 2: ["⛅", "구름조금"], 3: ["☁️", "흐림"],
+  45: ["🌫️", "안개"], 48: ["🌫️", "짙은 안개"],
+  51: ["🌦️", "약한 이슬비"], 53: ["🌦️", "이슬비"], 55: ["🌧️", "강한 이슬비"],
+  56: ["🌧️", "어는 이슬비"], 57: ["🌧️", "어는 이슬비"],
+  61: ["🌦️", "약한 비"], 63: ["🌧️", "비"], 65: ["🌧️", "강한 비"],
+  66: ["🌧️", "어는 비"], 67: ["🌧️", "어는 비"],
+  71: ["🌨️", "약한 눈"], 73: ["❄️", "눈"], 75: ["❄️", "많은 눈"], 77: ["❄️", "눈알갱이"],
+  80: ["🌦️", "약한 소나기"], 81: ["🌧️", "소나기"], 82: ["⛈️", "강한 소나기"],
+  85: ["🌨️", "눈 소나기"], 86: ["❄️", "많은 눈 소나기"],
+  95: ["⛈️", "천둥번개"], 96: ["⛈️", "우박 섞인 뇌우"], 99: ["⛈️", "우박 섞인 뇌우"]
+};
+function seaWx(code) {
+  if (code === null || code === undefined || code === "") return { em: "☁️", label: "날씨 미제공", na: true };
+  const v = SEA_WX[Number(code)];
+  return v ? { em: v[0], label: v[1], na: false } : { em: "☁️", label: "흐림", na: false };
+}
+function seaRain(v) {
+  if (typeof v !== "number" || !isFinite(v)) return "–";
+  return v > 0 ? (v >= 10 ? Math.round(v) + "mm" : v.toFixed(1) + "mm") : "0mm";
+}
 function seaM(v) { return (typeof v === "number" && isFinite(v)) ? v.toFixed(1) + "m" : "–"; }
 function seaClock(t) {
   const s = String(t || "");
@@ -4563,7 +4590,7 @@ function seaUrl(kind) {
       "&current=wave_height,wave_period&hourly=wave_height&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
   }
   return "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
-    "&current=temperature_2m,wind_speed_10m,wind_gusts_10m&hourly=wind_speed_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min&wind_speed_unit=ms&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
+    "&current=temperature_2m,wind_speed_10m,wind_gusts_10m,weather_code,precipitation&hourly=wind_speed_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max&wind_speed_unit=ms&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
 }
 /* 12초 안에 응답이 없으면 중단 */
 function seaGet(url) {
@@ -4607,12 +4634,20 @@ async function seaLoad() {
       const wgust = (w.hourly && w.hourly.wind_gusts_10m) || [];
       const wmap = {};
       for (let k = 0; k < wtime.length; k++) wmap[String(wtime[k])] = { w: wspeed[k], g: wgust[k] };
-      /* 날짜별 기온(최고·최저) — 파고가 없는 뒤쪽 날짜의 참고값 */
+      /* 날짜별 기온(최고·최저) · 날씨 코드 · 강수량·강수확률 — 파고가 없는 뒤쪽 날짜의 참고값 */
       const dtime = (w.daily && w.daily.time) || [];
       const dmax = (w.daily && w.daily.temperature_2m_max) || [];
       const dmin = (w.daily && w.daily.temperature_2m_min) || [];
+      const dcode = (w.daily && w.daily.weather_code) || [];
+      const drain = (w.daily && w.daily.precipitation_sum) || [];
+      const dprob = (w.daily && w.daily.precipitation_probability_max) || [];
       const tmap = {};
-      for (let k = 0; k < dtime.length; k++) tmap[String(dtime[k])] = { max: dmax[k], min: dmin[k] };
+      for (let k = 0; k < dtime.length; k++) tmap[String(dtime[k])] = {
+        max: dmax[k], min: dmin[k],
+        code: typeof dcode[k] === "number" ? dcode[k] : null,
+        rain: typeof drain[k] === "number" ? drain[k] : null,
+        prob: typeof dprob[k] === "number" ? dprob[k] : null
+      };
       /* 날짜별: 그날 최고 파고 · 오전(06~12시) 최고 · 오후(12~18시) 최고 · 최대 풍속·돌풍 · 기온 */
       const per = {};
       days.forEach(ds => {
@@ -4635,7 +4670,10 @@ async function seaLoad() {
         per[ds] = {
           max: mx, am: am, pm: pm, wind: wmx, gust: gmx, n: nhr,
           tmax: tmap[ds] && typeof tmap[ds].max === "number" ? tmap[ds].max : null,
-          tmin: tmap[ds] && typeof tmap[ds].min === "number" ? tmap[ds].min : null
+          tmin: tmap[ds] && typeof tmap[ds].min === "number" ? tmap[ds].min : null,
+          code: tmap[ds] && typeof tmap[ds].code === "number" ? tmap[ds].code : null,
+          rain: tmap[ds] && typeof tmap[ds].rain === "number" ? tmap[ds].rain : null,
+          prob: tmap[ds] && typeof tmap[ds].prob === "number" ? tmap[ds].prob : null
         };
       });
       const maxOf = ds => (per[ds] && typeof per[ds].max === "number") ? per[ds].max : null;
@@ -4646,6 +4684,8 @@ async function seaLoad() {
         temp: typeof wc.temperature_2m === "number" ? wc.temperature_2m : null,
         wind: typeof wc.wind_speed_10m === "number" ? wc.wind_speed_10m : null,
         gust: typeof wc.wind_gusts_10m === "number" ? wc.wind_gusts_10m : null,
+        code: typeof wc.weather_code === "number" ? wc.weather_code : null,
+        rain: typeof wc.precipitation === "number" ? wc.precipitation : null,
         days: per,
         todayMax: maxOf(days[0]), tomMax: maxOf(days[1])
       };
@@ -4667,11 +4707,16 @@ async function seaLoad() {
 /* 전체(오늘) — 섬 카드를 누르면 그 섬의 16일 리스트로 이동 */
 function seaCardHtml(i, idx) {
   const b = seaBadge(i.wave);
+  const wx = seaWx(i.code);
   const wind = i.wind !== null && i.wind !== undefined ? seaNum(i.wind) + " m/s" : "–";
-  return '<button type="button" class="sea-card tap ' + b.cls + '" data-si="' + idx + '" aria-label="' + esc(i.name) + ' 16일 파고 보기">' +
+  const rainTxt = (i.code !== null && i.code !== undefined)
+    ? wx.em + " " + wx.label + (i.rain !== null && i.rain !== undefined ? " · 💧 " + seaRain(i.rain) : "")
+    : "☁️ 날씨 미제공";
+  return '<button type="button" class="sea-card tap ' + b.cls + '" data-si="' + idx + '" aria-label="' + esc(i.name) + ' 16일 파고·날씨 보기">' +
     '<div class="sea-top"><b>' + esc(i.name) + '</b><span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
     '<div class="sea-wave"><b>' + seaNum(i.wave) + "</b>" + (i.wave !== null ? "<i>m</i>" : "") + "<small>지금 파고</small></div>" +
     '<div class="sea-meta">💨 ' + wind + (i.temp !== null && i.temp !== undefined ? ' <span>· ' + seaNum(i.temp) + "°</span>" : "") + "</div>" +
+    '<div class="sea-rain' + (i.code !== null && i.code !== undefined && i.rain > 0 ? " wet" : "") + '">' + rainTxt + "</div>" +
     '<div class="sea-max">오늘 최고 <b>' + seaM(i.todayMax) + '</b> · 내일 <b>' + seaM(i.tomMax) + "</b></div>" +
     '<div class="sea-more">16일 보기 ›</div>' +
     "</button>";
@@ -4714,11 +4759,18 @@ function seaRowHtml(it, ds, k) {
     l2 = "💨 최대 " + windTxt +
       (typeof s.tmax === "number" ? " · 🌡 " + seaTemp(s.tmax) + "/" + seaTemp(s.tmin) : "");
   }
+  /* 날씨·강수 — 기상 API가 실패한 날짜는 미제공으로 */
+  const wx = seaWx(s.code);
+  const wxTxt = (s.code !== null && s.code !== undefined)
+    ? wx.em + " " + wx.label + " · 💧 " + seaRain(s.rain) + (typeof s.prob === "number" ? ' <em>' + Math.round(s.prob) + "%</em>" : "")
+    : "날씨·강수 미제공";
+  const wet = s.code !== null && s.code !== undefined && typeof s.rain === "number" && s.rain > 0;
   return '<div class="sr ' + b.cls + (k === 0 ? " today" : "") + '">' +
     '<div class="sr-d"><b>' + seaMd(ds) + "</b>" + (tag ? "<span>" + tag + "</span>" : "") + "</div>" +
     '<div class="sr-m"><div class="sr-l1">' + l1 +
       '<span class="sea-badge ' + b.cls + '">' + badge + "</span></div>" +
-      '<div class="sr-l2">' + l2 + "</div></div>" +
+      '<div class="sr-l2">' + l2 + "</div>" +
+      '<div class="sr-l3' + (wet ? " wet" : "") + '">' + wxTxt + "</div></div>" +
     "</div>";
 }
 
@@ -4737,7 +4789,11 @@ function seaIslandHtml(it, d) {
   }).join("");
   const cur = "지금 파고 <b>" + seaM(it.wave) + "</b>" +
     (typeof it.wind === "number" ? " · 💨 " + seaNum(it.wind) + " m/s" : "") +
-    (typeof it.temp === "number" ? " · 🌡 " + seaTemp(it.temp) : "");
+    (typeof it.temp === "number" ? " · 🌡 " + seaTemp(it.temp) : "") +
+    (it.code !== null && it.code !== undefined
+      ? " · " + seaWx(it.code).em + " " + seaWx(it.code).label +
+        (typeof it.rain === "number" && it.rain > 0 ? " " + seaRain(it.rain) : "")
+      : "");
   return '<div class="sea-cur"><div class="ct"><b>' + esc(it.name) + "</b><small>" + esc(it.area) + "</small>" +
       '<span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
       '<div class="cm">' + cur + "</div></div>" +
@@ -4766,7 +4822,7 @@ function seaAllHtml(d) {
       '<span class="high">높음 <b>' + cnt.high + "</b></span>" +
       (cnt.na ? '<span class="na">정보없음 <b>' + cnt.na + "</b></span>" : "") + "</div>" +
     cards +
-    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·풍속으로 바로 넘어갑니다.</div>';
+    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·날씨·강수로 바로 넘어갑니다.</div>';
 }
 
 function seaBodyHtml() {
@@ -4825,6 +4881,7 @@ function seaBodyHtml() {
   return hd + partBar + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
     '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 16일 · 파고는 해양예보 최대 9일) · 실제 결항은 운항정보 확인<br>' +
       "10일째부터는 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
+      "날씨·강수는 <b>Open-Meteo</b> 일자별 예보값입니다 · 💧 강수량은 하루 합계, %는 그날 강수확률(최대) · 비·눈이 예보된 날은 파란색으로 표시합니다.<br>" +
       "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.</div>";
 }
 
@@ -5013,7 +5070,7 @@ function renderDuty() {
     (isDuty ? "" :
     '<button class="wave-strip" id="waveBtn" aria-label="섬 파고와 배편 열기">' +
       '<span class="em">🌊</span>' +
-      '<span class="tx"><b>섬 파고 · 배편</b><small>섬을 고르면 16일 파고·풍속 · 여객선 예매</small></span>' +
+      '<span class="tx"><b>섬 파고 · 배편</b><small>섬을 고르면 16일 파고·날씨·강수 · 여객선 예매</small></span>' +
       '<span class="go">열기 ›</span>' +
     "</button>") +
     '<div class="sum-grid">' +
