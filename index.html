@@ -7667,6 +7667,7 @@ const PUSH_WORKER = "https://teamhub-push.dudghks1210.workers.dev";
 const PUSH_VAPID_PUBLIC = "BJgN4r2npkGtxajTBg5-dUaw6ie8yfG5m5zD8A8iow6RRXEHizNjWl_jDfdTz1I9W89XF9x_vf2WLdADmLFud_o";
 const PUSH_NOTIFY_KEY = "dDxKpzlkM5SNgnPgMRP_uoZgFLXvBNLH";   /* 가벼운 남용 방지용(공개 코드) */
 const PUSH_ON_KEY = "teamhub.push.on";
+const PUSH_DEV_KEY = "teamhub.push.dev";
 let PUSH_BUSY = false;
 let PUSH_MUTE = 0;            /* 일괄 배정 중 알림 폭주 방지 */
 
@@ -7687,6 +7688,17 @@ function pushPerm() {
 }
 function pushWanted() { try { return localStorage.getItem(PUSH_ON_KEY) === "1"; } catch (e) { return false; } }
 function pushSetWanted(on) { try { on ? localStorage.setItem(PUSH_ON_KEY, "1") : localStorage.removeItem(PUSH_ON_KEY); } catch (e) {} }
+/* 기기 구분자 — 한 사람이 폰·PC 두 곳에서 켜도 각각 따로 받도록 */
+function pushDev() {
+  try {
+    let d = localStorage.getItem(PUSH_DEV_KEY);
+    if (!d || !/^[A-Za-z0-9_-]{6,32}$/.test(d)) {
+      d = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+      localStorage.setItem(PUSH_DEV_KEY, d);
+    }
+    return d;
+  } catch (e) { return "default"; }
+}
 function pushIsOn() { return pushSupported() && pushWanted() && pushPerm() === "granted"; }
 function pushKeyBytes() {
   const s = String(PUSH_VAPID_PUBLIC).replace(/-/g, "+").replace(/_/g, "/");
@@ -7723,7 +7735,7 @@ async function pushSubscribe() {
   const r = await fetch(PUSH_WORKER + "/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ uid: myUid(), empId: (S.user && S.user.empId) || "", name: (S.user && S.user.name) || "", subscription: json })
+    body: JSON.stringify({ uid: myUid(), dev: pushDev(), empId: (S.user && S.user.empId) || "", name: (S.user && S.user.name) || "", subscription: json })
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.ok) throw new Error(j.error || ("구독 저장 실패(" + r.status + ")"));
@@ -7763,7 +7775,7 @@ async function pushDisable() {
       try {
         await fetch(PUSH_WORKER + "/unsubscribe", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: myUid() })
+          body: JSON.stringify({ uid: myUid(), dev: pushDev() })
         });
       } catch (e) {}
       try { await sub.unsubscribe(); } catch (e) {}
