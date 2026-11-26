@@ -7698,7 +7698,15 @@ function pushKeyBytes() {
 }
 async function pushReg() {
   if (!("serviceWorker" in navigator)) return null;
-  try { return await navigator.serviceWorker.ready; } catch (e) { return null; }
+  try {
+    /* ready 가 영영 안 끝나는 경우(등록 실패·사파리 초기)에도 버튼이 잠기지 않도록 3초 제한 */
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(res => setTimeout(() => res(null), 3000))
+    ]);
+    if (reg) return reg;
+    return await navigator.serviceWorker.getRegistration() || null;
+  } catch (e) { return null; }
 }
 async function pushCurrent() {
   const reg = await pushReg();
@@ -8041,7 +8049,11 @@ function route() {
   /* 🔔 알림을 눌러 열었으면 그 화면으로 (#notices / #duty …) */
   try {
     const ht = (location.hash || "").replace("#", "");
-    if (["notices", "duty", "photos", "rest", "chat"].indexOf(ht) >= 0 && ht !== S.tab) setTab(ht);
+    if (["notices", "duty", "photos", "rest", "chat"].indexOf(ht) >= 0) {
+      if (ht !== S.tab) setTab(ht);
+      /* 주소창의 #은 한 번만 쓰고 지워 다음 새로고침에 영향을 주지 않게 */
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    }
   } catch (e) {}
   /* 🔔 알림 구독을 서버와 맞춰 두기(주소가 바뀌어도 계속 받도록) */
   pushSync();
