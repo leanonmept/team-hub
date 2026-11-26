@@ -1199,6 +1199,15 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .rt-lnk.naver{background:#e9f9f0;border-color:#cbebd9;color:#07864a}
 .rt-lnk.naver.big{font-size:11.5px;padding:7px 11px}
 .rt-lnk.kakao{background:#fdf8e6;border-color:#f0e4bd;color:#7a5b00}
+/* 📋 맛집 상세 시트 — 목록 카드·지도 핀에서 엽니다 */
+.rt-card{cursor:pointer}
+.rd-name{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.rd-name h3{margin:0;flex:1;min-width:0;font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1.3;word-break:break-word}
+.rd-rate{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:800;color:#e08a00;letter-spacing:-.02em;flex-shrink:0}
+.rd-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.rd-addr{margin:0 0 10px;font-size:12.5px;color:var(--ink2);line-height:1.55;word-break:break-word}
+.rd-quote{margin:0 0 10px;padding:11px 12px;background:#f7f9fd;border-radius:12px;font-size:13px;color:var(--ink2);line-height:1.65;word-break:break-word}
+.rd-quote b{display:block;font-size:10.5px;font-weight:800;color:var(--ink3);letter-spacing:.02em;margin-bottom:3px}
 .rt-pick{height:190px;border-radius:13px;overflow:hidden;background:#e9eef8;border:1px solid var(--line);margin-top:7px}
 .rt-pick.shake,.rt-starbtn.shake,#rtName.shake{animation:shake .42s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
@@ -2864,7 +2873,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         typeBlock +
         (isDuty ? "" : '<div class="field" id="endWrap" style="' + (curEnd || curType === "overnight_island" || curType === "edu" ? "" : "display:none") + '">' +
           '<label>종료일 <span style="font-weight:500;color:var(--ink3)">(여러 날이면 종료일을 뒤로 · 1박 섬은 다음 날)</span></label>' +
-          '<input type="date" id="schEnd" value="' + (curEnd || (curType === "overnight_island" ? addDays(ds, 1) : ds)) + '" min="' + ds + '"></div>') +
+          '<input type="date" id="schEnd" value="' + (curEnd || (curType === "overnight_island" ? addDays(ds, 1) : (curType === "edu" ? ds : ""))) + '" min="' + ds + '"></div>') +
         '<div class="field"><label>메모 (선택)</label><input type="text" id="schMemo" maxlength="40" placeholder="' + esc(MEMO_PH[curType] || "메모를 입력하세요") + '" value="' + esc(baseEntry ? (baseEntry.memo || "") : "") + '"></div>' +
         (isDuty ? '<div class="hint" style="margin:-4px 2px 8px">팀원끼리 상의해 담당자를 바꿀 수 있어요. 담당자를 바꾸면 누가·언제 바꿨는지 이력이 남습니다.</div>' : "") +
         '<div class="notice-bar">여기서 등록한 일정은 ' + (isDuty ? "<b>🏢 당직 달력</b>" : "<b>⛴️ 섬·교육 달력</b>") + "에 바로 표시됩니다.</div>";
@@ -2887,12 +2896,32 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
       const endWrap = $("#endWrap", root);
       const endInp = $("#schEnd", root);
       const memoInp = $("#schMemo", root);
+      /* 🌙⛴️ 1박 섬을 고르면 종료일을 다음 날로 자동 입력합니다.
+         사용자가 종료일을 직접 고쳤거나 기존 일정을 수정하는 중이면 덮어쓰지 않습니다. */
+      let endTouched = false;
+      if (endInp) {
+        const markEndTouched = () => { endTouched = true; };
+        endInp.addEventListener("change", markEndTouched);
+        endInp.addEventListener("input", markEndTouched);
+      }
       $$("#schPick button", root).forEach(b => b.addEventListener("click", () => {
         picked = b.dataset.type;
         $$("#schPick button", root).forEach(x => x.classList.toggle("on", x === b));
         const multi = picked === "overnight_island" || picked === "edu";
         if (endWrap) endWrap.style.display = multi ? "" : "none";
-        if (endInp && multi && (!endInp.value || endInp.value < ds)) endInp.value = picked === "overnight_island" ? addDays(ds, 1) : ds;
+        if (endInp && multi) {
+          const keep = !!editing || endTouched;
+          if (!keep) {
+            if (picked === "overnight_island") {
+              /* 종료일이 비었거나 시작일과 같으면 다음 날(+1일)로 */
+              if (!endInp.value || endInp.value === ds || endInp.value < ds) endInp.value = addDays(ds, 1);
+            } else {
+              endInp.value = ds;   /* 교육 = 하루 기본값 */
+            }
+          } else if (endInp.value && endInp.value < ds) {
+            endInp.value = ds;
+          }
+        }
         if (memoInp && !memoInp.value) memoInp.placeholder = MEMO_PH[picked] || "메모를 입력하세요";
       }));
       $$("[data-ms]", root).forEach(btn => btn.addEventListener("click", async () => {
@@ -2973,6 +3002,8 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         const multi = picked === "overnight_island" || picked === "edu";
         let end = multi ? ((endInp && endInp.value) || (picked === "overnight_island" ? addDays(ds, 1) : ds)) : ds;
         if (end < ds) end = ds;
+        /* 1박 섬은 최소 다음 날까지 — 시작일과 같은 날로 저장되면 +1일로 보정 */
+        if (picked === "overnight_island" && end <= ds) end = addDays(ds, 1);
         const body = {
           startDate: ds, endDate: end, type: picked,
           memberId: who, memberName: mm ? mm.name : (S.user.name || "팀원"),
@@ -3702,7 +3733,7 @@ function restCard(r) {
   const rg = restRegionOf(r);
   const score = (Number(r.rating) || 0).toFixed(1);
   const quote = [r.review || "", (r.menu ? "추천 " + r.menu : "")].filter(Boolean).join(" · ");
-  return '<article class="rt-card" data-rest="' + r.id + '">' +
+  return '<article class="rt-card" data-rest="' + r.id + '" role="button" tabindex="0" aria-label="' + esc(r.name) + ' 상세 보기">' +
     '<div class="rt-top"><h3>' + esc(r.name) + '</h3>' +
       (rg ? '<span class="rt-reg r-' + esc(rg) + '">' + restRegionLabel(rg) + '</span>' : "") +
       '<span class="rt-rate">' + starsHtml(r.rating) + score + '</span></div>' +
@@ -3716,6 +3747,61 @@ function restCard(r) {
     "</div>" +
     '<div class="rt-links2">' + restMapLinks(r) + "</div>" +
     "</article>";
+}
+
+/* 📋 맛집 상세 — 목록 카드 본문이나 지도 핀을 누르면 엽니다.
+   별점·주소·한줄평·추천 메뉴·지도 열기·좋아요, 작성자·관리자에게는 수정/삭제까지. */
+function openRestDetail(r) {
+  if (!r) return;
+  const liked = (r.likes || []).indexOf(myUid()) >= 0;
+  const canEdit = r.author_id === myUid() || isAdmin();
+  const rg = restRegionOf(r);
+  const tags = [];
+  if (r.area && REST_AREAS[r.area]) tags.push('<span class="rt-reg">' + REST_AREAS[r.area].em + " " + esc(REST_AREAS[r.area].label) + "</span>");
+  if (rg) tags.push('<span class="rt-reg r-' + esc(rg) + '">' + esc(restRegionLabel(rg)) + "</span>");
+  const body =
+    '<div class="rd-name"><h3>' + esc(r.name || "맛집") + '</h3>' +
+      '<span class="rd-rate">' + starsHtml(r.rating) + (Number(r.rating) || 0).toFixed(1) + "</span></div>" +
+    (tags.length ? '<div class="rd-tags">' + tags.join("") + "</div>" : "") +
+    (r.address ? '<p class="rd-addr">📍 ' + esc(r.address) + "</p>" : "") +
+    (r.review ? '<div class="rd-quote"><b>한줄평</b>' + esc(r.review) + "</div>" : "") +
+    (r.menu ? '<div class="rd-quote"><b>추천 메뉴</b>' + esc(r.menu) + "</div>" : "") +
+    '<div class="rt-links2" style="margin-top:2px">' + restMapLinks(r) + "</div>" +
+    '<div class="rt-meta" style="margin-top:12px">' + avatarHtml(r.author_name, "xs", r.author_id) +
+      '<div class="who"><span>' + esc(r.author_name || "팀원") + '</span></div>' +
+      '<button class="rt-like' + (liked ? " on" : "") + '" id="rdLike">' + (liked ? ICON.heart : ICON.heartO) + " 좋아요 " + (r.likes || []).length + "</button></div>";
+  openSheet({
+    title: "🍽️ 맛집 정보",
+    body: body,
+    footer: canEdit
+      ? '<div style="display:flex;gap:8px"><button class="btn danger" id="rdDel">삭제</button><button class="btn" id="rdEdit">수정</button></div>'
+      : '<button class="btn ghost" id="rdClose">닫기</button>',
+    onMount: root => {
+      const likeBtn = $("#rdLike", root);
+      if (likeBtn) likeBtn.addEventListener("click", async () => {
+        likeBtn.disabled = true;
+        try {
+          await dbRestLike(r.id);
+          const upd = S.restaurants.find(x => x.id === r.id) || r;
+          const on = (upd.likes || []).indexOf(myUid()) >= 0;
+          likeBtn.classList.toggle("on", on);
+          likeBtn.innerHTML = (on ? ICON.heart : ICON.heartO) + " 좋아요 " + (upd.likes || []).length;
+        } catch (err) { toast(fbErrMsg(err)); }
+        likeBtn.disabled = false;
+      });
+      const editBtn = $("#rdEdit", root);
+      if (editBtn) editBtn.addEventListener("click", () => { closeSheet(); setTimeout(() => openRestSheet(r.id), 90); });
+      const delBtn = $("#rdDel", root);
+      if (delBtn) delBtn.addEventListener("click", async () => {
+        if (!confirm("‘" + (r.name || "맛집") + "’ 맛집을 삭제할까요?")) return;
+        delBtn.disabled = true;
+        try { await dbRestDelete(r.id); closeSheet(); toast("삭제했습니다"); }
+        catch (err) { delBtn.disabled = false; toast(fbErrMsg(err)); }
+      });
+      const closeBtn = $("#rdClose", root);
+      if (closeBtn) closeBtn.addEventListener("click", closeSheet);
+    }
+  });
 }
 
 function renderRest() {
@@ -3758,12 +3844,26 @@ function renderRest() {
     e.stopPropagation();
     try { await dbRestLike(b.dataset.like); } catch (err) { toast(fbErrMsg(err)); }
   }));
-  $$("[data-editrest]", v).forEach(b => b.addEventListener("click", () => openRestSheet(b.dataset.editrest)));
-  $$("[data-delrest]", v).forEach(b => b.addEventListener("click", async () => {
+  $$("[data-editrest]", v).forEach(b => b.addEventListener("click", e => { e.stopPropagation(); openRestSheet(b.dataset.editrest); }));
+  $$("[data-delrest]", v).forEach(b => b.addEventListener("click", async e => {
+    e.stopPropagation();
     const r = S.restaurants.find(x => x.id === b.dataset.delrest);
     if (!r) return;
     if (!confirm("‘" + r.name + "’ 맛집을 삭제할까요?")) return;
     try { await dbRestDelete(r.id); toast("삭제했습니다"); } catch (err) { toast(fbErrMsg(err)); }
+  }));
+  /* 📋 목록 카드 본문을 누르면 상세 시트 — 안의 버튼·지도 링크는 각자 동작만 하고 버블링은 막습니다. */
+  $$("[data-rest] a", v).forEach(a => a.addEventListener("click", e => e.stopPropagation()));
+  $$("[data-rest]", v).forEach(card => card.addEventListener("click", ev => {
+    if (ev.target && ev.target.closest && ev.target.closest("a,button")) return;
+    const r = S.restaurants.find(x => x.id === card.dataset.rest);
+    if (r) openRestDetail(r);
+  }));
+  $$("[data-rest]", v).forEach(card => card.addEventListener("keydown", ev => {
+    if (ev.target !== card || (ev.key !== "Enter" && ev.key !== " ")) return;
+    ev.preventDefault();
+    const r = S.restaurants.find(x => x.id === card.dataset.rest);
+    if (r) openRestDetail(r);
   }));
   if (S.restView === "map") mountRestMap();
 }
@@ -4483,9 +4583,16 @@ async function seaLoad() {
   seaError = "";
   paintSea();
   try {
-    const res = await Promise.all([seaGet(seaUrl("marine")), seaGet(seaUrl("weather"))]);
-    const mArr = Array.isArray(res[0]) ? res[0] : [res[0]];
-    const wArr = Array.isArray(res[1]) ? res[1] : [res[1]];
+    /* 기상(api.open-meteo.com)과 해양(marine-api.open-meteo.com)을 따로 받습니다.
+       한쪽이 타임아웃·실패해도 다른 쪽 데이터는 그대로 보여 주려고 allSettled를 씁니다.
+       둘 다 실패했을 때만 오류 화면입니다. */
+    const settled = await Promise.allSettled([seaGet(seaUrl("marine")), seaGet(seaUrl("weather"))]);
+    const mRes = settled[0], wRes = settled[1];
+    const mOk = !!mRes && mRes.status === "fulfilled";
+    const wOk = !!wRes && wRes.status === "fulfilled";
+    if (!mOk && !wOk) throw ((mRes && mRes.reason) || (wRes && wRes.reason) || new Error("네트워크 오류"));
+    const mArr = mOk ? (Array.isArray(mRes.value) ? mRes.value : [mRes.value]) : [];
+    const wArr = wOk ? (Array.isArray(wRes.value) ? wRes.value : [wRes.value]) : [];
     /* 날짜 축은 API 응답(Asia/Seoul)에서 뽑습니다. 브라우저 시간대와 무관하게 섬 기준 날짜로 맞습니다. */
     const axis = (((wArr[0] && wArr[0].hourly && wArr[0].hourly.time) ||
       (mArr[0] && mArr[0].hourly && mArr[0].hourly.time) || []).map(t => String(t).slice(0, 10)));
@@ -4543,8 +4650,10 @@ async function seaLoad() {
         todayMax: maxOf(days[0]), tomMax: maxOf(days[1])
       };
     });
-    const stamp = (mArr[0] && mArr[0].current && mArr[0].current.time) || "";
-    seaCache = { at: Date.now(), items: items, stamp: stamp, days: days };
+    const stamp = (mArr[0] && mArr[0].current && mArr[0].current.time) ||
+      (wArr[0] && wArr[0].current && wArr[0].current.time) || "";
+    seaCache = { at: Date.now(), items: items, stamp: stamp, days: days,
+      partial: !mOk ? "marine" : (!wOk ? "weather" : "") };
   } catch (e) {
     const nm = (e && e.name) || "", msg = (e && e.message) || "";
     if (nm === "AbortError") seaError = "응답이 늦어 시간 초과";
@@ -4693,6 +4802,12 @@ function seaBodyHtml() {
   const staleBar = (d && stale && !seaBusy)
     ? '<div class="sea-stale">' + (seaError ? "새 정보를 못 받아 지난 값을 보여 줍니다. " : "10분 넘은 값이에요. ") + "[새로고침]을 눌러 주세요.</div>" : "";
 
+  /* 한쪽 API만 실패한 경우 — 받은 값은 그대로 보여 주고 빠진 것만 알립니다 */
+  const partBar = (d && d.partial && !seaBusy)
+    ? '<div class="sea-stale">' + (d.partial === "weather"
+        ? "기상(기온·풍속) 정보는 지금 받지 못했어요. 파고는 그대로 보여 줍니다."
+        : "파고 정보를 받지 못했어요. 풍속·기온만 보여 줍니다.") + "</div>" : "";
+
   const legend = '<div class="sea-legend">' +
       '<span><i style="background:#158f5f"></i>1.0m 미만 양호</span>' +
       '<span><i style="background:#e08a00"></i>1.0~1.9m 주의</span>' +
@@ -4707,7 +4822,7 @@ function seaBodyHtml() {
       '<span class="tx"><b>' + esc(l.label) + '</b></span>' +
       '<span class="ar">›</span></a>').join("");
 
-  return hd + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
+  return hd + partBar + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
     '<div class="sea-note">기상 데이터: <b>Open-Meteo</b> (오늘부터 16일 · 파고는 해양예보 최대 9일) · 실제 결항은 운항정보 확인<br>' +
       "10일째부터는 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
       "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.</div>";
