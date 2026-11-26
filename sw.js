@@ -9,9 +9,9 @@
    · Firebase·기상청 API·카카오 등 외부 주소는 절대 건드리지 않습니다(그대로 네트워크).
    · SW 로직이나 캐시 목록을 바꾸면 SW_VERSION 을 올려 주세요.
    ===================================================================== */
-const SW_VERSION = "th-2026-11-26-1";
+const SW_VERSION = "th-2026-11-26-5";
 const CACHE = "teamhub-" + SW_VERSION;
-const SCOPE_PATH = new URL(self.registration.scope).pathname;   // 예: /team-hub/
+const SCOPE_PATH = new URL(self.registration.scope).pathname;   /* 예: /team-hub/ */
 const SHELL_INDEX = new URL("./index.html", self.location.href).href;
 const SHELL = [
   "./",
@@ -21,6 +21,10 @@ const SHELL = [
   "./icon-512.png",
   "./apple-touch-icon.png"
 ];
+const HTML_HEAD = { "Content-Type": "text/html; charset=utf-8" };
+/* 이 워커가 화면(index.html) 캐시를 마지막으로 새로 받은 시각.
+   화면이 늦게 뜨면서 알림을 놓치는 경우가 있어, 앱이 따로 물어볼 수 있게 합니다(th-check). */
+let shellUpdatedAt = 0;
 
 /* 앱이 열려 있으면 새 버전/새 내용을 알려 줍니다 */
 function tellClients(type, extra) {
@@ -47,61 +51,61 @@ self.addEventListener("activate", event => {
   })());
 });
 
-/* ---------- 캐시 키: ?demo=1 같은 쿼리는 무시하고 같은 파일로 봅니다 ---------- */
-function cacheKeyFor(request) {
-  const url = new URL(request.url);
-  url.search = "";
-  return url.href;
+/* 앱이 '이 화면보다 새 화면이 있나?' 물어보면 답합니다 */
+self.addEventListener("message", event => {
+  const d = event.data || {};
+  if (d.type === "th-check" && event.ports && event.ports[0]) {
+    try { event.ports[0].postMessage({ type: "th-check-ok", version: SW_VERSION, shellUpdatedAt: shellUpdatedAt }); } catch (e) {}
+  }
+});
+
+/* ---------- 화면(HTML): 캐시 먼저 + 백그라운드 갱신 ----------
+   fetch 핸들러가 끝나도 워커가 곧바로 잠들 수 있으므로,
+   새 화면을 받아 비교·저장하는 일은 event.waitUntil 로 붙잡아 둡니다. */
+async function revalidateDocument(request) {
+  let res = null;
+  /* 주의 1: 탐색(navigate) 요청 객체는 그대로 fetch() 할 수 없어(브라우저 제한)
+     캐시 키와 같은 주소로 새 요청을 만들어 씨 네트워크의 최신 화면을 받습니다.
+     주의 2: 화면에 보낼 응답과 같은 Response 객체를 두 번 읽으면 'body already used'가
+     납니다. 그래서 예전 화면은 캐시를 한 번 더 읽어(별도 Response) 비교합니다. */
+  try { res = await fetch(new Request(SHELL_INDEX, { cache: "no-store", credentials: "same-origin" })); } catch (e) { return null; }
+  if (!res || !res.ok || res.type === "opaque") return res;
+  try {
+    const fresh = await res.clone().text();
+    const oldRes = await caches.match(SHELL_INDEX);
+    const old = oldRes ? await oldRes.text() : "";
+    if (fresh !== old) {
+      const cache = await caches.open(CACHE);
+      await cache.put(SHELL_INDEX, new Response(fresh, { headers: HTML_HEAD }));
+      shellUpdatedAt = Date.now();
+      if (old) await tellClients("th-shell-updated");
+    }
+  } catch (e) { /* 본문을 못 읽어도 응답은 그대로 돌려 줍니다 */ }
+  return res;
 }
 
-/* ---------- 화면(HTML): 캐시 먼저 + 백그라운드 갱신 ---------- */
-async function handleDocument(request) {
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(SHELL_INDEX);
-  const revalidate = fetch(request, { cache: "no-store" }).then(async res => {
-    if (!res || !res.ok) return res;
-    if (res.type === "opaque") return res;
-    const fresh = await res.clone().text();
-    let old = "";
-    if (cached) { try { old = await cached.clone().text(); } catch (e) { old = ""; } }
-    if (fresh !== old) {
-      try {
-        await cache.put(SHELL_INDEX, new Response(fresh, {
-          headers: { "Content-Type": "text/html; charset=utf-8", "X-Cached-At": String(Date.now()) }
-        }));
-      } catch (e) {}
-      /* 앱이 이미 열려 있으면 '새 버전 있어요' 안내 */
-      if (old) tellClients("th-shell-updated");
-    }
-    return res;
-  }).catch(() => null);
-
-  if (cached) return cached;             /* 전파 약해도 즉시 표시 */
-  const res = await revalidate;
-  if (res && res.ok) return res;
+function offlinePage() {
   return new Response(
     '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>우리팀 허브</title><div style="font-family:-apple-system,sans-serif;padding:40px 22px;text-align:center;color:#141a24">' +
     '<div style="font-size:40px">📡</div><h2 style="margin:12px 0 6px;font-size:17px">연결이 잠시 끊겼어요</h2>' +
     '<p style="font-size:13px;color:#5c6577;line-height:1.6">네트워크가 돌아오면 다시 열어 주세요.<br>한 번이라도 열었던 앱은 캐시에서 바로 뜹니다.</p>' +
     '<button onclick="location.reload()" style="margin-top:16px;padding:11px 20px;border:0;border-radius:12px;background:#2f6bf6;color:#fff;font-size:14px;font-weight:700">다시 시도</button></div>',
-    { headers: { "Content-Type": "text/html; charset=utf-8" } }
+    { headers: HTML_HEAD }
   );
 }
 
 /* ---------- 아이콘·매니페스트 등: 캐시 우선 ---------- */
 async function handleAsset(request) {
   const cache = await caches.open(CACHE);
-  const hit = await cache.match(request);
+  const hit = await cache.match(request, { ignoreSearch: true });
   if (hit) return hit;
   try {
     const res = await fetch(request);
     if (res && res.ok) { try { await cache.put(request, res.clone()); } catch (e) {} }
     return res;
   } catch (e) {
-    const key = cacheKeyFor(request);
-    const alt = await caches.match(key);
-    return alt || new Response("", { status: 504, statusText: "offline" });
+    return new Response("", { status: 504, statusText: "offline" });
   }
 }
 
@@ -115,6 +119,17 @@ self.addEventListener("fetch", event => {
   const isDoc = request.mode === "navigate" ||
     (request.headers.get("accept") || "").indexOf("text/html") >= 0;
 
-  if (isDoc) { event.respondWith(handleDocument(request)); return; }
+  if (isDoc) {
+    const cachedP = caches.match(SHELL_INDEX);
+    const freshP = revalidateDocument(request).catch(() => null);
+    event.waitUntil(freshP);
+    event.respondWith((async () => {
+      const cached = await cachedP;
+      if (cached) return cached;                        /* 전파 약해도 즉시 표시 */
+      const res = await freshP;
+      return (res && res.ok) ? res : offlinePage();
+    })());
+    return;
+  }
   event.respondWith(handleAsset(request));
 });

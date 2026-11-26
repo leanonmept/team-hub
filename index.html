@@ -7563,14 +7563,29 @@ function showAppUpdate() {
   appUpdateReady = true;
   renderNewBanner();
 }
+/* 화면이 늦게 떠서 새 버전 알림을 놓쳤을 수도 있으니 워커에게 직접 물어봅니다 */
+function swAskShell() {
+  const ctl = navigator.serviceWorker && navigator.serviceWorker.controller;
+  if (!ctl || typeof MessageChannel !== "function") return;
+  try {
+    const ch = new MessageChannel();
+    ch.port1.onmessage = ev => {
+      const d = ev.data || {};
+      const t0 = (typeof performance !== "undefined" && performance.timeOrigin) ? performance.timeOrigin : 0;
+      if (d.shellUpdatedAt && d.shellUpdatedAt > t0) showAppUpdate();
+    };
+    ctl.postMessage({ type: "th-check" }, [ch.port2]);
+  } catch (e) { /* 무시 */ }
+}
 function bindServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   const https = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
   if (!https) return;
   const ready = () => navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" })
-    .then(reg => { reg.update().catch(() => {}); return reg; })
+    .then(reg => { reg.update().catch(() => {}); setTimeout(swAskShell, 1200); return reg; })
     .catch(e => { console.warn("serviceWorker:", e && e.message); });
   if (document.readyState === "complete") ready(); else window.addEventListener("load", ready);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") swAskShell(); });
   navigator.serviceWorker.addEventListener("message", ev => {
     const d = ev.data || {};
     if (d.type === "th-shell-updated") { showAppUpdate(); return; }
