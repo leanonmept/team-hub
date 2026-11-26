@@ -2026,6 +2026,8 @@ function syncDemo() {
     const me = d.users.find(u => u.uid === S.user.uid);
     if (me) S.user = Object.assign({}, me);
   }
+  /* 🔗 미리보기 모드에서도 가입 회원과 겹치는 직접입력 이름을 자동 정리 */
+  scheduleCustomMerge(350);
 }
 
 /* =====================================================================
@@ -2327,7 +2329,9 @@ function rosterMember(id) { return rosterAll().filter(m => m.uid === id)[0] || n
 function excludedList() { return (S.roster && Array.isArray(S.roster.excluded)) ? S.roster.excluded : []; }
 function rosterMembers() {
   const ex = excludedList();
-  return rosterAll().filter(m => ex.indexOf(m.uid) < 0);
+  /* 🔗 같은 이름으로 가입·승인된 회원이 있으면 직접입력 이름은 순번에서 빼 중복을 막습니다
+     (앱이 자동으로 정리하기 전·권한이 없는 기기에서도 두 번 세지 않도록) */
+  return rosterAll().filter(m => ex.indexOf(m.uid) < 0 && !(m.custom && customNameIsMember(m.name)));
 }
 
 /* 배정 계획 -------------------------------------------------------------- */
@@ -2488,7 +2492,7 @@ function openRosterSheet(editId) {
   const rows = all.map(m => {
     const off = ex.indexOf(m.uid) >= 0;
     const no = off ? "–" : String(order[m.uid] || "");
-    const meta = (m.custom ? "직접 추가" : (m.position || "-")) + (off ? " · 명단 제외" : "");
+    const meta = (m.custom ? (customNameIsMember(m.name) ? "가입 회원과 같은 이름 · 순번 제외" : "직접 추가") : (m.position || "-")) + (off ? " · 명단 제외" : "");
     if (admin && editId && editId === m.uid) {
       return '<div class="rrow editing">' +
         '<span class="no">✏️</span>' +
@@ -2821,6 +2825,149 @@ async function dbRemoveCustomMember(id) {
   const list = customMembers().filter(c => c.id !== id).map(c => ({ id: c.id, name: c.name }));
   const ex = excludedList().filter(x => x !== id);
   await dbSaveRoster({ customMembers: list, excluded: ex });
+}
+
+/* =====================================================================
+   🔗 직접입력(직접 추가한 이름) ↔ 가입 회원 자동 병합
+   ---------------------------------------------------------------------
+   가입 전 직원을 명단에 '직접 추가'해 당직을 넣어 두었다가, 그 사람이 같은 이름으로
+   가입·승인되면 달력의 직접입력 일정을 가입 회원 계정(memberId = 회원 uid)으로 옮기고
+   직접입력 이름은 명단에서 지웁니다.
+   · 이미 그날 같은 종류의 일정이 그 회원에게 있으면 직접입력만 지웁니다(중복 없음).
+   · 그날 다른 팀원의 당직이 이미 있으면(하루 1명 규칙과 겹침) 손대지 않고 사람이
+     확인할 수 있게 남겨 둡니다 — 남의 당직을 말없이 지우지 않기 위해서입니다.
+   · 겹치지 않는 다른 직접입력 이름은 그대로 둡니다.
+   · 정리 중에는 팀원에게 가는 웹푸시(/notify)를 보내지 않습니다.
+   · 같은 이름의 승인 회원이 둘 이상(동명이인)이면 잘못 붙일 수 있어 그대로 둡니다.
+   ===================================================================== */
+function nameKeyOf(n) { return String(n == null ? "" : n).replace(/[\s\u00a0]+/g, " ").trim(); }
+/* 이 이름이 승인 회원과 겹치는 직접입력인가 — 명단 순번에서 중복으로 세지 않도록 */
+function customNameIsMember(name) {
+  const k = nameKeyOf(name);
+  if (!k) return false;
+  return approved().some(m => nameKeyOf(m.name) === k);
+}
+/* 병합 계획 — 지금 할 일이 없으면 null
+   items[].act : 'move' 옮긴다 · 'drop' 회원 일정이 이미 있어 직접입력만 지운다
+                 · 'hold' 그날 다른 팀원 당직이 있어 그대로 둔다 · null 권한이 없어 그대로 둔다 */
+function customMergePlan() {
+  if (!S.user || S.user.status !== "approved") return null;
+  if (!LOADED.members || !LOADED.duty || !LOADED.roster) return null;
+  const customs = customMembers();
+  if (!customs.length) return null;
+  const byName = {};
+  approved().forEach(m => {
+    const k = nameKeyOf(m.name);
+    if (!k) return;
+    (byName[k] = byName[k] || []).push(m);
+  });
+  const all = S.duty || [];
+  const moves = [];
+  customs.forEach(c => {
+    const cands = byName[nameKeyOf(c.name)];
+    if (!cands || !cands.length) return;
+    if (cands.length > 1) {
+      console.info("[직접입력 병합 보류] 같은 이름의 승인 팀원이 둘 이상: " + c.name);
+      return;
+    }
+    const user = cands[0];
+    const items = all.filter(e => e.memberId === c.id).map(e => {
+      if (e.type !== "duty" && !isAdmin()) return { e: e, act: null };
+      if (all.some(x => x.id !== e.id && x.memberId === user.uid && x.type === e.type && entryStart(x) === entryStart(e)))
+        return { e: e, act: "drop" };
+      if (e.type === "duty" && all.some(x => x.id !== e.id && x.type === "duty" && x.memberId !== e.memberId && entryStart(x) === entryStart(e)))
+        return { e: e, act: "hold" };
+      return { e: e, act: "move" };
+    });
+    moves.push({ customId: c.id, customName: c.name, user: user, items: items });
+  });
+  if (!moves.length) return null;
+  const work = moves.filter(mv => mv.items.some(it => it.act === "move" || it.act === "drop"));
+  /* 명단에서 지울 때는 그 이름으로 남는 일정이 하나도 없을 때만(권한·겹침 때문에 못 옮긴 것이 있으면 보류) */
+  const rosterRemove = moves.filter(mv => {
+    if (!canManageDuty()) return false;
+    return !mv.items.some(it => it.act !== "move" && it.act !== "drop");
+  }).map(mv => mv.customId);
+  if (!work.length && !rosterRemove.length) return null;
+  return { moves: moves, work: work, rosterRemove: rosterRemove };
+}
+const CM_MERGE = { busy: false, timer: null, fails: 0 };
+function scheduleCustomMerge(ms) {
+  if (CM_MERGE.timer) return;
+  CM_MERGE.timer = setTimeout(() => {
+    CM_MERGE.timer = null;
+    runCustomMerge().catch(e => console.warn("직접입력 병합:", (e && e.code) || (e && e.message) || e));
+  }, ms == null ? 500 : ms);
+}
+async function runCustomMerge() {
+  if (CM_MERGE.busy || CM_MERGE.fails >= 3) return;
+  const plan = customMergePlan();
+  if (!plan) return;
+  CM_MERGE.busy = true;
+  PUSH_MUTE++;                       /* 정리 중 알림이 나가지 않도록 한 번 더 잠급니다 */
+  let moved = 0, dropped = 0, removed = 0;
+  try {
+    for (const mv of plan.work) {
+      for (const it of mv.items) {
+        if (it.act !== "move" && it.act !== "drop") continue;
+        const e = it.e;
+        if (it.act === "move") {
+          const newId = entryStart(e) + "_" + mv.user.uid + "_" + e.type;
+          const payload = {
+            startDate: entryStart(e), endDate: entryEnd(e), type: e.type,
+            memberId: mv.user.uid, memberName: mv.user.name, memo: e.memo || "",
+            history: Array.isArray(e.history) ? e.history : [],
+            previousMemberName: e.previousMemberName || "",
+            updatedByName: e.updatedByName || "", updatedAt: e.updatedAt || 0
+          };
+          /* ① 가입 회원 계정으로 같은 날 같은 종류 일정을 먼저 넣고 */
+          if (!S.duty.some(x => x.id === newId)) {
+            if (S.mode === "demo") {
+              const d = demoGet();
+              (d.duty = d.duty || []).push(Object.assign({ id: newId, createdAt: Date.now() }, payload));
+              demoWrite(d);
+            } else {
+              const { doc, setDoc, serverTimestamp } = FB.f;
+              await setDoc(doc(FB.db, "duty_schedules", newId), Object.assign({}, payload, { createdBy: myUid(), createdAt: serverTimestamp() }));
+            }
+            S.duty.push(Object.assign({ id: newId, createdAt: Date.now() }, payload));
+            moved++;
+          }
+        }
+        /* ② 직접입력 항목은 지웁니다(회원 일정이 이미 있던 날은 이 삭제만) */
+        if (S.mode === "demo") {
+          const d = demoGet();
+          d.duty = (d.duty || []).filter(x => x.id !== e.id);
+          demoWrite(d);
+        } else {
+          const { doc, deleteDoc } = FB.f;
+          await deleteDoc(doc(FB.db, "duty_schedules", e.id));
+        }
+        S.duty = S.duty.filter(x => x.id !== e.id);
+        if (it.act === "drop") dropped++;
+      }
+    }
+    if (plan.rosterRemove.length) {
+      const keep = customMembers().filter(c => plan.rosterRemove.indexOf(c.id) < 0).map(c => ({ id: c.id, name: c.name }));
+      const ex = excludedList().filter(x => plan.rosterRemove.indexOf(x) < 0);
+      await dbSaveRoster({ customMembers: keep, excluded: ex });
+      removed = plan.rosterRemove.length;
+    }
+    CM_MERGE.fails = 0;
+  } catch (err) {
+    CM_MERGE.fails++;
+    console.warn("직접입력 병합 실패:", (err && err.code) || (err && err.message) || err);
+  } finally {
+    PUSH_MUTE--;
+    CM_MERGE.busy = false;
+    if (S.mode === "demo") syncDemo();
+    if (S.tab === "duty") renderDuty();
+    if (S.tab === "team") renderTeam();
+    if (moved || dropped || removed) {
+      toast("직접입력 이름을 가입 회원으로 합쳤어요" + (moved ? " · 일정 " + moved + "건 이동" : "") +
+        (dropped ? " · 중복 " + dropped + "건 정리" : "") + (removed ? " · 명단 " + removed + "명 정리" : ""));
+    }
+  }
 }
 async function dbSaveEvent(ds, title) {
   const data = { date: ds, title: title, createdBy: myUid() };
@@ -8227,6 +8374,7 @@ function startSubs() {
     if (S.user && S.user.status === "approved") renderAll();
     else if (S.user && S.user.status === "pending" && $("#scr-pending").classList.contains("active")) { route(); }
     autoAssignNextMonth();
+    scheduleCustomMerge();        /* 🔗 승인된 회원과 같은 이름의 직접입력 정리 */
   }, e => console.warn("users:", e && e.code)));
 
   S.subs.push(onSnapshot(query(collection(FB.db, "announcements"), orderBy("createdAt", "desc")), snap => {
@@ -8257,6 +8405,7 @@ function startSubs() {
     LOADED.duty = true;
     if (S.tab === "duty") renderDuty();
     autoAssignNextMonth();
+    scheduleCustomMerge();        /* 🔗 직접입력 일정을 가입 회원 계정으로 */
   }, e => console.warn("duty:", e && e.code)));
 
   S.subs.push(onSnapshot(doc(FB.db, "duty_roster_config", "config"), snap => {
@@ -8321,6 +8470,7 @@ function applyRosterDoc(v) {
   if (S.tab === "team") renderTeam();
   if (S.tab === "photos") renderPhotos();
   autoAssignNextMonth();
+  scheduleCustomMerge();          /* 🔗 명단이 늦게 와도 한 번 더 확인 */
 }
 
 function subExtras(id) {
@@ -8505,7 +8655,7 @@ async function boot() {
     const sess = localStorage.getItem(SESSION_KEY);
     if (sess) {
       const u = demoGet().users.find(x => x.uid === sess);
-      if (u) { S.user = Object.assign({}, u); route(); return; }
+      if (u) { S.user = Object.assign({}, u); route(); scheduleCustomMerge(350); return; }
     }
     showAuthLogin();
     return;
