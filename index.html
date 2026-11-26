@@ -748,9 +748,13 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 }
 .sheet-hd b{font-size:15.5px;font-weight:800;flex:1;letter-spacing:-.03em}
 .sheet-hd .x{width:30px;height:30px;border-radius:50%;background:#f1f3f8;display:flex;align-items:center;justify-content:center;color:var(--ink2);flex-shrink:0}
-.sheet-bd{flex:1;overflow-y:auto;padding:16px;min-height:0}
+.sheet-bd{flex:1;overflow-y:auto;padding:16px;min-height:0;overscroll-behavior-y:contain}
 .sheet-ft{padding:11px 16px calc(12px + var(--safe-b));background:#fff;border-top:1px solid var(--line);display:flex;gap:8px;flex-shrink:0}
-.grab{width:38px;height:4px;border-radius:4px;background:#dfe4ee;margin:8px auto 0;flex-shrink:0}
+.grab{width:38px;height:4px;border-radius:4px;background:#dfe4ee;margin:8px auto 0;flex-shrink:0;position:relative}
+/* 끌어내려 닫기 — 핸들은 잡기 쉽게 터치 영역을 넓히고, 헤더는 세로 끌기만 받습니다 */
+.grab::after{content:"";position:absolute;left:50%;top:-13px;transform:translateX(-50%);width:150px;height:34px}
+.sheet-hd{touch-action:none}
+.sheet.swiping{animation:none!important}
 
 .toast{
   position:fixed;left:50%;bottom:96px;transform:translate(-50%,14px);z-index:200;
@@ -1643,6 +1647,11 @@ function fmtRel(ms) {
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 /* 직책 — 앱 권한(role·canManageDuty)과는 별개의 표시용 값 */
 const POSITIONS = ["주임", "대리", "과장", "팀장", "센터장", "부장"];
+/* 직책 선택지 — 저장된 값이 목록에 없으면(예전에 넣은 다른 직책) 그 값도 함께 보여 줍니다 */
+function posOptions(cur) {
+  const list = (cur && POSITIONS.indexOf(cur) < 0) ? [cur].concat(POSITIONS) : POSITIONS.slice();
+  return list.map(p => '<option value="' + esc(p) + '"' + (p === cur ? " selected" : "") + ">" + esc(p) + "</option>").join("");
+}
 const COLORS = ["#2f6bf6", "#6b53d8", "#e0713a", "#158f5f", "#c2417a", "#0e8a9c", "#b08217", "#4b5563"];
 function colorOf(name) {
   let h = 0; const s = String(name || "?");
@@ -2183,8 +2192,149 @@ function entriesOn(ds) {
 }
 function todayEntries() { return entriesOn(ymd(new Date())); }
 
+/* 시트 끌기 정리 함수 — 시트를 닫거나 새 시트를 열 때 붙였던 document 리스너를 똑같이 떼어냅니다 */
+let sheetDragOff = null;
+
+/* ── 바텀시트 끌어내려 닫기 (아이폰 터치 · 마우스) ───────────────────────
+   · 핸들·헤더를 아래로 끌면 손가락을 따라 시트가 내려오고, 본문은 스크롤이
+     맨 위(scrollTop<=0)일 때만 시트가 따라 내려옵니다. 스크롤이 내려가 있으면
+     평소대로 본문만 스크롤됩니다.
+   · 90px 이상 내리거나 빠르게 튕기면(0.5px/ms) 닫히고, 아니면 제자리로 돌아갑니다.
+   · ✕ 버튼과 바깥(어두운 배경) 탭 닫기는 그대로 동작합니다. */
+function enableSheetSwipe(sh, backdrop) {
+  if (!sh || sh.dataset.swipe === "1") return;
+  sh.dataset.swipe = "1";
+  const hd = sh.querySelector(".sheet-hd");
+  const grab = sh.querySelector(".grab");
+  const body = sh.querySelector(".sheet-bd");
+  const CLOSE_DIST = 90, CLOSE_VEL = 0.5;
+  let active = false, sy = 0, sx = 0, dy = 0, dragging = false, decided = false, aborted = false, fromBody = false, closing = false;
+  let lastY = 0, lastT = 0, vel = 0, suppressClick = false;
+
+  const paint = y => { sh.style.transform = y > 0 ? "translateY(" + y + "px)" : ""; };
+  /* 배경 딤은 opacity 대신 색의 투명도로 바꿉니다 — opacity 를 쓰면 시트까지 비쳐 보입니다 */
+  const fade = k => {
+    if (!backdrop) return;
+    const a = Math.max(0, Math.min(1, k)) * 0.44;
+    backdrop.style.backgroundColor = "rgba(14,20,32," + a.toFixed(3) + ")";
+  };
+  const reset = () => {
+    sh.style.transition = "transform .24s cubic-bezier(.22,1,.36,1)";
+    paint(0);
+    if (backdrop) { backdrop.style.transition = "background-color .24s ease"; fade(1); }
+    setTimeout(() => {
+      sh.style.transition = "";
+      if (backdrop) { backdrop.style.transition = ""; backdrop.style.backgroundColor = ""; }
+    }, 260);
+  };
+  const finish = () => {
+    if (closing) return;
+    closing = true;
+    const h = sh.offsetHeight || 480;
+    sh.style.transition = "transform .22s cubic-bezier(.4,0,.6,1)";
+    paint(h + 24);
+    if (backdrop) { backdrop.style.transition = "background-color .22s ease"; fade(0); }
+    setTimeout(() => { if (sh.isConnected) closeSheet(); }, 200);
+  };
+  const isField = t => !!(t && t.closest && t.closest("input,textarea,select,[contenteditable=true]"));
+  const begin = (y, x, inBody) => {
+    if (closing) return;
+    active = true; sy = y; sx = x; dy = 0; dragging = false; decided = false; aborted = false; fromBody = !!inBody;
+    lastY = y; lastT = Date.now(); vel = 0;
+    window.__thSheetDragging = false;
+  };
+  const move = (y, x, ev) => {
+    if (!active || closing || aborted) return;
+    const ddy = y - sy, ddx = x - sx;
+    if (!decided) {
+      /* 가로로 더 움직이면 이 시트 끌기가 아님(가로 스와이프 카드·가로 스크롤) */
+      if (Math.abs(ddx) > 8 && Math.abs(ddx) > Math.abs(ddy)) { aborted = true; return; }
+      if (fromBody) {
+        if (ddy < -6) { aborted = true; return; }                     /* 위로 끌면 평소 스크롤 */
+        if (ddy <= 6) return;
+        if (body && body.scrollTop > 0) { aborted = true; return; }   /* 스크롤 중간에서는 본문만 스크롤 */
+      } else if (Math.abs(ddy) <= 5) return;
+      decided = true;
+      dragging = ddy > 0;
+      if (!dragging) { aborted = true; return; }                      /* 핸들에서 위로 끌면 그냥 둠 */
+      window.__thSheetDragging = true;
+      sh.classList.add("swiping");
+      sh.style.transition = "none";
+    }
+    if (!dragging) return;
+    if (ev && ev.cancelable && ev.preventDefault) ev.preventDefault();
+    dy = Math.max(0, ddy);
+    paint(dy);
+    fade(1 - dy / 380);
+    const now = Date.now(), dt = now - lastT;
+    if (dt > 0) vel = vel * 0.6 + ((y - lastY) / dt) * 0.4;
+    lastY = y; lastT = now;
+  };
+  const end = () => {
+    if (!active) return;
+    active = false;
+    window.__thSheetDragging = false;
+    if (closing) return;
+    const moved = dragging;
+    dragging = false; decided = false;
+    if (!moved) return;
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 350);
+    if (dy > CLOSE_DIST || (vel > CLOSE_VEL && dy > 26)) finish(); else reset();
+    /* 끌는 동안 미뤄 둔 내용 다시 그리기(예: 섬 파고 시트의 새 예보) */
+    if (typeof onSheetDragEnd === "function") { try { onSheetDragEnd(); } catch (e) {} }
+  };
+  const bindMouse = (el, inBody) => {
+    if (!el) return;
+    el.addEventListener("mousedown", e => {
+      if (closing || e.button !== 0) return;
+      if (inBody && isField(e.target)) return;
+      begin(e.clientY, e.clientX, inBody);
+      const mv = ev => move(ev.clientY, ev.clientX, ev);
+      const up = () => { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); end(); };
+      document.addEventListener("mousemove", mv);
+      document.addEventListener("mouseup", up);
+    });
+  };
+  /* 터치 시작은 시트 전체에서 받고, 이동·끝은 document에서 받습니다.
+     시트 내용이 도중에 다시 그려져 처음 누른 요소가 사라져도 끌기가
+     끊기지 않게 하기 위해서입니다(섬 파고 시트 등 새로 고침되는 시트). */
+  const onStart = e => {
+    if (closing || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const inBody = !!(body && body.contains(e.target));
+    if (!inBody && !(hd && hd.contains(e.target)) && !(grab && grab.contains(e.target)) && e.target !== sh) return;
+    if (inBody && isField(e.target)) return;
+    begin(t.clientY, t.clientX, inBody);
+  };
+  const onMove = e => {
+    if (!active || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    move(t.clientY, t.clientX, e);
+  };
+  const onEnd = () => { if (active) end(); };
+  sh.addEventListener("touchstart", onStart, { passive: true });
+  document.addEventListener("touchmove", onMove, { passive: false });
+  document.addEventListener("touchend", onEnd);
+  document.addEventListener("touchcancel", onEnd);
+  bindMouse(hd, false);
+  bindMouse(grab, false);
+  bindMouse(body, true);
+  sheetDragOff = () => {
+    document.removeEventListener("touchmove", onMove);
+    document.removeEventListener("touchend", onEnd);
+    document.removeEventListener("touchcancel", onEnd);
+  };
+  /* 끌어내린 뒤 손을 떼면 그 자리의 버튼이 눌리지 않도록 클릭 한 번을 막습니다 */
+  sh.addEventListener("click", e => {
+    if (!suppressClick) return;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+}
+
 function openSheet(opts) {
   const layer = $("#layer");
+  if (sheetDragOff) { try { sheetDragOff(); } catch (e) {} sheetDragOff = null; }
   const full = opts.full ? " full" : "";
   const foot = opts.footer ? '<div class="sheet-ft">' + opts.footer + "</div>" : "";
   layer.innerHTML =
@@ -2198,10 +2348,15 @@ function openSheet(opts) {
   const bd = $("#bd");
   bd.addEventListener("click", e => { if (e.target === bd) closeSheet(); });
   $("#sheetX").addEventListener("click", closeSheet);
-  if (opts.onMount) opts.onMount($("#sh"));
-  return $("#sh");
+  const sh = $("#sh");
+  enableSheetSwipe(sh, bd);                      /* 눌러서 끌어내리면 닫기 */
+  if (opts.onMount) opts.onMount(sh);
+  return sh;
 }
-function closeSheet() { $("#layer").innerHTML = ""; }
+function closeSheet() {
+  if (sheetDragOff) { try { sheetDragOff(); } catch (e) {} sheetDragOff = null; }
+  $("#layer").innerHTML = "";
+}
 
 /* =====================================================================
    8. 당직 운영 — 명단(가나다순) · 다음 달 자동 배정 · 행사일
@@ -5792,9 +5947,13 @@ function seaBodyHtml() {
       "공공누리 제1유형은 출처를 밝히면 자유롭게 이용할 수 있습니다.</div>";
 }
 
+let seaRepaintPending = false;
 function paintSea() {
   const wrap = $("#seaWrap");
   if (!wrap) return;
+  /* 시트를 끌어내리는 중에는 내용을 다시 그리지 않습니다(끌기가 끊기지 않게).
+     끌기가 끝나면 onSheetDragEnd 가 미뤄 둔 그리기를 한 번 합니다. */
+  if (window.__thSheetDragging === true) { seaRepaintPending = true; return; }
   const bd = $("#sheetBd");
   const st = bd ? bd.scrollTop : 0;
   wrap.innerHTML = seaBodyHtml();
@@ -5821,6 +5980,11 @@ function paintSea() {
     paintSea();
   }));
   if (bd) bd.scrollTop = st;
+}
+
+/* 시트 끌기가 끝난 뒤 — 미뤄 둔 섬 파고 그리기 */
+function onSheetDragEnd() {
+  if (seaRepaintPending) { seaRepaintPending = false; paintSea(); }
 }
 
 function openSeaSheet() {
@@ -6937,6 +7101,7 @@ function openPhoto(id) {
   const liked = (p.likes || []).indexOf(myUid()) >= 0;
   const comments = (p.comments || []).slice().sort((a, b) => a.createdAt - b.createdAt);
   const layer = $("#layer");
+  if (sheetDragOff) { try { sheetDragOff(); } catch (e) {} sheetDragOff = null; }
   layer.innerHTML =
     '<div class="lightbox" id="lb">' +
       '<div style="display:flex;align-items:center;gap:9px;padding:14px 16px;color:#fff;flex-shrink:0">' +
@@ -7320,6 +7485,9 @@ function openMemberSheet(id) {
   const m = memberOf(id);
   if (!m) return;
   const canManage = isAdmin() && m.uid !== myUid();
+  /* 직책은 다른 팀원은 관리자가, 본인 것은 본인(관리자)이 바꿀 수 있습니다.
+     앱 권한(role·canManageDuty)은 본인 문서에서 바꾸지 않습니다. */
+  const canSetPos = canManage || (isAdmin() && m.uid === myUid());
   const mAdm = m.role === "admin";
   const mDuty = m.canManageDuty === true;
   const pill = (txt, bg, fg) => '<span class="pill" style="background:' + bg + ';color:' + fg + '">' + txt + "</span>";
@@ -7328,25 +7496,28 @@ function openMemberSheet(id) {
     body:
       '<div style="text-align:center;padding:2px 0 16px">' +
         '<div style="display:flex;justify-content:center;margin-bottom:10px">' + avatarHtml(m.name, "lg", m.uid) + "</div>" +
-        "<div style=\"font-size:17px;font-weight:800\">" + esc(m.name) + " <span style=\"font-size:12px;font-weight:600;color:var(--ink3)\">" + esc(m.position || "") + "</span></div>" +
+        "<div style=\"font-size:17px;font-weight:800\">" + esc(m.name) + " <span id=\"mPosCur\" style=\"font-size:12px;font-weight:600;color:var(--ink3)\">" + esc(m.position || "") + "</span></div>" +
         '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(m.empId || "-") + "</div>" +
         '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center">' +
           pill(mAdm ? "👑 관리자" : "팀원", mAdm ? "#e8eafc" : "#e8f8f1", mAdm ? "#2f3391" : "#0d7a55") +
           (mDuty ? pill("🏢 당직 관리", "#fff3dd", "#96590a") : "") +
         "</div>" +
       "</div>" +
-      '<div class="hint" style="margin:0 2px 10px">직책(' + esc(m.position || "-") + ')과 앱 권한은 별개입니다.</div>' +
-      (canManage ? '<div class="hr"></div><div class="sec-title" style="margin-top:0">직책 · 권한 관리</div>' +
-        '<div class="field" style="margin-bottom:10px"><label>직책</label><select id="mPos">' +
-          (m.position && POSITIONS.indexOf(m.position) < 0 ? '<option selected>' + esc(m.position) + "</option>" : "") +
-          POSITIONS.map(p => '<option' + (p === m.position ? " selected" : "") + ">" + p + "</option>").join("") +
-        "</select></div>" +
-        '<div style="display:flex;flex-direction:column;gap:8px">' +
-          '<button class="btn ghost sm" id="mRole" style="width:100%">' + (mAdm ? "관리자 권한 해제" : "관리자 권한 부여") + "</button>" +
-          '<button class="btn ghost sm" id="mDuty" style="width:100%">' + (mDuty ? "당직 관리 권한 해제" : "당직 관리 권한 부여") + "</button>" +
-          '<button class="btn danger sm" id="mDel" style="width:100%">팀원 내보내기</button>' +
-        "</div>" +
-        '<div class="hint" style="margin:9px 2px 0">관리자: 팀원 승인·관리자 지정 등 모든 권한 · 당직 관리: 명단·재배정·행사일·자동 배정</div>' : "")
+      '<div class="hint" id="mPosHint" style="margin:0 2px 10px">직책(' + esc(m.position || "-") + ')과 앱 권한은 별개입니다.</div>' +
+      (canSetPos ? '<div class="hr"></div>' +
+        (canManage
+          ? '<div class="sec-title" style="margin-top:0">직책 · 권한 관리</div>'
+          : '<div class="sec-title" style="margin-top:0">내 직책</div>') +
+        '<div class="field" style="margin-bottom:10px"><label>직책</label><select id="mPos">' + posOptions(m.position) + "</select></div>" +
+        (canManage
+          ? '<div style="display:flex;flex-direction:column;gap:8px">' +
+            '<button class="btn ghost sm" id="mRole" style="width:100%">' + (mAdm ? "관리자 권한 해제" : "관리자 권한 부여") + "</button>" +
+            '<button class="btn ghost sm" id="mDuty" style="width:100%">' + (mDuty ? "당직 관리 권한 해제" : "당직 관리 권한 부여") + "</button>" +
+            '<button class="btn danger sm" id="mDel" style="width:100%">팀원 내보내기</button>' +
+            "</div>" +
+            '<div class="hint" style="margin:9px 2px 0">관리자: 팀원 승인·관리자 지정 등 모든 권한 · 당직 관리: 명단·재배정·행사일·자동 배정</div>'
+          : '<div class="hint" style="margin:-4px 2px 0">관리자는 본인 직책도 여기에서 바로 바꿀 수 있어요.</div>')
+        : "")
   });
   const rb = $("#mRole");
   if (rb) rb.addEventListener("click", async () => {
@@ -7370,7 +7541,13 @@ function openMemberSheet(id) {
   if (mp) mp.addEventListener("change", async () => {
     const v = mp.value;
     if (!v || v === m.position) return;
-    try { await dbSetPosition(m.uid, v); toast(m.name + " 님 직책을 " + v + "(으)로 바꿨습니다"); }
+    try {
+      await dbSetPosition(m.uid, v);
+      m.position = v;
+      const cur = $("#mPosCur"); if (cur) cur.textContent = v;
+      const h = $("#mPosHint"); if (h) h.textContent = "직책(" + v + ")과 앱 권한은 별개입니다.";
+      toast(m.uid === myUid() ? "내 직책을 " + v + "(으)로 바꿨습니다" : m.name + " 님 직책을 " + v + "(으)로 바꿨습니다");
+    }
     catch (e) { toast(fbErrMsg(e)); }
   });
   const db = $("#mDel");
@@ -7418,9 +7595,9 @@ async function dbSetPosition(id, pos) {
     const { doc, updateDoc } = FB.f;
     await updateDoc(doc(FB.db, "users", id), { position: pos });
     const m = memberOf(id); if (m) m.position = pos;
-    renderAll();
   }
   if (S.user && S.user.uid === id) S.user.position = pos;
+  renderAll();
 }
 async function dbRemoveMember(id) {
   if (S.mode === "demo") {
@@ -7567,15 +7744,29 @@ function openProfileSheet() {
     body:
       '<div style="text-align:center;padding:4px 0 16px">' +
         '<div style="display:flex;justify-content:center;margin-bottom:10px">' + avatarHtml(S.user.name, "lg", myUid()) + "</div>" +
-        '<div style="font-size:18px;font-weight:800">' + esc(S.user.name) + ' <span style="font-size:12px;font-weight:600;color:var(--ink3)">' + esc(S.user.position || "") + "</span></div>" +
+        '<div style="font-size:18px;font-weight:800">' + esc(S.user.name) + ' <span id="pfPosCur" style="font-size:12px;font-weight:600;color:var(--ink3)">' + esc(S.user.position || "") + "</span></div>" +
         '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(S.user.empId || "-") + "</div>" +
         '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자" : (S.user.canManageDuty ? "팀원 · 당직 관리" : "팀원")) + "</span></div>" +
       "</div>" +
       '<button class="btn ghost" id="pfAvatar" style="margin-bottom:8px">프로필 사진 · 이모티콘 바꾸기</button>' +
+      (isAdmin()
+        ? '<div class="field" style="margin:6px 0 4px"><label>내 직책</label><select id="pfPos">' + posOptions(S.user.position) + "</select></div>" +
+          '<div class="hint" style="margin:0 2px 10px">직책(팀장·과장 등)은 앱 권한(관리자)과 별개입니다. 관리자는 본인 직책도 바꿀 수 있어요.</div>'
+        : "") +
       '<button class="btn ghost" id="pfStatus" style="margin-bottom:8px">오늘 일정 관리</button>' +
       '<button class="btn ghost-line" id="pfCfg" style="margin-bottom:8px">Firebase 연결 설정</button>' +
       '<button class="btn danger" id="pfOut">로그아웃</button>',
     onMount: root => {
+      const pfPos = $("#pfPos", root);
+      if (pfPos) pfPos.addEventListener("change", async () => {
+        const v = pfPos.value;
+        if (!v || v === S.user.position) return;
+        try {
+          await dbSetPosition(myUid(), v);
+          const cur = $("#pfPosCur", root); if (cur) cur.textContent = v;
+          toast("내 직책을 " + v + "(으)로 바꿨습니다");
+        } catch (e) { toast(fbErrMsg(e)); }
+      });
       $("#pfAvatar", root).addEventListener("click", () => { closeSheet(); setTimeout(openAvatarSheet, 120); });
       $("#pfStatus", root).addEventListener("click", () => { closeSheet(); setTimeout(() => openScheduleSheet(ymd(new Date()), myUid()), 120); });
       $("#pfCfg", root).addEventListener("click", () => { closeSheet(); setTimeout(openCfgSheet, 120); });
