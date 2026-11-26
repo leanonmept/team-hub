@@ -4622,6 +4622,24 @@ function seaGet(url) {
   }).then(j => { if (timer) clearTimeout(timer); return j; },
          e => { if (timer) clearTimeout(timer); throw e; });
 }
+/* 여러 콜을 small개씩 나눠 보내고, 실패한 콜은 한 번 더 시도합니다.
+   공공데이터포털은 동시 요청이 많으면 일부 응답을 늦게 주거나 붙잡는 경우가 있어
+   전부 한꺼번에 보내지 않고 3개씩 물결로 보냅니다. */
+async function seaGetWaves(urls, small) {
+  const out = [];
+  const size = small || 3;
+  for (let i = 0; i < urls.length; i += size) {
+    const wave = urls.slice(i, i + size);
+    const r = await Promise.allSettled(wave.map(u => seaGet(u)));
+    for (let k = 0; k < r.length; k++) out[i + k] = r[k];
+  }
+  for (let i = 0; i < urls.length; i++) {
+    if (out[i] && out[i].status === "fulfilled") continue;
+    try { out[i] = { status: "fulfilled", value: await seaGet(urls[i]) }; }
+    catch (e) { out[i] = { status: "rejected", reason: e }; }
+  }
+  return out;
+}
 
 /* ---------- 기상청 격자·발표시각·값 변환 ---------- */
 function seaPad(n) { n = Number(n) || 0; return (n < 10 ? "0" : "") + n; }
@@ -4833,30 +4851,34 @@ async function seaLoad() {
     const nowMs = Date.now();
     const sb = seaKmaShortBase(nowMs);
     const mb = seaKmaMidBase(nowMs);
-    /* ① 기상청 단기예보 8콜 · ② 중기예보 3콜 · ③ Open-Meteo 2콜을 한꺼번에 받습니다.
+    /* ① 기상청 단기예보 8콜(3개씩 물결+재시도) · ② 중기예보 3콜 · ③ Open-Meteo 2콜
        하나가 타임아웃·실패해도 나머지는 그대로 보여 주려고 allSettled를 씁니다. */
-    const jobs = SEA_ISLANDS.map(isl => seaGet(seaKmaUrl(SEA_KMA_SHORT, 1000,
-      "base_date=" + sb.d8 + "&base_time=" + sb.hh + "&nx=" + isl.nx + "&ny=" + isl.ny)));
-    jobs.push(seaGet(seaUrl("marine")));
-    jobs.push(seaGet(seaUrl("weather")));
-    jobs.push(seaGet(seaKmaUrl(SEA_KMA_MIDSEA, 10, "regId=" + SEA_MID_SEA_REG + "&tmFc=" + mb.d8 + mb.hh)));
-    jobs.push(seaGet(seaKmaUrl(SEA_KMA_MIDTA, 10, "regId=" + SEA_MID_TA_REG + "&tmFc=" + mb.d8 + mb.hh)));
-    jobs.push(seaGet(seaKmaUrl(SEA_KMA_MIDLAND, 10, "regId=" + SEA_MID_LAND_REG + "&tmFc=" + mb.d8 + mb.hh)));
-    const settled = await Promise.allSettled(jobs);
-    const val = i => (settled[i] && settled[i].status === "fulfilled") ? settled[i].value : null;
+    const shortUrls = SEA_ISLANDS.map(isl => seaKmaUrl(SEA_KMA_SHORT, 1000,
+      "base_date=" + sb.d8 + "&base_time=" + sb.hh + "&nx=" + isl.nx + "&ny=" + isl.ny));
+    const shortP = seaGetWaves(shortUrls, 3);
+    const extraP = Promise.allSettled([
+      seaGet(seaUrl("marine")),
+      seaGet(seaUrl("weather")),
+      seaGet(seaKmaUrl(SEA_KMA_MIDSEA, 10, "regId=" + SEA_MID_SEA_REG + "&tmFc=" + mb.d8 + mb.hh)),
+      seaGet(seaKmaUrl(SEA_KMA_MIDTA, 10, "regId=" + SEA_MID_TA_REG + "&tmFc=" + mb.d8 + mb.hh)),
+      seaGet(seaKmaUrl(SEA_KMA_MIDLAND, 10, "regId=" + SEA_MID_LAND_REG + "&tmFc=" + mb.d8 + mb.hh))
+    ]);
+    const settledShort = await shortP;
+    const settledExtra = await extraP;
+    const val = i => (settledExtra[i] && settledExtra[i].status === "fulfilled") ? settledExtra[i].value : null;
 
     /* 기상청 단기예보 — 섬별 파싱 (한 섬이 실패해도 다른 섬은 그대로) */
     const shorts = [];
     let shortOk = 0;
     for (let i = 0; i < SEA_ISLANDS.length; i++) {
       let r = null;
-      const j = val(i);
+      const j = settledShort[i] && settledShort[i].status === "fulfilled" ? settledShort[i].value : null;
       if (j) { try { r = seaKmaShort(seaKmaItems(j)); } catch (e) { r = null; } }
       if (r && Object.keys(r.days).length) shortOk++;
       shorts.push(r);
     }
     /* 기상청 중기예보 — 3~10일 뒤 (해상 파고·해상날씨 · 중기기온 · 강수확률) */
-    const jSea = val(10), jTa = val(11), jLand = val(12);
+    const jSea = val(2), jTa = val(3), jLand = val(4);
     let mid = null;
     if (jSea) {
       try {
@@ -4866,7 +4888,7 @@ async function seaLoad() {
     const midOk = !!(mid && Object.keys(mid).length);
 
     /* Open-Meteo — 11~16일을 잇고, 기상청이 실패한 자리의 대체값 */
-    const mRes = val(8), wRes = val(9);
+    const mRes = val(0), wRes = val(1);
     const mOk = !!mRes, wOk = !!wRes;
     if (!mOk && !wOk && !shortOk && !midOk) throw new Error("기상 데이터를 하나도 받지 못했어요");
     const mArr = mOk ? (Array.isArray(mRes) ? mRes : [mRes]) : [];
