@@ -649,6 +649,16 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .pill.approved{background:var(--ok-soft);color:var(--ok)}
 .pill.pending{background:var(--warn-soft);color:#96650a}
 .pill.rejected{background:var(--danger-soft);color:var(--danger)}
+/* 🖋️ 간사 · 간사보조 — 직책·앱 권한과 별개인 역할 배지 */
+.pill.exec{background:#f3eaff;color:#6b21a8;border:1px solid #e4d3fb}
+.pill.exec.asst{background:#e2f4fc;color:#0b6a8a;border:1px solid #bde6f6}
+.execpick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.execpick button{border:1px solid #e2e7f0;background:#fff;border-radius:11px;padding:10px 3px;font-size:12px;font-weight:800;color:var(--ink2);line-height:1.25;letter-spacing:-.03em}
+.execpick button.on{background:#f3eaff;border-color:#d8bffa;color:#6b21a8;box-shadow:inset 0 0 0 1px #d8bffa}
+.execpick button.on.asst{background:#e2f4fc;border-color:#a9def2;color:#0b6a8a;box-shadow:inset 0 0 0 1px #a9def2}
+.execpick button.on.off{background:#eef1f7;border-color:#d7dde8;color:var(--ink2);box-shadow:inset 0 0 0 1px #d7dde8}
+.ops-des{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:7px;font-size:11px;color:var(--ink2);line-height:1.5}
+.ops-des .warn{color:#b91c1c;font-weight:800}
 .pend-card{background:linear-gradient(150deg,#fff8ea,#fff);border:1px solid #ffe6bc;border-radius:16px;padding:13px;margin-bottom:9px}
 .pend-card .pt{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .pend-card .pt .pi{flex:1;min-width:0}
@@ -1025,6 +1035,9 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .cal.fivecol .day .dcells{gap:3px;padding:0}
 .cal.fivecol .day .dpill.duty{font-size:13px;font-weight:800;line-height:1.22;padding:3px 1px;border-radius:7px;background:#fff1d6;color:#8a4b00;border:1px solid #ffdfa4;letter-spacing:-.04em;white-space:normal;word-break:break-all;display:block}
 .cal.fivecol .day .dpill.duty.mine{background:#e58a09;color:#fff;border-color:#e58a09;box-shadow:0 2px 6px -3px rgba(229,138,9,.9)}
+/* 🖋️ 간사·간사보조가 당직인 날 — 보라 테두리로 구분 */
+.cal.fivecol .day .dpill.duty.des{border-color:#b794f6;box-shadow:inset 0 0 0 1px #dcccfb}
+.cal.fivecol .day .dpill.duty.mine.des{box-shadow:inset 0 0 0 2px #e9dcff,0 2px 6px -3px rgba(229,138,9,.9)}
 .cal.fivecol .day .dpill.hols{font-size:10px;font-weight:800;padding:2px 1px;border-radius:5px;letter-spacing:-.05em}
 .cal.fivecol .day .dpill.event{font-size:10px;font-weight:800;padding:2px 1px;border-radius:5px;letter-spacing:-.05em}
 .cal.fivecol .day .dpill.more{font-size:9.5px;padding:2px}/* 맨 위 당직자 → 아래 등판(빨강) · 의소기한(파랑) · 조사기한(초록) */
@@ -2006,7 +2019,7 @@ function demoWrite(d) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(d));
 /* 데모 상태 → S 반영 */
 function syncDemo() {
   const d = demoGet();
-  S.members = d.users.map(u => ({ uid: u.uid, empId: u.empId || emailToEmp(u.email), email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, canManageDuty: u.canManageDuty === true, createdAt: u.createdAt, avatarData: u.avatarData || "", workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
+  S.members = d.users.map(u => ({ uid: u.uid, empId: u.empId || emailToEmp(u.email), email: u.email, name: u.name, position: u.position, role: u.role, status: u.status, canManageDuty: u.canManageDuty === true, execRole: normExecRole(u.execRole), createdAt: u.createdAt, avatarData: u.avatarData || "", workStatus: u.workStatus || "", statusNote: u.statusNote || "", statusUpdatedAt: u.statusUpdatedAt || u.createdAt }));
   S.announcements = (d.announcements || []).map(a => ({
     id: a.id, title: a.title, body: a.body, is_pinned: !!a.is_pinned, is_important: !!a.is_important,
     author_id: a.author_id, author_name: a.author_name, createdAt: a.createdAt,
@@ -2164,6 +2177,57 @@ const memberOf = id => S.members.find(m => m.uid === id) || null;
 const readBy = id => S.reads[id] || [];
 const cmtsOf = id => S.comments[id] || [];
 const isRead = id => readBy(id).indexOf(myUid()) >= 0;
+
+/* ---------- 🖋️ 간사 · 간사보조 지명 -------------------------------------------------
+   직책(position) · 앱 권한(role·canManageDuty)과 또 다른 '역할' 표시입니다.
+   · 관리자가 [팀원 관리 → 회원 카드]에서 지명하고 users/{uid}.execRole 에 저장합니다.
+     'secretary'(간사) · 'assistant'(간사보조) · ''(지명 안 함) — 한 사람은 한 자리만 가능
+   · 보안 규칙(firebase-rules.txt)의 users update 는 관리자(isAdmin())에게 필드 제한이 없어
+     이 필드 하나로 저장됩니다 → 규칙을 다시 게시하지 않아도 됩니다.
+   · 지명된 분들은 같은 날 당직(등판)하지 않도록 자동 배치·수동 배치에서 막습니다. */
+const EXEC_ROLES = { secretary: "간사", assistant: "간사보조" };
+function normExecRole(v) { return (v === "secretary" || v === "assistant") ? v : ""; }
+const execRoleOf = id => { const m = memberOf(id); return m ? normExecRole(m.execRole) : ""; };
+const execNameOf = id => EXEC_ROLES[execRoleOf(id)] || "";
+const isDesignated = id => !!execRoleOf(id);
+/* 그 자리(간사·간사보조)를 지금 맞고 있는 사람 — 각 1명 */
+function execSeat(role) { return approved().filter(m => normExecRole(m.execRole) === role)[0] || null; }
+function execPill(role) {
+  const r = normExecRole(role);
+  if (!r) return "";
+  return '<span class="pill exec' + (r === "assistant" ? " asst" : "") + '">🖋️ ' + EXEC_ROLES[r] + "</span>";
+}
+const execBadge = m => execPill(m && m.execRole);
+/* 지명된 사람 전원 — 간사 → 간사보조 → 이름 순 (같은 날 겹침 판단에 쓸 사람들) */
+function designatedMembers() {
+  return approved().filter(m => normExecRole(m.execRole))
+    .sort((a, b) => (a.execRole === b.execRole
+      ? String(a.name).localeCompare(String(b.name), "ko")
+      : (a.execRole === "secretary" ? -1 : 1)));
+}
+function designatedLabel() {
+  const list = designatedMembers();
+  return list.length ? list.map(m => EXEC_ROLES[m.execRole] + " " + m.name).join(" · ") : "";
+}
+/* 그 날짜에 이미 다른 지명자(간사·간사보조)가 당직으로 들어 있는가 — 수동 배정·교체 때 확인 */
+function designatedDutyOn(ds, exceptUid) {
+  return designatedMembers().filter(m => m.uid !== exceptUid
+    && (S.duty || []).some(e => e.type === "duty" && entryStart(e) === ds && e.memberId === m.uid));
+}
+/* 이 기간 안에서 지명자 둘 이상이 같은 날 당직으로 잡힌 날 (이미 저장된 데이터 점검용) */
+function designatedClashes(fromDs, toDs) {
+  const byUid = {};
+  designatedMembers().forEach(m => { byUid[m.uid] = m; });
+  const byDs = {};
+  (S.duty || []).forEach(e => {
+    if (e.type !== "duty" || !byUid[e.memberId]) return;
+    const ds = entryStart(e);
+    if (!ds || ds < fromDs || ds > toDs) return;
+    (byDs[ds] = byDs[ds] || []).push(byUid[e.memberId]);
+  });
+  return Object.keys(byDs).filter(ds => byDs[ds].length > 1).sort()
+    .map(ds => ({ ds: ds, members: byDs[ds] }));
+}
 
 function addDays(ds, n) {
   const d = new Date(ds + "T00:00:00");
@@ -2550,13 +2614,18 @@ function defaultStartUid(fromDs) {
 
 /* 계획 적용 — onlyEmpty: 이미 등록된 날짜는 건드리지 않음(다음 달 생성) */
 async function applyDutyPlan(rows, onlyEmpty) {
-  let created = 0, replaced = 0, kept = 0;
+  let created = 0, replaced = 0, kept = 0, guarded = 0;
+  const desUids = designatedMembers().map(m => m.uid);   /* 🖋️ 간사·간사보조 */
   PUSH_MUTE++;            /* 한 달치 일괄 배정 — 알림은 따로 한 번만 */
   try {
   for (const r of rows) {
     const existing = S.duty.filter(e => e.type === "duty" && entryStart(e) === r.ds);
     if (existing.some(e => e.memberId === r.uid)) { kept++; continue; }
     if (existing.length && onlyEmpty) { kept++; continue; }
+    /* 🖋️ 지명자(간사·간사보조)끼리는 같은 날 당직으로 겹치지 않게 — 그 날이 이미 다른
+       지명자의 당직이면 그 사람을 지우지 않고 그대로 둡니다(겹침 회피). */
+    if (desUids.indexOf(r.uid) >= 0
+        && existing.some(e => e.memberId !== r.uid && desUids.indexOf(e.memberId) >= 0)) { kept++; guarded++; continue; }
     for (const e of existing) await dbDeleteEntry(e.id);
     await dbSaveEntry({ startDate: r.ds, endDate: r.ds, type: "duty", memberId: r.uid, memberName: r.name, memo: "" });
     existing.length ? replaced++ : created++;
@@ -2574,7 +2643,7 @@ async function applyDutyPlan(rows, onlyEmpty) {
       });
     } catch (e) {}
   }
-  return { created: created, replaced: replaced, kept: kept };
+  return { created: created, replaced: replaced, kept: kept, guarded: guarded };
 }
 
 /* 한국 시간(KST) 기준 시각 — 기기 시간대와 무관하게 24일 00:00을 판단 */
@@ -2657,7 +2726,8 @@ function openRosterSheet(editId) {
   const rows = all.map(m => {
     const off = ex.indexOf(m.uid) >= 0;
     const no = off ? "–" : String(order[m.uid] || "");
-    const meta = (m.custom ? (customNameIsMember(m.name) ? "가입 회원과 같은 이름 · 순번 제외" : "직접 추가") : (m.position || "-")) + (off ? " · 명단 제외" : "");
+    const ex1 = execNameOf(m.uid);
+    const meta = (m.custom ? (customNameIsMember(m.name) ? "가입 회원과 같은 이름 · 순번 제외" : "직접 추가") : ((ex1 ? "🖋️ " + ex1 + " · " : "") + (m.position || "-"))) + (off ? " · 명단 제외" : "");
     if (admin && editId && editId === m.uid) {
       return '<div class="rrow editing">' +
         '<span class="no">✏️</span>' +
@@ -2669,7 +2739,7 @@ function openRosterSheet(editId) {
     return '<div class="rrow' + (off ? " off" : "") + '">' +
       '<span class="no">' + no + "</span>" +
       avatarHtml(m.name, "sm", m.uid) +
-      '<div class="nm"><b>' + esc(m.name) + (m.custom ? ' <span class="cf">직접</span>' : "") + "</b><p>" + esc(meta) + "</p></div>" +
+      '<div class="nm"><b>' + esc(m.name) + (m.custom ? ' <span class="cf">직접</span>' : "") + (ex1 ? " " + execPill(execRoleOf(m.uid)) : "") + "</b><p>" + esc(meta) + "</p></div>" +
       (admin ? '<div class="racts">' +
         (m.custom ? '<button class="ico" data-ren="' + m.uid + '" aria-label="이름 수정">' + ICON.pencil + "</button>" +
                     '<button class="ico danger" data-rm="' + m.uid + '" data-nm="' + esc(m.name) + '" aria-label="명단에서 삭제">' + ICON.trash + "</button>" : "") +
@@ -2688,6 +2758,7 @@ function openRosterSheet(editId) {
     title: "당직 명단",
     body:
       '<div class="notice-bar">승인된 팀원과 직접 추가한 이름이 <b>가나다순</b>으로 순번이 정해집니다. [제외]를 누르면 순번에서 빠지고, 직접 추가한 이름은 수정·삭제할 수 있어요.</div>' +
+      (designatedMembers().length ? '<div class="notice-bar" style="background:#f7f2ff;border-color:#e4d3fb;color:#5b21b6">🖋️ ' + esc(designatedLabel()) + ' — 지명된 분들은 같은 날 당직으로 겹치지 않게 배정돼요.</div>' : "") +
       '<div class="sec-title" style="margin-top:0">🏢 명단 ' + active.length + "명" + (ex.length ? " · 제외 " + ex.length + "명" : "") + "</div>" +
       (rows || '<div class="empty"><span>👥</span>승인된 팀원이 없습니다.</div>') + addHtml +
       '<div class="notice-bar" style="margin-top:12px;background:#f2f5fb;border-color:#e3e9f4;color:var(--ink2)">명단을 바꾼 뒤에는 달력의 <b>재배정</b>으로 원하는 날짜부터 순번을 다시 돌려 주세요.</div>',
@@ -2762,7 +2833,7 @@ function openRebalanceSheet() {
     const changes = [];
     plan.rows.forEach(r => {
       const cur = S.duty.filter(e => e.type === "duty" && entryStart(e) === r.ds)[0];
-      if (!cur || cur.memberId !== r.uid) changes.push({ ds: r.ds, old: cur ? cur.memberName : "", name: r.name });
+      if (!cur || cur.memberId !== r.uid) changes.push({ ds: r.ds, old: cur ? cur.memberName : "", name: r.name, uid: r.uid });
     });
     return { plan: plan, changes: changes };
   };
@@ -2774,13 +2845,14 @@ function openRebalanceSheet() {
     return '<div class="plan"><div class="prow head"><span class="d">날짜</span><span class="old">기존</span><span></span><span class="new">변경</span></div>' +
       cur.changes.map(c => '<div class="prow"><span class="d">' + shortDate(c.ds) + ' (' + DAYS[new Date(c.ds + "T00:00:00").getDay()] + ')</span>' +
         '<span class="old">' + (c.old ? esc(c.old) : "없음") + "</span><span style=\"color:var(--ink3);text-align:center\">→</span>" +
-        '<span class="new">' + esc(c.name) + "</span></div>").join("") + "</div>";
+        '<span class="new">' + (isDesignated(c.uid) ? "🖋 " : "") + esc(c.name) + "</span></div>").join("") + "</div>";
   };
 
   openSheet({
     title: "당직 재배정",
     body:
       '<div class="notice-bar">시작일과 시작 담당자를 고르면 그날부터 순번을 다시 돌린 결과를 <b>기존 담당자와 비교</b>해 보여줍니다. [적용]을 눌러야 반영됩니다.</div>' +
+      (designatedMembers().length ? '<div class="notice-bar" style="background:#f7f2ff;border-color:#e4d3fb;color:#5b21b6">🖋️ ' + esc(designatedLabel()) + ' — 지명된 분들은 같은 날 당직으로 겹치지 않게 배정되고, 그 날이 이미 다른 지명자의 당직이면 그대로 둡니다.</div>' : "") +
       '<div class="field"><label>시작 날짜</label><input type="date" id="rbStart" value="' + start + '"></div>' +
       '<div class="field"><label>시작 담당자 (이 사람부터 순서대로 배정)</label><select id="rbWho">' + whoOptions() + "</select></div>" +
       '<div class="sec-title" style="margin-top:0" id="rbSum"></div>' +
@@ -2817,7 +2889,7 @@ function openRebalanceSheet() {
         try {
           const r = await applyDutyPlan(cur.plan.rows, false);
           closeSheet(); renderDuty();
-          toast("재배정 완료 · 변경 " + (r.created + r.replaced) + "건" + (r.kept ? " · 유지 " + r.kept + "건" : ""));
+          toast("재배정 완료 · 변경 " + (r.created + r.replaced) + "건" + (r.kept ? " · 유지 " + r.kept + "건" : "") + (r.guarded ? " · 지명자 겹침 회피 " + r.guarded + "일" : ""));
         } catch (e) { btn.disabled = false; toast(fbErrMsg(e)); }
       });
     }
@@ -3188,6 +3260,11 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
   /* 상세 시트의 '이 날의 당직' 카드 = 당직자만 (등판·의소기한·조사기한은 아래 별도 영역) */
   const dutyItems = isDuty ? entries.filter(e => e.type === "duty") : entries;
   const msItems = isDuty ? msOn(ds) : [];
+  /* 🖋️ 같은 날 두 지명자(간사·간사보조)가 잡혀 있으면 위에서 분명하게 알립니다 */
+  const desToday = isDuty ? designatedMembers().filter(dm => entries.some(e => e.memberId === dm.uid)) : [];
+  const desClashHtml = desToday.length >= 2
+    ? '<div class="notice-bar" style="background:#fff1f1;border-color:#fecaca;color:#b91c1c">⚠️ 이 날은 ' + esc(desToday.map(dm => EXEC_ROLES[dm.execRole] + " " + dm.name).join(" · ")) + ' 님이 함께 등판합니다. 지명된 분들은 같은 날 등판하지 않는 것이 원칙이에요.</div>'
+    : "";
 
   const listHtml = dutyItems.length ? dutyItems.map(e => {
     const s = STATUS[e.type] || STATUS.duty;
@@ -3202,7 +3279,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
     const span = entryEnd(e) !== entryStart(e) ? ' <span style="font-size:10px;color:var(--ink3)">' + shortDate(entryStart(e)) + "~" + shortDate(entryEnd(e)) + "</span>" : "";
     return '<div class="duty-item">' +
       avatarHtml(mm ? mm.name : e.memberName, "", mm ? mm.uid : "") +
-      '<div class="di"><b>' + esc(mm ? mm.name : e.memberName) + ' <span class="type-badge" style="background:' + (s.cls === "island-night" ? "#333a9e" : s.cls === "island-day" ? "#0ea5e9" : s.cls === "duty" ? "#e07a00" : "#059669") + '">' + s.em + " " + s.label + "</span>" + span + "</b>" +
+      '<div class="di"><b>' + esc(mm ? mm.name : e.memberName) + (isDuty && isDesignated(e.memberId) ? " " + execPill(execRoleOf(e.memberId)) : "") + ' <span class="type-badge" style="background:' + (s.cls === "island-night" ? "#333a9e" : s.cls === "island-day" ? "#0ea5e9" : s.cls === "duty" ? "#e07a00" : "#059669") + '">' + s.em + " " + s.label + "</span>" + span + "</b>" +
       (e.memo ? "<p>" + esc(e.memo) + "</p>" : "") + histHtml + "</div>" +
       /* 🛡️ 당직 카드는 아래 '당직자 변경' 폼에서만 바꾸므로 ✏️ 를 두지 않습니다(중복 제거). ⛴️ 섬·교육은 ✏️ 유지 */
       (editable && !isDuty ? '<button class="btn sm ghost" data-edit="' + e.id + '">' + ICON.pencil + "</button>" : "") +
@@ -3316,6 +3393,7 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
     body:
       (editing ? '<div class="notice-bar" style="margin-bottom:12px">✏️ 기존 일정을 수정하고 있어요.</div>' : "") +
       '<div class="sec-title" style="margin-top:0">이 날의 ' + (isDuty ? "당직" : "섬·교육 일정") + " " + dutyItems.length + "건</div>" +
+      desClashHtml +
       '<div id="dayList">' + listHtml + "</div>" +
       (isDuty && dutyItems.length && !dayEv ? '<div class="hint" style="margin:-2px 2px 2px">담당자를 바꾸려면 아래 <b>당직자 변경</b>에서 새 담당자를 골라 저장하세요.</div>' : "") +
       msBlock +
@@ -3362,6 +3440,14 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
           teamCount.classList.toggle("ok", n >= 2);
         }
         if (teamSaveBtn) teamSaveBtn.textContent = (isIslandPick() && n >= 2) ? n + "명 일정 등록" : "일정 등록";
+        /* 🖋️ 고른 사람 중 간사·간사보조가 둘 이상이면 바로 알림 */
+        const hintEl = $("#teamHint", root);
+        if (hintEl && canAssign) {
+          const dpick = Array.from(teamSel).filter(id => isDesignated(id));
+          hintEl.innerHTML = dpick.length >= 2
+            ? '<b style="color:#b91c1c">⚠️ 간사·간사보조가 같은 날 등판합니다.</b> ' + dpick.map(id => esc(execNameOf(id) + " " + ((memberOf(id) || rosterMember(id) || {}).name || ""))).join(" · ") + ' — 지명된 분들은 같은 날 잡지 않는 것이 원칙이에요.'
+            : "섬은 보통 <b>2인 1조</b> — 두 명을 눌러 한 번에 등록해요.";
+        }
         $$("[data-team]", teamBox).forEach(b => b.addEventListener("click", () => {
           const id = b.dataset.team;
           if (teamSel.has(id)) teamSel.delete(id); else teamSel.add(id);
@@ -3523,6 +3609,11 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
             return { id: id, name: pm ? pm.name : "" };
           }).filter(p => p.name);
           if (!people.length) return toast("담당자를 한 명 이상 골라주세요");
+          /* 🖋️ 간사·간사보조는 같은 날 함께 세우지 않습니다 — 둘 다 골랐으면 한 번 확인 */
+          const desPicked = people.filter(p => isDesignated(p.id));
+          if (desPicked.length >= 2 && !confirm("이 날(" + shortDate(ds) + ")에 간사·간사보조를 함께 넣으려 해요.\n" +
+            desPicked.map(p => execNameOf(p.id) + " " + p.name).join(" · ") +
+            "\n\n지명된 분들은 같은 날 등판하지 않는 것이 원칙이에요. 그래도 등록할까요?")) { saveBtn.disabled = false; return; }
           saveBtn.disabled = true;
           const done = [], failed = [];
           for (const p of people) {
@@ -3544,6 +3635,12 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         }
         const who = canAssign ? ($("#schMember", root).value || myUid()) : myUid();
         const mm = memberOf(who) || rosterMember(who);
+        /* 🖋️ 간사·간사보조는 같은 날 당직으로 겹치지 않게 — 그 날 다른 지명자가 있으면 확인 */
+        if (isDuty && picked === "duty" && isDesignated(who)) {
+          const clash = designatedDutyOn(ds, who);
+          if (clash.length && !confirm("이 날(" + shortDate(ds) + ")에는 이미 " + clash.map(o => EXEC_ROLES[o.execRole] + " " + o.name).join(" · ") + " 님이 당직입니다.\n\n" +
+            "간사·간사보조는 같은 날 등판하지 않는 것이 원칙이에요.\n" + (mm ? mm.name : "팀원") + " 님으로 바꾸면 " + clash.map(o => o.name).join("·") + " 님 당직은 이 날에서 빠집니다. 그래도 바꿀까요?")) { saveBtn.disabled = false; return; }
+        }
         const body = {
           startDate: ds, endDate: end, type: picked,
           memberId: who, memberName: mm ? mm.name : (S.user.name || "팀원"),
@@ -6046,7 +6143,7 @@ function renderDuty() {
     const shown = list.slice(0, takes).map(e => {
       const s = STATUS[e.type] || STATUS.duty;
       const mine = e.memberId === myUid();
-      if (isDuty) return '<span class="dpill duty' + (mine ? " mine" : "") + '">' + esc(e.memberName) + "</span>";
+      if (isDuty) return '<span class="dpill duty' + (mine ? " mine" : "") + (isDesignated(e.memberId) ? " des" : "") + '"' + (isDesignated(e.memberId) ? ' title="🖋️ 간사·간사보조 지명자"' : "") + ">" + esc(e.memberName) + "</span>";
       return '<span class="dpill ' + s.cls + '"><i class="em">' + (s.mini || s.em) + "</i>" + esc(e.memberName) + "</span>";
     }).join("");
     const msTakes = Math.min(msList.length, 2);
@@ -6129,6 +6226,8 @@ function renderDuty() {
 
   /* 당직 운영 카드 (관리자) */
   let opsHtml = "";
+  const desList = isDuty ? designatedMembers() : [];
+  const clashDays = (isDuty && desList.length > 1) ? designatedClashes(from, to) : [];
   if (isDuty && canManageDuty()) {
     const info = nextMonthInfo();
     const exN = excludedList().length;
@@ -6136,12 +6235,18 @@ function renderDuty() {
       '<div class="ops">' +
         '<div class="ops-hd"><b>🏢 당직 운영</b><span class="ops-badge">매월 24일 자동 배정</span></div>' +
         '<div class="ops-st"><b>' + info.label + " 당직 " + info.count + '건</b> · 명단 <b>' + info.roster + '명</b>' + (exN ? " (제외 " + exN + ")" : "") + "</div>" +
+        '<div class="ops-des">🖋️ ' + (desList.length ? esc(designatedLabel()) : "간사·간사보조 미지명") +
+          (clashDays.length ? ' <span class="warn">· 이 달 겹침 ' + clashDays.length + '일</span>' : (desList.length > 1 ? ' <span style="color:#15803d">· 겹침 없음</span>' : "")) + "</div>" +
         '<div class="ops-btns">' +
           '<button id="opsRoster">👥 명단</button>' +
           '<button id="opsRebalance">🔁 재배정</button>' +
         "</div>" +
       "</div>";
   }
+  /* 🖋️ 지명자 둘이 같은 날 당직으로 잡혀 있으면 달력 위에 알립니다 (수동으로 고칠 수 있게) */
+  const clashHtml = clashDays.length
+    ? '<div class="notice-bar" style="margin-top:9px;background:#fff1f1;border-color:#fecaca;color:#b91c1c">⚠️ ' + esc(clashDays.map(c => shortDate(c.ds) + "(" + EXEC_ROLES[c.members[0].execRole] + "·" + EXEC_ROLES[c.members[1].execRole] + ")").join(" · ")) + ' — 같은 날 간사·간사보조가 함께 잡혀 있어요. 날짜를 눌러 담당자를 바꿔 주세요.</div>'
+    : "";
 
   v.innerHTML =
     '<div class="vhead"><div><h2>팀 캘린더</h2><div class="sub">' +
@@ -6163,6 +6268,7 @@ function renderDuty() {
         "<small>" + esc(mySub) + "</small></div></div>" +
     "</div>" +
     opsHtml +
+    clashHtml +
     '<div class="cal' + (isDuty ? " fivecol" : "") + '" style="margin-top:11px">' +
       '<div class="cal-head"><b>' + y + "년 " + (m + 1) + "월</b><div class=\"nav\">" +
         (isDuty ? '<button class="prn" id="calPrint" title="이번 달 당직표 인쇄 · 저장">🖨️ 인쇄</button>' : "") +
@@ -7334,7 +7440,7 @@ function renderTeam() {
     /* 내 프로필 — 사진·이모티콘 프로필 바꾸는 입구 */
     '<div class="myprof" id="myProfCard">' +
       avatarHtml(S.user.name, "lg", myUid()) +
-      '<div class="mi"><b>' + esc(S.user.name) + '</b><p>' + esc(S.user.position || "") +
+      '<div class="mi"><b>' + esc(S.user.name) + (isDesignated(myUid()) ? " " + execPill(execRoleOf(myUid())) : "") + '</b><p>' + esc(S.user.position || "") +
         (S.user.empId ? " · 사번 " + esc(S.user.empId) : "") + "</p></div>" +
       '<button class="btn sm ghost" id="btnMyAvatar" style="flex-shrink:0">프로필 변경</button>' +
     "</div>" +
@@ -7350,12 +7456,14 @@ function renderTeam() {
       "</div>").join("") : "") +
 
     '<div class="sec-title">' + (pend.length ? "👥 " : "👥 ") + "팀원 " + app.length + "명</div>" +
+    (designatedMembers().length ? '<div class="hint" style="margin:-2px 4px 8px;font-size:11px;color:#6b21a8">🖋️ ' + esc(designatedLabel()) + " · 같은 날 당직(등판)은 피해서 짜 드려요</div>" : "") +
     (app.length ? app.map(m => {
       return '<button class="mem" data-member="' + m.uid + '">' +
         avatarHtml(m.name, "", m.uid) +
         '<div class="mi"><b>' + esc(m.name) +
           ' <span class="pill ' + (m.role === "admin" ? "admin" : "approved") + '">' + (m.role === "admin" ? "관리자" : "팀원") + "</span>" +
           (m.role !== "admin" && m.canManageDuty ? ' <span class="pill" style="background:#fff3dd;color:#96590a">당직 관리</span>' : "") +
+          (normExecRole(m.execRole) ? " " + execBadge(m) : "") +
         "</b><p>" + esc(m.position || "") + (m.empId ? " · 사번 " + esc(m.empId) : "") + "</p></div>" +
         '<span style="color:#c8cfdc">' + '<svg width="7" height="12" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m1 1 6 6-6 6"/></svg>' + "</span>" +
       "</button>";
@@ -7490,7 +7598,23 @@ function openMemberSheet(id) {
   const canSetPos = canManage || (isAdmin() && m.uid === myUid());
   const mAdm = m.role === "admin";
   const mDuty = m.canManageDuty === true;
+  const curExec = normExecRole(m.execRole);
   const pill = (txt, bg, fg) => '<span class="pill" style="background:' + bg + ';color:' + fg + '">' + txt + "</span>";
+  /* 🖋️ 간사 · 간사보조 지명 — 관리자만. 각 1명이고, 다른 분이 맞고 있으면 바꿀지 먼저 묻습니다. */
+  const seatMsg = ["secretary", "assistant"].map(r => {
+    const o = execSeat(r);
+    return (o && o.uid !== m.uid) ? EXEC_ROLES[r] + "는 " + o.name + " 님" : "";
+  }).filter(Boolean).join(" · ");
+  const execBlock = !isAdmin() ? "" :
+    '<div class="hr"></div>' +
+    '<div class="sec-title" style="margin-top:0">🖋️ 간사 · 간사보조 지명</div>' +
+    '<div class="execpick" id="mExecPick">' +
+      [["secretary", "간사"], ["assistant", "간사보조"], ["", "지명 안 함"]].map(it =>
+        '<button type="button" data-exec="' + it[0] + '" class="' + (it[0] === "assistant" ? "asst" : (it[0] === "" ? "off" : "")) + (it[0] === curExec ? " on" : "") + '">' + (it[0] === curExec ? "✓ " : "") + it[1] + "</button>").join("") +
+    "</div>" +
+    '<div class="hint" style="margin:8px 2px 0">간사·간사보조는 각 1명입니다.' +
+      (seatMsg ? " 지금 " + esc(seatMsg) + "이에요. 다른 분을 고르면 바꿀지 먼저 물어봐요." : "") +
+      " 지명된 분들은 같은 날 당직(등판)하지 않도록 자동·수동 배정에서 막아 드려요.</div>";
   openSheet({
     title: m.name,
     body:
@@ -7498,9 +7622,10 @@ function openMemberSheet(id) {
         '<div style="display:flex;justify-content:center;margin-bottom:10px">' + avatarHtml(m.name, "lg", m.uid) + "</div>" +
         "<div style=\"font-size:17px;font-weight:800\">" + esc(m.name) + " <span id=\"mPosCur\" style=\"font-size:12px;font-weight:600;color:var(--ink3)\">" + esc(m.position || "") + "</span></div>" +
         '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(m.empId || "-") + "</div>" +
-        '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center">' +
+        '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">' +
           pill(mAdm ? "👑 관리자" : "팀원", mAdm ? "#e8eafc" : "#e8f8f1", mAdm ? "#2f3391" : "#0d7a55") +
           (mDuty ? pill("🏢 당직 관리", "#fff3dd", "#96590a") : "") +
+          execBadge(m) +
         "</div>" +
       "</div>" +
       '<div class="hint" id="mPosHint" style="margin:0 2px 10px">직책(' + esc(m.position || "-") + ')과 앱 권한은 별개입니다.</div>' +
@@ -7516,8 +7641,21 @@ function openMemberSheet(id) {
             "</div>" +
             '<div class="hint" style="margin:9px 2px 0">관리자: 팀원 승인·관리자 지정 등 모든 권한 · 당직 관리: 명단·재배정·행사일·자동 배정</div>'
           : '<div class="hint" style="margin:-4px 2px 0">관리자는 본인 직책도 여기에서 바로 바꿀 수 있어요.</div>')
-        : "")
+        : "") +
+      execBlock
   });
+  $$("#mExecPick [data-exec]").forEach(b => b.addEventListener("click", async () => {
+    const role = normExecRole(b.dataset.exec);
+    if (role === curExec) return;
+    const other = role ? execSeat(role) : null;
+    if (other && other.uid !== m.uid && !confirm(EXEC_ROLES[role] + "는 1명입니다.\n지금 " + EXEC_ROLES[role] + "는 " + other.name + " 님이에요.\n\n" + other.name + " 님 대신 " + m.name + " 님을 " + EXEC_ROLES[role] + "(으)로 바꿀까요?")) return;
+    b.disabled = true;
+    try {
+      await dbSetExecRole(m.uid, role);
+      closeSheet();
+      toast(role ? m.name + " 님을 " + EXEC_ROLES[role] + "(으)로 지명했어요" : m.name + " 님 지명을 해제했어요");
+    } catch (e) { b.disabled = false; toast(fbErrMsg(e)); }
+  }));
   const rb = $("#mRole");
   if (rb) rb.addEventListener("click", async () => {
     const next = !mAdm;
@@ -7597,6 +7735,34 @@ async function dbSetPosition(id, pos) {
   }
   if (S.user && S.user.uid === id) S.user.position = pos;
   renderAll();
+}
+/* 🖋️ 간사 · 간사보조 지명 — users/{uid}.execRole (간사 1명 · 간사보조 1명)
+   · 보안 규칙의 users update 는 관리자에게 필드 제한이 없으므로 이 필드 하나로 저장됩니다
+     → firebase-rules.txt 를 다시 게시하지 않아도 됩니다.
+   · 같은 자리에 이미 다른 사람이 있으면 그 사람을 먼저 비우고 새 사람을 넣습니다(교체).
+   · 한 사람이 간사와 간사보조를 동시에 맡지 않습니다(필드 하나 = 역할 하나). */
+async function dbSetExecRole(id, role) {
+  const next = normExecRole(role);
+  if (S.mode === "demo") {
+    demoMutate(d => {
+      (d.users || []).forEach(u => {
+        if (u.uid === id) u.execRole = next;
+        else if (next && normExecRole(u.execRole) === next) u.execRole = "";
+      });
+    });
+  } else {
+    const { doc, updateDoc } = FB.f;
+    const holders = next ? S.members.filter(m => m.uid !== id && normExecRole(m.execRole) === next) : [];
+    for (const h of holders) {
+      await updateDoc(doc(FB.db, "users", h.uid), { execRole: "" });
+      const hm = memberOf(h.uid); if (hm) hm.execRole = "";
+    }
+    await updateDoc(doc(FB.db, "users", id), { execRole: next });
+    const m = memberOf(id); if (m) m.execRole = next;
+  }
+  if (S.user && S.user.uid === id) S.user.execRole = next;
+  renderAll();
+  return next;
 }
 async function dbRemoveMember(id) {
   if (S.mode === "demo") {
@@ -7745,7 +7911,8 @@ function openProfileSheet() {
         '<div style="display:flex;justify-content:center;margin-bottom:10px">' + avatarHtml(S.user.name, "lg", myUid()) + "</div>" +
         '<div style="font-size:18px;font-weight:800">' + esc(S.user.name) + ' <span id="pfPosCur" style="font-size:12px;font-weight:600;color:var(--ink3)">' + esc(S.user.position || "") + "</span></div>" +
         '<div style="font-size:12px;color:var(--ink3);margin-top:3px">사번 ' + esc(S.user.empId || "-") + "</div>" +
-        '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자" : (S.user.canManageDuty ? "팀원 · 당직 관리" : "팀원")) + "</span></div>" +
+        '<div style="margin-top:9px"><span class="pill ' + (S.user.role === "admin" ? "admin" : "approved") + '">' + (S.user.role === "admin" ? "관리자" : (S.user.canManageDuty ? "팀원 · 당직 관리" : "팀원")) + "</span>" +
+          (isDesignated(myUid()) ? " " + execPill(execRoleOf(myUid())) : "") + "</div>" +
       "</div>" +
       '<button class="btn ghost" id="pfAvatar" style="margin-bottom:8px">프로필 사진 · 이모티콘 바꾸기</button>' +
       (isAdmin()
@@ -7931,6 +8098,7 @@ function openGuideSheet() {
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날 당직은 취소되고, 달력 칸 전체가 <b>연보라색</b>으로 칠해지며 등록한 행사명이 표시됩니다(공휴일의 연분홍과 구분).</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직은 <b>한 날짜에 1명</b>입니다. 이미 당직자가 있는 날짜를 열면 [당직 등록]이 아니라 <b>당직자 변경</b> 폼이 열리고, 새 담당자를 골라 저장하면 기존 담당자는 빠지고 새 담당자 1명만 남습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🖋️ <b>간사 · 간사보조</b>는 팀원관리에서 회원 카드를 눌러 지명합니다(관리자만, 각 1명). 다른 분이 이미 맡고 있으면 바꿀지 먼저 물어봐요. 지명된 분들은 <b>같은 날 당직으로 겹치지 않게</b> 자동 배정·재배정·수동 변경에서 막고, 그런 날은 달력 위에 빨간 ⚠️ 안내를 보여 줍니다. 당직 달력의 지명자 이름에는 보라색 테두리가 붙습니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, 상단 오른쪽 <b>프로필 아이콘</b>을 눌러 들어간 [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀 이름은 상단 오른쪽 프로필 아이콘으로 들어간 [팀원관리] 맨 아래 <b>팀 이름</b>에서 <b>관리자만</b> 바꿀 수 있습니다. 저장하면 팀원 모두의 상단·대화방·설정에 바로 적용되고, 팀원은 현재 이름만 볼 수 있습니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
@@ -8698,12 +8866,12 @@ function startSubs() {
     S.members = snap.docs.map(d => {
       const v = d.data() || {};
       return { uid: d.id, empId: v.empId || emailToEmp(v.email), email: v.email || "", name: v.name || "(이름 없음)", position: v.position || "",
-        role: v.role || "member", status: v.status || "pending", canManageDuty: v.canManageDuty === true, createdAt: toMs(v.createdAt),
+        role: v.role || "member", status: v.status || "pending", canManageDuty: v.canManageDuty === true, execRole: normExecRole(v.execRole), createdAt: toMs(v.createdAt),
         avatarData: v.avatarData || "",
         workStatus: v.workStatus || "", statusNote: v.statusNote || "", statusUpdatedAt: toMs(v.statusUpdatedAt) };
     });
     const me = memberOf(myUid());
-    if (me) { S.user = Object.assign({}, S.user, { name: me.name, position: me.position, role: me.role, status: me.status, canManageDuty: me.canManageDuty, avatarData: me.avatarData, workStatus: me.workStatus, statusNote: me.statusNote }); }
+    if (me) { S.user = Object.assign({}, S.user, { name: me.name, position: me.position, role: me.role, status: me.status, canManageDuty: me.canManageDuty, execRole: me.execRole, avatarData: me.avatarData, workStatus: me.workStatus, statusNote: me.statusNote }); }
     LOADED.members = true;
     if (S.user && S.user.status === "approved") renderAll();
     else if (S.user && S.user.status === "pending" && $("#scr-pending").classList.contains("active")) { route(); }

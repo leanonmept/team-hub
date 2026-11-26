@@ -20,9 +20,14 @@
 
    ▶ 데이터 구조
      users/{uid}            { empId, email(=사번@teamhub.local), name, position,
-                              role:'admin'|'member', canManageDuty,
+                              role:'admin'|'member', canManageDuty, execRole,
                               status:'pending'|'approved'|'rejected',
                               avatarData, workStatus, statusNote, statusUpdatedAt, createdAt }
+                            → execRole: '' (지명 없음) | 'secretary'(간사) | 'assistant'(간사보조)
+                              관리자가 [팀원관리 → 회원 카드]에서 지명하며, 각 1명입니다.
+                              관리자의 users update 는 필드 제한이 없어 이 필드를 추가해도
+                              이 규칙을 다시 게시할 필요가 없습니다(가입 create 의 hasOnly 목록에는
+                              넣지 않아 스스로 지명할 수는 없습니다).
                             → avatarData: '' (기본·이름 첫 글자) | 'emoji:😊' | 'data:image/jpeg;base64,…'(160×160, 80KB 미만)
                               본인만 바꿀 수 있고, 길이 12만 자 미만만 허용합니다.
                             → 로그인은 사번 + 비밀번호. 사번은 내부에서만
@@ -82,6 +87,8 @@
      - 승인 대기(pending)·거절(rejected) 상태는 자기 프로필만 볼 수 있습니다.
      - 직책(position)은 표시용이고, 실제 권한은 role 과 canManageDuty 로만 정해집니다.
      - 권한(role·canManageDuty)·승인 상태(status) 변경은 관리자(role == 'admin')만 가능합니다.
+     - 간사·간사보조 지명(execRole)도 관리자만 바꿉니다. 표시·당직 배치용 역할이며
+       앱 권한과는 별개입니다(지명된 분들은 같은 날 당직으로 겹치지 않게 배정됩니다).
      - 일정은 본인 것만 등록/수정/삭제할 수 있고, 관리자는 전원 일정을 관리합니다.
      - 당직(type == 'duty') 일정은 팀원끼리 상의해 서로 바꿀 수 있도록 승인 팀원 누구나
        담당자를 만들고 바꿀 수 있습니다. 바꿀 때마다 history 에 누가·언제·누구를 누구로
