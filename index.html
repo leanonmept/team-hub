@@ -7857,8 +7857,7 @@ async function pushNotify(payload) {
     const r = await fetch(PUSH_WORKER + "/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-teamhub-key": PUSH_NOTIFY_KEY },
-      body: JSON.stringify(body),
-      keepalive: true
+      body: JSON.stringify(body)
     });
     const j = await r.json().catch(() => ({}));
     if (!j.ok) console.warn("pushNotify:", r.status, j);
