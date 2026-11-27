@@ -2184,7 +2184,9 @@ const isRead = id => readBy(id).indexOf(myUid()) >= 0;
      'secretary'(간사) · 'assistant'(간사보조) · ''(지명 안 함) — 한 사람은 한 자리만 가능
    · 보안 규칙(firebase-rules.txt)의 users update 는 관리자(isAdmin())에게 필드 제한이 없어
      이 필드 하나로 저장됩니다 → 규칙을 다시 게시하지 않아도 됩니다.
-   · 지명된 분들은 같은 날 당직(등판)하지 않도록 자동 배치·수동 배치에서 막습니다. */
+   · 규칙은 하나입니다 — 지명된 분들은 📋 등판일(격주 수요일 규칙 + 직접 넣은 등판일)에
+     당직으로 배정하지 않습니다. 등판일에는 다음 비지명자가 그날을 맡고, 건너뛴
+     지명자는 다음 당직일에 들어가 순번을 잃지 않습니다. */
 const EXEC_ROLES = { secretary: "간사", assistant: "간사보조" };
 function normExecRole(v) { return (v === "secretary" || v === "assistant") ? v : ""; }
 const execRoleOf = id => { const m = memberOf(id); return m ? normExecRole(m.execRole) : ""; };
@@ -2209,24 +2211,34 @@ function designatedLabel() {
   const list = designatedMembers();
   return list.length ? list.map(m => EXEC_ROLES[m.execRole] + " " + m.name).join(" · ") : "";
 }
-/* 그 날짜에 이미 다른 지명자(간사·간사보조)가 당직으로 들어 있는가 — 수동 배정·교체 때 확인 */
-function designatedDutyOn(ds, exceptUid) {
-  return designatedMembers().filter(m => m.uid !== exceptUid
-    && (S.duty || []).some(e => e.type === "duty" && entryStart(e) === ds && e.memberId === m.uid));
+/* ---------- 📋 등판일 — 당직 배정에서 지명자를 빼는 기준 ----------------------------
+   달력의 '📋 등판'(board_meeting) 날짜입니다.
+   · 규칙: 2026-12-09(수)부터 격주 수요일
+   · 날짜 상세에서 직접 넣은 등판일도 포함
+   · 날짜 상세에서 뺀(msOff) 규칙 날짜는 등판일이 아님 */
+const BOARD_FIRST_DS = "2026-12-09";
+function isBoardDay(ds) {
+  if (!ds) return false;
+  if ((S.duty || []).some(e => e.type === "board_meeting" && covers(e, ds))) return true;
+  const off = (S.roster && Array.isArray(S.roster.msOff)) ? S.roster.msOff : [];
+  if (off.indexOf(ds + "|board_meeting") >= 0) return false;
+  const n = dayDiff(BOARD_FIRST_DS, ds);
+  return n >= 0 && n % 14 === 0;
 }
-/* 이 기간 안에서 지명자 둘 이상이 같은 날 당직으로 잡힌 날 (이미 저장된 데이터 점검용) */
-function designatedClashes(fromDs, toDs) {
+/* 이 기간 안에서 📋 등판일에 지명자(간사·간사보조)가 당직으로 잡힌 날 — 이미 저장된 데이터 점검용 */
+function designatedOnBoardDays(fromDs, toDs) {
   const byUid = {};
   designatedMembers().forEach(m => { byUid[m.uid] = m; });
-  const byDs = {};
+  const seen = {}, out = [];
   (S.duty || []).forEach(e => {
     if (e.type !== "duty" || !byUid[e.memberId]) return;
     const ds = entryStart(e);
-    if (!ds || ds < fromDs || ds > toDs) return;
-    (byDs[ds] = byDs[ds] || []).push(byUid[e.memberId]);
+    if (!ds || ds < fromDs || ds > toDs || seen[ds]) return;
+    if (!isBoardDay(ds)) return;
+    seen[ds] = 1;
+    out.push({ ds: ds, member: byUid[e.memberId] });
   });
-  return Object.keys(byDs).filter(ds => byDs[ds].length > 1).sort()
-    .map(ds => ({ ds: ds, members: byDs[ds] }));
+  return out.sort((a, b) => a.ds < b.ds ? -1 : 1);
 }
 
 function addDays(ds, n) {
@@ -2574,24 +2586,37 @@ function lastDutyBefore(ds) {
 function buildDutyPlan(fromDs, toDs, startUid) {
   const roster = rosterMembers();
   if (!roster.length) return { rows: [], roster: roster };
-  let idx = 0;
+  let startIdx = 0;
   const si = startUid ? roster.findIndex(m => m.uid === startUid) : -1;
   if (si >= 0) {
-    idx = si;
+    startIdx = si;
   } else if (fromDs.slice(5) !== "12-01") {
     const last = lastDutyBefore(fromDs);
     if (last) {
       const i = roster.findIndex(m => m.uid === last.memberId);
-      idx = i >= 0 ? i + 1 : 0;
+      startIdx = i >= 0 ? i + 1 : 0;
     }
   }
+  /* 순번 대기열 — 앞에서 한 명씩 당직을 맡고 맨 뒤로 돌아갑니다.
+     📋 등판일에는 지명자(간사·간사보조)를 세우지 않습니다.
+     · 대기열 맨 앞이 지명자면 그 사람은 앞자리에 그대로 두고, 뒤에서 가장 가까운
+       비지명자가 그날(등판일) 당직을 먼저 맡습니다.
+     · 건너뛴 지명자는 대기열 맨 앞에 남아 다음 당직일에 바로 들어갑니다 → 차례를 잃지 않음.
+     · 전원 지명자인 예외에서는 순번대로 그냥 배정합니다(무한 루프 방지). */
+  const pend = roster.slice();
+  for (let r = 0; r < startIdx % roster.length; r++) pend.push(pend.shift());
   const rows = [];
   let ds = fromDs, guard = 0;
   while (ds <= toDs && guard++ < 400) {
     if (isDutyDay(ds)) {
-      const m = roster[idx % roster.length];
+      let pick = 0;
+      if (isBoardDay(ds)) {
+        const k = pend.findIndex(m => !isDesignated(m.uid));
+        if (k >= 0) pick = k;
+      }
+      const m = pend.splice(pick, 1)[0];
       rows.push({ ds: ds, uid: m.uid, name: m.name });
-      idx++;
+      pend.push(m);
     }
     ds = addDays(ds, 1);
   }
@@ -2614,18 +2639,13 @@ function defaultStartUid(fromDs) {
 
 /* 계획 적용 — onlyEmpty: 이미 등록된 날짜는 건드리지 않음(다음 달 생성) */
 async function applyDutyPlan(rows, onlyEmpty) {
-  let created = 0, replaced = 0, kept = 0, guarded = 0;
-  const desUids = designatedMembers().map(m => m.uid);   /* 🖋️ 간사·간사보조 */
+  let created = 0, replaced = 0, kept = 0;
   PUSH_MUTE++;            /* 한 달치 일괄 배정 — 알림은 따로 한 번만 */
   try {
   for (const r of rows) {
     const existing = S.duty.filter(e => e.type === "duty" && entryStart(e) === r.ds);
     if (existing.some(e => e.memberId === r.uid)) { kept++; continue; }
     if (existing.length && onlyEmpty) { kept++; continue; }
-    /* 🖋️ 지명자(간사·간사보조)끼리는 같은 날 당직으로 겹치지 않게 — 그 날이 이미 다른
-       지명자의 당직이면 그 사람을 지우지 않고 그대로 둡니다(겹침 회피). */
-    if (desUids.indexOf(r.uid) >= 0
-        && existing.some(e => e.memberId !== r.uid && desUids.indexOf(e.memberId) >= 0)) { kept++; guarded++; continue; }
     for (const e of existing) await dbDeleteEntry(e.id);
     await dbSaveEntry({ startDate: r.ds, endDate: r.ds, type: "duty", memberId: r.uid, memberName: r.name, memo: "" });
     existing.length ? replaced++ : created++;
@@ -2643,7 +2663,7 @@ async function applyDutyPlan(rows, onlyEmpty) {
       });
     } catch (e) {}
   }
-  return { created: created, replaced: replaced, kept: kept, guarded: guarded };
+  return { created: created, replaced: replaced, kept: kept };
 }
 
 /* 한국 시간(KST) 기준 시각 — 기기 시간대와 무관하게 24일 00:00을 판단 */
@@ -2758,7 +2778,7 @@ function openRosterSheet(editId) {
     title: "당직 명단",
     body:
       '<div class="notice-bar">승인된 팀원과 직접 추가한 이름이 <b>가나다순</b>으로 순번이 정해집니다. [제외]를 누르면 순번에서 빠지고, 직접 추가한 이름은 수정·삭제할 수 있어요.</div>' +
-      (designatedMembers().length ? '<div class="notice-bar" style="background:#f7f2ff;border-color:#e4d3fb;color:#5b21b6">🖋️ ' + esc(designatedLabel()) + ' — 지명된 분들은 같은 날 당직으로 겹치지 않게 배정돼요.</div>' : "") +
+      (designatedMembers().length ? '<div class="notice-bar" style="background:#f7f2ff;border-color:#e4d3fb;color:#5b21b6">🖋️ ' + esc(designatedLabel()) + ' — 지명된 분들은 등판일(📋 등판)에 당직이 배정되지 않아요.</div>' : "") +
       '<div class="sec-title" style="margin-top:0">🏢 명단 ' + active.length + "명" + (ex.length ? " · 제외 " + ex.length + "명" : "") + "</div>" +
       (rows || '<div class="empty"><span>👥</span>승인된 팀원이 없습니다.</div>') + addHtml +
       '<div class="notice-bar" style="margin-top:12px;background:#f2f5fb;border-color:#e3e9f4;color:var(--ink2)">명단을 바꾼 뒤에는 달력의 <b>재배정</b>으로 원하는 날짜부터 순번을 다시 돌려 주세요.</div>',
@@ -2852,7 +2872,7 @@ function openRebalanceSheet() {
     title: "당직 재배정",
     body:
       '<div class="notice-bar">시작일과 시작 담당자를 고르면 그날부터 순번을 다시 돌린 결과를 <b>기존 담당자와 비교</b>해 보여줍니다. [적용]을 눌러야 반영됩니다.</div>' +
-      (designatedMembers().length ? '<div class="notice-bar" style="background:#f7f2ff;border-color:#e4d3fb;color:#5b21b6">🖋️ ' + esc(designatedLabel()) + ' — 지명된 분들은 같은 날 당직으로 겹치지 않게 배정되고, 그 날이 이미 다른 지명자의 당직이면 그대로 둡니다.</div>' : "") +
+      (designatedMembers().length ? '<div class="notice-bar" style="background:#f7f2ff;border-color:#e4d3fb;color:#5b21b6">🖋️ ' + esc(designatedLabel()) + ' — 지명된 분들은 등판일(📋 등판)에 당직이 배정되지 않아요. 그날은 다음 팀원이 맡고, 지명자는 다음 당직일에 들어갑니다.</div>' : "") +
       '<div class="field"><label>시작 날짜</label><input type="date" id="rbStart" value="' + start + '"></div>' +
       '<div class="field"><label>시작 담당자 (이 사람부터 순서대로 배정)</label><select id="rbWho">' + whoOptions() + "</select></div>" +
       '<div class="sec-title" style="margin-top:0" id="rbSum"></div>' +
@@ -2889,7 +2909,7 @@ function openRebalanceSheet() {
         try {
           const r = await applyDutyPlan(cur.plan.rows, false);
           closeSheet(); renderDuty();
-          toast("재배정 완료 · 변경 " + (r.created + r.replaced) + "건" + (r.kept ? " · 유지 " + r.kept + "건" : "") + (r.guarded ? " · 지명자 겹침 회피 " + r.guarded + "일" : ""));
+          toast("재배정 완료 · 변경 " + (r.created + r.replaced) + "건" + (r.kept ? " · 유지 " + r.kept + "건" : ""));
         } catch (e) { btn.disabled = false; toast(fbErrMsg(e)); }
       });
     }
@@ -3260,10 +3280,12 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
   /* 상세 시트의 '이 날의 당직' 카드 = 당직자만 (등판·의소기한·조사기한은 아래 별도 영역) */
   const dutyItems = isDuty ? entries.filter(e => e.type === "duty") : entries;
   const msItems = isDuty ? msOn(ds) : [];
-  /* 🖋️ 같은 날 두 지명자(간사·간사보조)가 잡혀 있으면 위에서 분명하게 알립니다 */
-  const desToday = isDuty ? designatedMembers().filter(dm => entries.some(e => e.memberId === dm.uid)) : [];
-  const desClashHtml = desToday.length >= 2
-    ? '<div class="notice-bar" style="background:#fff1f1;border-color:#fecaca;color:#b91c1c">⚠️ 이 날은 ' + esc(desToday.map(dm => EXEC_ROLES[dm.execRole] + " " + dm.name).join(" · ")) + ' 님이 함께 등판합니다. 지명된 분들은 같은 날 등판하지 않는 것이 원칙이에요.</div>'
+  /* 🖋️ 등판일(📋)에 지명자(간사·간사보조)가 당직으로 잡혀 있으면 위에서 분명하게 알립니다 */
+  const boardHit = (isDuty && isBoardDay(ds))
+    ? designatedMembers().filter(dm => entries.some(e => e.type === "duty" && e.memberId === dm.uid))
+    : [];
+  const desClashHtml = boardHit.length
+    ? '<div class="notice-bar" style="background:#fff1f1;border-color:#fecaca;color:#b91c1c">⚠️ 이 날은 📋 등판일이에요. ' + esc(boardHit.map(dm => EXEC_ROLES[dm.execRole] + " " + dm.name).join(" · ")) + ' 님이 당직으로 잡혀 있어요 — 간사·간사보조는 등판날에 당직을 배정하지 않는 것이 원칙이에요. 아래에서 다른 팀원으로 바꿔 주세요.</div>'
     : "";
 
   const listHtml = dutyItems.length ? dutyItems.map(e => {
@@ -3440,14 +3462,6 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
           teamCount.classList.toggle("ok", n >= 2);
         }
         if (teamSaveBtn) teamSaveBtn.textContent = (isIslandPick() && n >= 2) ? n + "명 일정 등록" : "일정 등록";
-        /* 🖋️ 고른 사람 중 간사·간사보조가 둘 이상이면 바로 알림 */
-        const hintEl = $("#teamHint", root);
-        if (hintEl && canAssign) {
-          const dpick = Array.from(teamSel).filter(id => isDesignated(id));
-          hintEl.innerHTML = dpick.length >= 2
-            ? '<b style="color:#b91c1c">⚠️ 간사·간사보조가 같은 날 등판합니다.</b> ' + dpick.map(id => esc(execNameOf(id) + " " + ((memberOf(id) || rosterMember(id) || {}).name || ""))).join(" · ") + ' — 지명된 분들은 같은 날 잡지 않는 것이 원칙이에요.'
-            : "섬은 보통 <b>2인 1조</b> — 두 명을 눌러 한 번에 등록해요.";
-        }
         $$("[data-team]", teamBox).forEach(b => b.addEventListener("click", () => {
           const id = b.dataset.team;
           if (teamSel.has(id)) teamSel.delete(id); else teamSel.add(id);
@@ -3609,11 +3623,6 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
             return { id: id, name: pm ? pm.name : "" };
           }).filter(p => p.name);
           if (!people.length) return toast("담당자를 한 명 이상 골라주세요");
-          /* 🖋️ 간사·간사보조는 같은 날 함께 세우지 않습니다 — 둘 다 골랐으면 한 번 확인 */
-          const desPicked = people.filter(p => isDesignated(p.id));
-          if (desPicked.length >= 2 && !confirm("이 날(" + shortDate(ds) + ")에 간사·간사보조를 함께 넣으려 해요.\n" +
-            desPicked.map(p => execNameOf(p.id) + " " + p.name).join(" · ") +
-            "\n\n지명된 분들은 같은 날 등판하지 않는 것이 원칙이에요. 그래도 등록할까요?")) { saveBtn.disabled = false; return; }
           saveBtn.disabled = true;
           const done = [], failed = [];
           for (const p of people) {
@@ -3635,11 +3644,9 @@ function openScheduleSheet(ds, presetUid, editEntry, mode) {
         }
         const who = canAssign ? ($("#schMember", root).value || myUid()) : myUid();
         const mm = memberOf(who) || rosterMember(who);
-        /* 🖋️ 간사·간사보조는 같은 날 당직으로 겹치지 않게 — 그 날 다른 지명자가 있으면 확인 */
-        if (isDuty && picked === "duty" && isDesignated(who)) {
-          const clash = designatedDutyOn(ds, who);
-          if (clash.length && !confirm("이 날(" + shortDate(ds) + ")에는 이미 " + clash.map(o => EXEC_ROLES[o.execRole] + " " + o.name).join(" · ") + " 님이 당직입니다.\n\n" +
-            "간사·간사보조는 같은 날 등판하지 않는 것이 원칙이에요.\n" + (mm ? mm.name : "팀원") + " 님으로 바꾸면 " + clash.map(o => o.name).join("·") + " 님 당직은 이 날에서 빠집니다. 그래도 바꿀까요?")) { saveBtn.disabled = false; return; }
+        /* 🖋️ 간사·간사보조는 등판날(📋 등판)에 당직을 배정하지 않는 것이 원칙 — 넣으려 하면 한 번 확인 */
+        if (isDuty && picked === "duty" && isDesignated(who) && isBoardDay(ds)) {
+          if (!confirm("이 날(" + shortDate(ds) + ")은 📋 등판일이에요. " + (execNameOf(who) + " " + (mm ? mm.name : "팀원")) + " 님은 등판날에 당직을 배정하지 않는 것이 원칙이에요. 그래도 배정할까요?")) { saveBtn.disabled = false; return; }
         }
         const body = {
           startDate: ds, endDate: end, type: picked,
@@ -5057,7 +5064,7 @@ function calAll() {
    규칙 밖 날짜에 직접 넣은 항목만 duty_schedules(id = 날짜_ms_종류)에 저장된다.
    ===================================================================== */
 const MS_TYPES = ["board_meeting", "opinion_due", "survey_due"];
-const MS_FIRST_BOARD = "2026-12-09";
+const MS_FIRST_BOARD = BOARD_FIRST_DS;   /* 등판 규칙 기준일 — 당직 배정의 isBoardDay() 와 같은 값 */
 const isMsType = t => MS_TYPES.indexOf(t) >= 0;
 const msKey = (ds, t) => ds + "|" + t;
 /* 규칙 날짜 여부 — 12/9 를 기준으로 14일 주기 */
@@ -6227,7 +6234,7 @@ function renderDuty() {
   /* 당직 운영 카드 (관리자) */
   let opsHtml = "";
   const desList = isDuty ? designatedMembers() : [];
-  const clashDays = (isDuty && desList.length > 1) ? designatedClashes(from, to) : [];
+  const boardDays = (isDuty && desList.length) ? designatedOnBoardDays(from, to) : [];
   if (isDuty && canManageDuty()) {
     const info = nextMonthInfo();
     const exN = excludedList().length;
@@ -6236,16 +6243,16 @@ function renderDuty() {
         '<div class="ops-hd"><b>🏢 당직 운영</b><span class="ops-badge">매월 24일 자동 배정</span></div>' +
         '<div class="ops-st"><b>' + info.label + " 당직 " + info.count + '건</b> · 명단 <b>' + info.roster + '명</b>' + (exN ? " (제외 " + exN + ")" : "") + "</div>" +
         '<div class="ops-des">🖋️ ' + (desList.length ? esc(designatedLabel()) : "간사·간사보조 미지명") +
-          (clashDays.length ? ' <span class="warn">· 이 달 겹침 ' + clashDays.length + '일</span>' : (desList.length > 1 ? ' <span style="color:#15803d">· 겹침 없음</span>' : "")) + "</div>" +
+          (desList.length ? (boardDays.length ? ' <span class="warn">· ⚠️ 등판일 배정 ' + boardDays.length + "일</span>" : ' <span style="color:#15803d">· 등판일 겹침 없음</span>') : "") + "</div>" +
         '<div class="ops-btns">' +
           '<button id="opsRoster">👥 명단</button>' +
           '<button id="opsRebalance">🔁 재배정</button>' +
         "</div>" +
       "</div>";
   }
-  /* 🖋️ 지명자 둘이 같은 날 당직으로 잡혀 있으면 달력 위에 알립니다 (수동으로 고칠 수 있게) */
-  const clashHtml = clashDays.length
-    ? '<div class="notice-bar" style="margin-top:9px;background:#fff1f1;border-color:#fecaca;color:#b91c1c">⚠️ ' + esc(clashDays.map(c => shortDate(c.ds) + "(" + EXEC_ROLES[c.members[0].execRole] + "·" + EXEC_ROLES[c.members[1].execRole] + ")").join(" · ")) + ' — 같은 날 간사·간사보조가 함께 잡혀 있어요. 날짜를 눌러 담당자를 바꿔 주세요.</div>'
+  /* 🖋️ 등판일에 지명자가 당직으로 잡혀 있으면 달력 위에 알립니다 (날짜를 눌러 고칠 수 있게) */
+  const clashHtml = boardDays.length
+    ? '<div class="notice-bar" style="margin-top:9px;background:#fff1f1;border-color:#fecaca;color:#b91c1c">⚠️ 📋 등판일인 ' + esc(boardDays.map(c => shortDate(c.ds) + "(" + EXEC_ROLES[c.member.execRole] + " " + c.member.name + ")").join(" · ")) + ' 에 당직이 잡혀 있어요 — 간사·간사보조는 등판날에 당직을 배정하지 않는 것이 원칙이에요. 날짜를 눌러 담당자를 바꿔 주세요.</div>'
     : "";
 
   v.innerHTML =
@@ -7456,7 +7463,7 @@ function renderTeam() {
       "</div>").join("") : "") +
 
     '<div class="sec-title">' + (pend.length ? "👥 " : "👥 ") + "팀원 " + app.length + "명</div>" +
-    (designatedMembers().length ? '<div class="hint" style="margin:-2px 4px 8px;font-size:11px;color:#6b21a8">🖋️ ' + esc(designatedLabel()) + " · 같은 날 당직(등판)은 피해서 짜 드려요</div>" : "") +
+    (designatedMembers().length ? '<div class="hint" style="margin:-2px 4px 8px;font-size:11px;color:#6b21a8">🖋️ ' + esc(designatedLabel()) + " · 등판날(📋)에는 당직을 빼고 짜 드려요</div>" : "") +
     (app.length ? app.map(m => {
       return '<button class="mem" data-member="' + m.uid + '">' +
         avatarHtml(m.name, "", m.uid) +
@@ -7614,7 +7621,7 @@ function openMemberSheet(id) {
     "</div>" +
     '<div class="hint" style="margin:8px 2px 0">간사·간사보조는 각 1명입니다.' +
       (seatMsg ? " 지금 " + esc(seatMsg) + "이에요. 다른 분을 고르면 바꿀지 먼저 물어봐요." : "") +
-      " 지명된 분들은 같은 날 당직(등판)하지 않도록 자동·수동 배정에서 막아 드려요.</div>";
+      " 지명된 분들은 등판날(📋 등판)에 당직이 배정되지 않아요. 그날은 다음 팀원이 맡고, 지명자는 다음 당직일에 들어갑니다.</div>";
   openSheet({
     title: m.name,
     body:
@@ -8098,7 +8105,7 @@ function openGuideSheet() {
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">관리자(또는 당직 관리 권한을 받은 팀원)는 당직 달력의 <b>👥 명단 · 🔁 재배정</b>으로 명단(가나다순)을 관리합니다. 다음 달 당직은 매월 24일 0시가 지난 뒤 앱을 열 때 자동으로 배정됩니다. 날짜 상세에서 <b>🎈 행사일</b>을 등록하면 그날 당직은 취소되고, 달력 칸 전체가 <b>연보라색</b>으로 칠해지며 등록한 행사명이 표시됩니다(공휴일의 연분홍과 구분).</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직 달력 칸은 <b>맨 위 당직자</b>, 그 아래에 <b>📋 등판(빨강) · 💬 의소기한(파랑) · 📝 조사기한(초록)</b>이 따로 표시됩니다. 등판은 2026년 12월 9일(수)부터 격주 수요일이고, 의소기한은 그 전주 목요일·조사기한은 그 하루 전으로 자동 계산됩니다. 날짜를 눌러 [📋 등판 · 의소기한 · 조사기한] 칩으로 붙이거나 뺄 수 있고(관리자·당직 관리), 이 영역은 당직자 교체와 따로 움직입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">당직은 <b>한 날짜에 1명</b>입니다. 이미 당직자가 있는 날짜를 열면 [당직 등록]이 아니라 <b>당직자 변경</b> 폼이 열리고, 새 담당자를 골라 저장하면 기존 담당자는 빠지고 새 담당자 1명만 남습니다. 바꾸면 <b>변경 이력</b>(누구를 누구로 · 언제 · 누가)이 남아 날짜를 다시 열어 확인할 수 있어요.</p>' +
-      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🖋️ <b>간사 · 간사보조</b>는 팀원관리에서 회원 카드를 눌러 지명합니다(관리자만, 각 1명). 다른 분이 이미 맡고 있으면 바꿀지 먼저 물어봐요. 지명된 분들은 <b>같은 날 당직으로 겹치지 않게</b> 자동 배정·재배정·수동 변경에서 막고, 그런 날은 달력 위에 빨간 ⚠️ 안내를 보여 줍니다. 당직 달력의 지명자 이름에는 보라색 테두리가 붙습니다.</p>' +
+      '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">🖋️ <b>간사 · 간사보조</b>는 팀원관리에서 회원 카드를 눌러 지명합니다(관리자만, 각 1명). 다른 분이 이미 맡고 있으면 바꿀지 먼저 물어봐요. 규칙은 하나 — 지명된 분들은 <b>📋 등판일</b>(격주 수요일 규칙과 직접 넣은 등판일)에 당직으로 배정되지 않습니다. 자동 배정·재배정에서는 등판일 당직을 다음 팀원이 맡고 지명자는 다음 당직일에 들어가며, 이미 등판일에 잡혀 있으면 달력 위에 빨간 ⚠️ 안내를 보여 주고 수동으로 넣으려 하면 한 번 확인합니다. 당직 달력의 지명자 이름에는 보라색 테두리가 붙습니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">앱 권한은 <b>관리자</b>(승인·권한 부여)와 <b>당직 관리</b>(명단·재배정·행사일)로 나뉘며, 상단 오른쪽 <b>프로필 아이콘</b>을 눌러 들어간 [팀원관리]에서 탭 한 번으로 주고 뺏을 수 있습니다. 직책(팀장·주무관 등)과는 별개입니다.</p>' +
       '<p style="font-size:12.5px;line-height:1.6;color:var(--ink3);margin:0 0 10px">팀 이름은 상단 오른쪽 프로필 아이콘으로 들어간 [팀원관리] 맨 아래 <b>팀 이름</b>에서 <b>관리자만</b> 바꿀 수 있습니다. 저장하면 팀원 모두의 상단·대화방·설정에 바로 적용되고, 팀원은 현재 이름만 볼 수 있습니다.</p>' +
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
