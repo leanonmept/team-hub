@@ -1785,9 +1785,10 @@ function loadConfig() {
   try { team = localStorage.getItem(TEAM_KEY) || team; } catch (e) {}
   return { cfg: cfg, live: live, team: team, demoOverride: wantDemo };
 }
-function saveConfig(cfg, team) {
+function saveConfig(cfg) {
+  /* Firebase 연결 값만 이 기기에 저장합니다. 팀 이름은 관리자가 [팀원관리 → 팀 이름]에서
+     정해 서버(duty_roster_config/config.teamName)에 저장하고, 모든 기기가 그 값을 씁니다. */
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
-  if (team) localStorage.setItem(TEAM_KEY, team);
 }
 
 /* =====================================================================
@@ -8011,15 +8012,14 @@ function openCfgSheet() {
       F("storageBucket", "storageBucket", "myteam.appspot.com") +
       F("messagingSenderId", "messagingSenderId", "1234567890") +
       F("appId", "appId", "1:1234:web:abcd") +
-      '<div class="field"><label>팀 이름</label><input type="text" id="cfgTeam" value="' + esc(S.team) + '"></div>' +
-      '<div class="notice-bar">실시간 연결에서는 <b>팀원관리 → 팀 이름</b>에서 관리자만 바꿀 수 있고, 팀원 모두에게 바로 적용됩니다. 위 입력은 이 기기에만 저장됩니다.</div>' +
+      '<div class="notice-bar">위 입력은 이 기기에만 저장됩니다.</div>' +
       '<div class="notice-bar">저장하면 새로고침되며 해당 프로젝트로 연결됩니다.<br>Firestore 보안 규칙은 <b>firebase-rules.txt</b> 내용을 콘솔에 붙여넣으세요.</div>',
     footer: '<button class="btn ghost" id="cfgClear" style="flex:0 0 30%">기본값으로</button><button class="btn" id="cfgSave">저장</button>',
     onMount: root => {
       $("#cfgSave", root).addEventListener("click", () => {
         const out = {};
         $$("[data-cfg]", root).forEach(i => { out[i.dataset.cfg] = i.value.trim(); });
-        saveConfig(out, ($("#cfgTeam", root) && $("#cfgTeam", root).value.trim()) || "");
+        saveConfig(out);
         toast("저장했습니다. 새로고침합니다");
         setTimeout(() => location.reload(), 500);
       });
@@ -8043,7 +8043,12 @@ function openTeamNameSheet() {
       const save = async () => {
         const v = String(inp.value || "").replace(/\s+/g, " ").trim().slice(0, 20);
         if (!v) { toast("팀 이름을 입력해 주세요"); return; }
-        if (v === S.team) { closeSheet(); return; }
+        /* 이 기기에 이미 같은 이름이 들어 있어도 저장을 건너뛰지 않습니다.
+           실시간 연결에서는 서버(duty_roster_config/config.teamName)에 같은 값이 있을 때만 건너뜁니다. */
+        const alreadySaved = (S.mode === "live")
+          ? !!(S.roster && S.roster.teamName === v)
+          : (v === S.team);
+        if (alreadySaved) { closeSheet(); return; }
         btn.disabled = true; btn.textContent = "저장 중…";
         try {
           await dbSetTeamName(v);
@@ -9023,8 +9028,18 @@ function applyRosterDoc(v) {
     photoFolders: Array.isArray(d.photoFolders) ? d.photoFolders.filter(f => f && typeof f.name === "string") : []
   };
   LOADED.roster = true;
-  /* 관리자가 바꾼 팀 이름이 오면 상단 헤더·설정·대화방을 바로 갱신 */
-  if (S.roster.teamName) setTeamName(S.roster.teamName);
+  /* 관리자가 정한 팀 이름이 오면 이 기기에 남아 있는 값보다 서버 값을 우선해
+     상단 헤더·설정·대화방·팀원관리 표시와 localStorage 를 모두 같은 이름으로 맞춥니다. */
+  if (S.roster.teamName) {
+    setTeamName(S.roster.teamName);
+    /* 값이 같아 다시 그리지 않았더라도 화면 요소가 비어 있으면 서버 값으로 채웁니다 */
+    if (S.mode === "live") {
+      const hdr = $("#hdrSub"); if (hdr) hdr.textContent = S.team;
+      const ct = $("#chatTeamName"); if (ct) ct.textContent = S.team + " 단체방";
+      const ca = $("#chatAvatar"); if (ca) ca.textContent = S.team.slice(0, 1);
+      try { localStorage.setItem(TEAM_KEY, S.team); } catch (e) {}
+    }
+  }
   if (S.tab === "duty") renderDuty();
   if (S.tab === "team") renderTeam();
   if (S.tab === "photos") renderPhotos();

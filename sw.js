@@ -9,7 +9,7 @@
    · Firebase·기상청 API·카카오 등 외부 주소는 절대 건드리지 않습니다(그대로 네트워크).
    · SW 로직이나 캐시 목록을 바꾸면 SW_VERSION 을 올려 주세요.
    ===================================================================== */
-const SW_VERSION = "th-2026-11-27-5";
+const SW_VERSION = "th-2026-11-27-6";
 const CACHE = "teamhub-" + SW_VERSION;
 const SCOPE_PATH = new URL(self.registration.scope).pathname;   /* 예: /team-hub/ */
 const SHELL_INDEX = new URL("./index.html", self.location.href).href;
