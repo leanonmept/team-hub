@@ -5348,10 +5348,12 @@ function islandBarHtml(sp) {
 
 /* =====================================================================
    🌊 섬 파고 · 배편 — 인천 8개 섬(영흥도 제외) 실시간 파고·풍속
-   · 1~5일: 기상청 단기예보(getVilageFcst) — WAV 파고·WSD 풍속·TMP 기온·SKY/PTY 날씨·PCP 강수량·POP 강수확률
-   · 6~10일: 기상청 중기해상예보(getMidSeaFcst 12A20000 파고 A~B·해상날씨) + 중기기온(getMidTa 11A00101)
+   · 파고(지금·날짜별 예보): Open-Meteo 해양 모델(marine-api, 0.1m 단위) — 오전(00~11시) 최고·오후(12~23시) 최고·일 최고
+             그날 파고 값이 없을 때만 기상청 값으로 대체(WAV 0.5m · 중기해상 최저~최고 범위)
+   · 1~5일: 기상청 단기예보(getVilageFcst) — WSD 풍속·TMP 기온·SKY/PTY 날씨·PCP 강수량·POP 강수확률
+   · 6~10일: 기상청 중기해상예보(getMidSeaFcst 12A20000 해상날씨) + 중기기온(getMidTa 11A00101)
              + 중기육상예보(getMidLandFcst 11B00000) 강수확률
-   · 11~16일: Open-Meteo 예보(weather_code·precipitation_sum·강수확률·풍속·기온, 파고는 해양예보 범위까지)
+   · 11~16일: Open-Meteo 예보(weather_code·precipitation_sum·강수확률·풍속·기온)
    · 격자 nx·ny는 기상청 Lambert 격자 변환식(서울 60/127·인천 55/124 검증)으로 8개 섬 실측값을 씁니다.
    · 출처: 기상청 단기·중기예보(공공데이터포털, 공공누리 제1유형: 출처표시) · Open-Meteo
    · 공공데이터포털 Decoding 인증키 사용 · apis.data.go.kr CORS 허용 확인 · 10분 캐시
@@ -5383,7 +5385,8 @@ const SEA_LINKS = [
   { em: "⚓", label: "인천항 여객선 운항정보", sub: "KOMSA · 당일 운항·결항 조회", url: "https://www.komsa.or.kr/prog/pssgCurState/kor/sub03_0202/list.do" }
 ];
 const SEA_TTL = 10 * 60 * 1000;        /* 10분 캐시 */
-const SEA_DAYS = 16;                   /* 오늘부터 16일 예보 (파고는 해양예보 최대 9일) */
+const SEA_DAYS = 16;                   /* 오늘부터 16일 예보 */
+const SEA_MARINE_DAYS = 10;            /* Open-Meteo 해양 파고 예보 10일치(뒤쪽 날짜는 비어 있을 수 있음) */
 const SEA_WEEK = "일월화수목금토";
 let seaCache = null;                   /* { at, items, stamp, days } */
 let seaBusy = false;
@@ -5591,7 +5594,7 @@ function seaUrl(kind) {
   const lon = SEA_ISLANDS.map(i => i.lon).join(",");
   if (kind === "marine") {
     return "https://marine-api.open-meteo.com/v1/marine?latitude=" + lat + "&longitude=" + lon +
-      "&current=wave_height,wave_period&hourly=wave_height&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
+      "&current=wave_height&hourly=wave_height&forecast_days=" + SEA_MARINE_DAYS + "&timezone=Asia%2FSeoul";
   }
   return "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
     "&current=temperature_2m,wind_speed_10m,wind_gusts_10m,weather_code,precipitation&hourly=wind_speed_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum,precipitation_probability_max&wind_speed_unit=ms&forecast_days=" + SEA_DAYS + "&timezone=Asia%2FSeoul";
@@ -5981,7 +5984,8 @@ async function seaLoad() {
         rain: typeof drain[k] === "number" ? drain[k] : null,
         prob: typeof dprob[k] === "number" ? dprob[k] : null
       };
-      /* 날짜별: 그날 최고 파고 · 오전(06~12시) 최고 · 오후(12~18시) 최고 · 최대 풍속·돌풍 · 기온 */
+      /* 날짜별: 그날 최고 파고 · 오전(00~11시) 최고 · 오후(12~23시) 최고 · 최대 풍속·돌풍 · 기온
+         파고는 Open-Meteo 해양(0.1m 단위) — 기상청 WAV(0.5m)·중기해상 범위는 그날 이 값이 없을 때만 씁니다. */
       const per = {};
       days.forEach(ds => {
         let mx = null, am = null, pm = null, wmx = null, gmx = null, nhr = 0;
@@ -5993,8 +5997,8 @@ async function seaLoad() {
           if (typeof v === "number" && isFinite(v)) {
             if (mx === null || v > mx) mx = v;
             nhr++;
-            if (hh >= 6 && hh < 12 && (am === null || v > am)) am = v;
-            if (hh >= 12 && hh < 18 && (pm === null || v > pm)) pm = v;
+            if (hh < 12 && (am === null || v > am)) am = v;
+            if (hh >= 12 && (pm === null || v > pm)) pm = v;
           }
           const ww = wmap[t];
           if (ww && typeof ww.w === "number" && isFinite(ww.w) && (wmx === null || ww.w > wmx)) wmx = ww.w;
@@ -6002,6 +6006,7 @@ async function seaLoad() {
         }
         per[ds] = {
           max: mx, am: am, pm: pm, wind: wmx, gust: gmx, n: nhr,
+          waveSrc: mx === null ? "" : "om",
           tmax: tmap[ds] && typeof tmap[ds].max === "number" ? tmap[ds].max : null,
           tmin: tmap[ds] && typeof tmap[ds].min === "number" ? tmap[ds].min : null,
           code: tmap[ds] && typeof tmap[ds].code === "number" ? tmap[ds].code : null,
@@ -6017,7 +6022,10 @@ async function seaLoad() {
           const d = sh.days[ds];
           if (!d) return;
           const o = per[ds];
-          if (typeof d.wavMax === "number") { o.max = d.wavMax; o.am = d.am; o.pm = d.pm; o.n = d.n; }
+          /* 파고는 Open-Meteo 해양이 우선 — 그날 값이 없을 때만 기상청 WAV(0.5m)로 대체 */
+          if (typeof d.wavMax === "number" && typeof o.max !== "number") {
+            o.max = d.wavMax; o.am = d.am; o.pm = d.pm; o.n = d.n; o.waveSrc = "kma";
+          }
           if (typeof d.wind === "number") o.wind = d.wind;
           if (typeof d.tmax === "number") o.tmax = d.tmax;
           if (typeof d.tmin === "number") o.tmin = d.tmin;
@@ -6027,15 +6035,18 @@ async function seaLoad() {
           if (typeof d.wavMax === "number" || d.code !== null || d.wind !== null) o.src = "kma";
         });
       }
-      /* 기상청 중기예보 — 6~10일 (단기예보가 있는 날은 건너뜀) */
+      /* 기상청 중기예보 — 6~10일 (단기예보가 있는 날은 건너뜀)
+         파고는 Open-Meteo 해양 값이 있으면 그대로 두고, 없는 날만 중기해상 범위(최저~최고)를 씁니다. */
       if (mid) {
         days.forEach(ds => {
           const d = mid[ds];
           if (!d || per[ds].src === "kma") return;
           const o = per[ds];
-          o.max = d.wmax; o.wmin = d.wmin;
-          o.amMin = d.amMin; o.amMax = d.amMax; o.pmMin = d.pmMin; o.pmMax = d.pmMax;
-          o.am = d.amMax; o.pm = d.pmMax; o.n = null;
+          if (typeof o.max !== "number") {
+            o.max = d.wmax; o.wmin = d.wmin;
+            o.amMin = d.amMin; o.amMax = d.amMax; o.pmMin = d.pmMin; o.pmMax = d.pmMax;
+            o.am = d.amMax; o.pm = d.pmMax; o.n = null; o.waveSrc = "mid";
+          }
           o.wind = null; o.gust = null; o.rain = null;
           if (d.prob !== null) o.prob = d.prob;
           if (d.code !== null) o.code = d.code;
@@ -6050,14 +6061,13 @@ async function seaLoad() {
       const tdy = sh && sh.days[kstNow.ds] ? sh.days[kstNow.ds] : null;
       const maxOf = ds => (per[ds] && typeof per[ds].max === "number") ? per[ds].max : null;
       /* 🌊 '지금' 파고 — 기상청 단기예보(WAV)는 0.5m 단위라 뭉툭해서,
-         '지금' 값은 Open-Meteo 해양(0.1m 단위)을 먼저 쓰고 실패할 때만 WAV로 돌아갑니다.
-         1~10일 예보·여객선 운항 통제는 그대로 기상청·해양교통안전공단 값을 씁니다. */
+         '지금'도 날짜별 예보와 같은 Open-Meteo 해양(0.1m 단위) 값을 쓰고, 실패할 때만 WAV로 돌아갑니다.
+         기온·강수·바람과 여객선 운항 통제는 그대로 기상청·한국해양교통안전공단 값을 씁니다. */
       const omWave = (typeof cur.wave_height === "number" && isFinite(cur.wave_height)) ? cur.wave_height : null;
       return {
         name: isl.name, area: isl.area,
         wave: omWave !== null ? omWave : (nowHr && typeof nowHr.wav === "number" ? nowHr.wav : null),
         waveNow: omWave !== null ? "om" : (nowHr && typeof nowHr.wav === "number" ? "kma" : ""),
-        period: typeof cur.wave_period === "number" ? cur.wave_period : null,
         temp: nowHr && typeof nowHr.tmp === "number" ? nowHr.tmp : (typeof wc.temperature_2m === "number" ? wc.temperature_2m : null),
         wind: nowHr && typeof nowHr.wind === "number" ? nowHr.wind : (typeof wc.wind_speed_10m === "number" ? wc.wind_speed_10m : null),
         gust: typeof wc.wind_gusts_10m === "number" ? wc.wind_gusts_10m : null,
@@ -6076,7 +6086,8 @@ async function seaLoad() {
     if (shortOk === 0) warns.push("기상청 단기예보를 받지 못해 1~5일은 Open-Meteo 값으로 대신했어요.");
     else if (shortOk < SEA_ISLANDS.length) warns.push("일부 섬(" + (SEA_ISLANDS.length - shortOk) + "곳)의 기상청 단기예보를 받지 못해 Open-Meteo 값으로 대신했어요.");
     if (!midOk) warns.push("기상청 중기예보를 받지 못해 6~10일도 Open-Meteo 값으로 대신했어요.");
-    if (!mOk || !wOk) warns.push("Open-Meteo " + (!mOk ? "해양(파고)" : "기상(기온·풍속)") + " 정보를 받지 못해 11일 이후가 비어 있을 수 있어요.");
+    if (!mOk) warns.push("Open-Meteo 해양(파고) 정보를 받지 못해 날짜별 파고는 기상청 예보(0.5m 단위)로 대신했어요.");
+    if (!wOk) warns.push("Open-Meteo 기상(기온·풍속) 정보를 받지 못해 11일 이후가 비어 있을 수 있어요.");
 
     const stamp = sb.ds + " " + sb.hh.slice(0, 2) + ":" + sb.hh.slice(2);
     seaCache = { at: Date.now(), items: items, stamp: stamp, days: days, warns: warns,
@@ -6127,7 +6138,7 @@ function seaTemp(v) { return (typeof v === "number" && isFinite(v)) ? Math.round
 /* 그날 배지 — 단기는 최고 파고, 중기(최저~최고 범위)는 범위의 중간값 기준(최고 파고는 범위로 보입니다) */
 function seaDayBadge(s) {
   if (!s || typeof s.max !== "number") return seaWindBadge(s ? s.wind : null);
-  if (s.src === "mid" && typeof s.wmin === "number") return seaBadge((s.wmin + s.max) / 2);
+  if (s.waveSrc === "mid" && typeof s.wmin === "number") return seaBadge((s.wmin + s.max) / 2);
   return seaBadge(s.max);
 }
 
@@ -6143,12 +6154,12 @@ function seaMd(ds) {
 function seaRowHtml(it, ds, k) {
   const s = (it.days && it.days[ds]) || {};
   const hasWave = typeof s.max === "number";
-  const isMid = s.src === "mid" && hasWave;
+  const isMid = s.waveSrc === "mid" && hasWave;
   const b = seaDayBadge(s);
   const badge = hasWave && b.cls === "high" && !isMid ? "높음·결항주의" : b.label;
   /* 해양예보 마지막 날처럼 파고가 하루 일부 시간만 있는 경우 */
   const partial = hasWave && !isMid && k > 0 && typeof s.n === "number" && s.n < 24;
-  const tag = k === 0 ? "오늘" : k === 1 ? "내일" : (isMid ? "중기" : "");
+  const tag = k === 0 ? "오늘" : k === 1 ? "내일" : ((isMid || s.src === "mid") ? "중기" : "");
   const windTxt = typeof s.wind === "number" ? seaNum(s.wind) + " m/s" : "–";
   let l1, l2, wxTxt, wet = false;
   if (isMid) {
@@ -6168,17 +6179,23 @@ function seaRowHtml(it, ds, k) {
       : "오전 " + seaNum(s.am) + " · 오후 " + seaNum(s.pm) + (partial ? " <em>＊</em>" : "");
     l1 = '<span class="sr-w"><b>' + seaNum(s.max) + "</b><i>m</i></span>" +
       '<span class="sr-split">' + splitTxt + "</span>";
-    l2 = "💨 최대 " + windTxt;
+    /* 6~10일 중 Open-Meteo 파고가 있는 날 — 중기예보에는 바람이 없어 기온을 함께 보여 줍니다 */
+    l2 = typeof s.wind === "number" ? "💨 최대 " + windTxt
+      : (typeof s.tmax === "number" ? "🌡 최저 " + seaTemp(s.tmin) + " · 최고 " + seaTemp(s.tmax) : "💨 최대 " + windTxt);
   } else {
     l1 = '<span class="sr-nw">파고 미제공</span><span class="sr-split"></span>';
     l2 = "💨 최대 " + windTxt +
       (typeof s.tmax === "number" ? " · 🌡 " + seaTemp(s.tmax) + "/" + seaTemp(s.tmin) : "");
   }
   if (!isMid) {
-    /* 날씨·강수 — 기상 API가 실패한 날짜는 미제공으로 */
+    /* 날씨·강수 — 기상 API가 실패한 날짜는 미제공으로
+       (중기 날짜는 강수량이 없어 강수확률만 보여 줍니다) */
     const wx = seaWx(s.code);
+    const rainTxt = typeof s.rain === "number"
+      ? "💧 " + seaRain(s.rain) + (typeof s.prob === "number" ? ' <em>' + Math.round(s.prob) + "%</em>" : "")
+      : (typeof s.prob === "number" ? "💧 <em>" + Math.round(s.prob) + "%</em>" : "");
     wxTxt = (s.code !== null && s.code !== undefined)
-      ? wx.em + " " + wx.label + " · 💧 " + seaRain(s.rain) + (typeof s.prob === "number" ? ' <em>' + Math.round(s.prob) + "%</em>" : "")
+      ? wx.em + " " + wx.label + (rainTxt ? " · " + rainTxt : "")
       : "날씨·강수 미제공";
     wet = s.code !== null && s.code !== undefined && typeof s.rain === "number" && s.rain > 0;
   }
@@ -6220,8 +6237,8 @@ function seaIslandHtml(it, d) {
       '<span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
       '<div class="cm">' + cur + "</div>" + ferryBig + "</div>" +
     '<div class="sea-srcnote">' + (it.waveNow === "kma"
-      ? '＊ 지금 파고는 <b>기상청 단기예보</b>(0.5m 단위) 값이에요 — Open-Meteo 해양 값은 이번에 받지 못했어요.'
-      : '＊ 지금 파고는 <b>Open-Meteo 해양 모델</b>(0.1m 단위), 아래 날짜별 예보는 <b>기상청 단기·중기예보</b>(0.5m 단위) 값이에요.') + '</div>' +
+      ? '＊ 파고(지금·예보)는 <b>기상청 단기예보</b>(0.5m 단위) 값이에요 — Open-Meteo 해양 값을 이번에 받지 못했어요.'
+      : '＊ 파고(지금·예보)는 <b>Open-Meteo 해양 모델</b>(0.1m 단위), 기온·강수·바람은 <b>기상청</b> 값이에요.') + '</div>' +
     '<div class="sea-cc">' +
       '<span class="ok">파고 양호 <b>' + ok + "</b></span>" +
       '<span class="warn">주의 <b>' + warn + "</b></span>" +
@@ -6247,7 +6264,7 @@ function seaAllHtml(d) {
       '<span class="high">높음 <b>' + cnt.high + "</b></span>" +
       (cnt.na ? '<span class="na">정보없음 <b>' + cnt.na + "</b></span>" : "") + "</div>" +
     cards +
-    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·날씨·강수로 바로 넘어갑니다. 지금 파고는 Open-Meteo 해양(0.1m 단위), 예보 최고는 기상청(0.5m 단위) 값이에요.</div>';
+    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·날씨·강수로 바로 넘어갑니다. 파고(지금·예보)는 Open-Meteo 해양(0.1m 단위), 기온·강수·바람은 기상청 값이에요.</div>';
 }
 
 function seaBodyHtml() {
@@ -6255,16 +6272,16 @@ function seaBodyHtml() {
   const stale = d && Date.now() - d.at > SEA_TTL;
   let hd = '<div class="sea-hd"><span class="dot"></span>';
   if (seaBusy) hd += d ? "새로 받는 중… (" + seaClock(d.stamp) + " 기준)" : "파고·풍속을 받아오는 중…";
-  else if (d) hd += seaClock(d.stamp) + " 발표 · 기상청 단기예보";
+  else if (d) hd += seaClock(d.stamp) + " 기준 · 기상청 단기예보";
   else hd += "연결하지 못했어요";
   hd += '<button class="rf" id="seaRefresh" aria-label="파고·날씨 새로고침"' + (seaBusy ? " disabled" : "") + ">" + (seaBusy ? "⏳ 받는 중" : "🔄 새로고침") + "</button></div>";
 
   /* 출처 표시(상단) — 기상청 공공누리 제1유형(출처표시) · Open-Meteo */
   const srcTop = '<div class="sea-src">자료 출처: ' +
-    '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener"><b>기상청</b></a>(단기·중기예보, ' +
+    '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener"><b>기상청</b></a>(기온·바람·강수, ' +
     '<a href="https://www.kogl.or.kr" target="_blank" rel="noopener">공공누리 제1유형</a>) · ' +
     '<b>한국해양교통안전공단</b>(오늘 실제 운항) · ' +
-    '<b>Open-Meteo</b>(지금 파고 0.1m · 11~16일)</div>';
+    '<b>Open-Meteo</b>(파고 0.1m)</div>';
 
   /* 선택 상태 — 데이터가 없거나 범위를 벗어나면 첫 번째 섬(백령도) */
   let sel = seaSel;
@@ -6301,7 +6318,7 @@ function seaBodyHtml() {
       '<span><i style="background:#e5484d"></i>2.0m 이상 높음·결항주의</span>' +
       '<span><i style="background:#cbd5e3"></i>파고 미제공 = 풍속·기온 참고</span>' +
     "</div>" +
-    (sel === SEA_ALL ? "" : '<div class="sea-legend" style="margin-top:4px"><span>＊ 지금 파고 = Open-Meteo(0.1m 단위) · 예보 최고 = 기상청 단기예보(0.5m 단위)</span><span>＊ 그날 일부 시간대는 파고 예보 없음</span><span>중기(6~10일) 배지 = 최저~최고 범위의 중간값 기준</span></div>');
+    (sel === SEA_ALL ? "" : '<div class="sea-legend" style="margin-top:4px"><span>＊ 파고(지금·예보) = Open-Meteo 해양(0.1m 단위)</span><span>＊ 기상청 단기(0.5m)·중기 범위는 Open-Meteo 파고가 없는 날의 대체값</span><span>＊ 그날 일부 시간대는 파고 예보 없음</span><span>중기 범위 배지 = 최저~최고의 중간값 기준</span></div>');
 
   const links = SEA_LINKS.map(l =>
     '<a class="sea-link cp" href="' + l.url + '" target="_blank" rel="noopener">' +
@@ -6310,16 +6327,16 @@ function seaBodyHtml() {
       '<span class="ar">›</span></a>').join("");
 
   return hd + srcTop + partBar + seaFerryStripHtml() + '<div class="sea-links top">' + links + "</div>" + chips + main + staleBar + legend +
-    '<div class="sea-note">기상 자료: <b>기상청 단기예보</b>(오늘~5일: 파고·풍속·기온·날씨·강수) + ' +
-      "<b>기상청 중기해상예보·중기기온</b>(6~10일: 파고 최저~최고·해상날씨) + " +
-      "<b>Open-Meteo</b>(지금 파고 0.1m 단위 보조 · 11~16일: 날씨·강수·풍속·기온, 파고는 해양예보 범위까지)<br>" +
-      "🌊 <b>지금 파고</b>는 Open-Meteo 해양 모델 값을 우선 쓰고, 받지 못하면 기상청 단기예보(0.5m 단위)로 보여 줍니다. 예보·운항 통제는 기상청·한국해양교통안전공단 값 그대로입니다.<br>" +
+    '<div class="sea-note">기상 자료: <b>기상청 단기예보</b>(오늘~5일: 풍속·기온·날씨·강수) + ' +
+      "<b>기상청 중기해상예보·중기기온</b>(6~10일: 해상날씨·기온·강수확률) + " +
+      "<b>Open-Meteo</b>(파고 0.1m 단위 · 11~16일: 날씨·강수·풍속·기온)<br>" +
+      "🌊 <b>파고(지금·예보)</b>는 Open-Meteo 해양 모델(0.1m 단위) 값을 쓰고, 그날 값이 없을 때만 기상청 단기예보 WAV(0.5m 단위)·중기해상 범위로 대신합니다. 기온·강수·바람과 운항 통제는 기상청·한국해양교통안전공단 값 그대로입니다.<br>" +
       "⛴️ <b>오늘 실제 운항</b>은 공공데이터포털 오픈API(15142302) <b>한국해양교통안전공단</b> 운항 스케줄 정보로, 정상·증선·증회는 <b>운항</b>, 통제는 <b>통제</b>, 비운은 <b>비운항</b>으로 묶어 섬별로 보여 줍니다(5분 갱신). 일부만 통제된 날은 '일부 통제'로 표시되고, 맨 아래에서 운항정보를 한 번 더 확인해 주세요.<br>" +
       "💧 강수량은 하루 합계, %는 그날 강수확률(최대) · 비·눈이 예보된 날은 파란색으로 표시합니다.<br>" +
       "6~10일 파고·날씨는 기상청 <b>중기해상예보(서해중부 먼바다)</b> 값이라 8개 섬이 같고, 최저~최고 범위로 나옵니다. 강수확률은 수도권 육상예보, 기온은 백령도 지점 값이에요.<br>" +
       "11일 이후 파고 예보가 없으면 파고 대신 <b>최대 풍속</b> 배지(12.0m/s 이상 강풍 주의 · 9.0~11.9 바람 약간 · 9.0 미만 바람 양호)와 <b>최고/최저 기온</b>을 보여 줍니다.<br>" +
       "파고는 바다 격자 예보값이라 섬 주변 실제 바다와 조금 다를 수 있어요.<br>" +
-      '<b>자료 출처: 기상청(단기·중기예보, 공공누리 제1유형) · 한국해양교통안전공단(운항 정보, 공공데이터포털) · Open-Meteo(지금 파고·11~16일)</b> — ' +
+      '<b>자료 출처: 기상청(기온·바람·강수, 공공누리 제1유형) · 한국해양교통안전공단(운항 정보, 공공데이터포털) · Open-Meteo(파고 0.1m·11~16일)</b> — ' +
       '<a href="https://www.weather.go.kr/w/index.do" target="_blank" rel="noopener">기상청</a> · ' +
       '<a href="https://www.kogl.or.kr" target="_blank" rel="noopener">공공누리</a> · ' +
       '<a href="https://www.komsa.or.kr" target="_blank" rel="noopener">한국해양교통안전공단</a> · ' +
