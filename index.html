@@ -919,6 +919,8 @@ mark.hl{background:#fff0ae;color:inherit;border-radius:3px;padding:0 1px;font-we
 .sea-rain{margin-top:1px;font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sea-rain.wet{color:#0b6d8f}
 .sea-tip{margin:8px 2px 0;font-size:9.5px;font-weight:700;color:var(--ink3);letter-spacing:-.02em}
+.sea-srcnote{margin:5px 2px 9px;font-size:9px;font-weight:600;color:var(--ink3);letter-spacing:-.02em;line-height:1.5}
+.sea-srcnote b{font-weight:800;color:var(--ink2)}
 .sea-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#cbd5e3}
 .sea-card.ok:before{background:#158f5f}
 .sea-card.warn:before{background:#e08a00}
@@ -6217,6 +6219,7 @@ function seaIslandHtml(it, d) {
   return '<div class="sea-cur"><div class="ct"><b>' + esc(it.name) + "</b><small>" + esc(it.area) + "</small>" +
       '<span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
       '<div class="cm">' + cur + "</div>" + ferryBig + "</div>" +
+    '<div class="sea-srcnote">＊ 지금 파고는 <b>Open-Meteo 해양 모델</b>(0.1m 단위), 아래 날짜별 예보는 <b>기상청 단기·중기예보</b>(0.5m 단위) 값이에요.</div>' +
     '<div class="sea-cc">' +
       '<span class="ok">파고 양호 <b>' + ok + "</b></span>" +
       '<span class="warn">주의 <b>' + warn + "</b></span>" +
@@ -6242,7 +6245,7 @@ function seaAllHtml(d) {
       '<span class="high">높음 <b>' + cnt.high + "</b></span>" +
       (cnt.na ? '<span class="na">정보없음 <b>' + cnt.na + "</b></span>" : "") + "</div>" +
     cards +
-    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·날씨·강수로 바로 넘어갑니다.</div>';
+    '<div class="sea-tip">섬 카드를 누르면 그 섬의 16일 파고·날씨·강수로 바로 넘어갑니다. 지금 파고는 Open-Meteo 해양(0.1m 단위), 예보 최고는 기상청(0.5m 단위) 값이에요.</div>';
 }
 
 function seaBodyHtml() {
