@@ -6219,7 +6219,9 @@ function seaIslandHtml(it, d) {
   return '<div class="sea-cur"><div class="ct"><b>' + esc(it.name) + "</b><small>" + esc(it.area) + "</small>" +
       '<span class="sea-badge ' + b.cls + '">' + b.label + "</span></div>" +
       '<div class="cm">' + cur + "</div>" + ferryBig + "</div>" +
-    '<div class="sea-srcnote">＊ 지금 파고는 <b>Open-Meteo 해양 모델</b>(0.1m 단위), 아래 날짜별 예보는 <b>기상청 단기·중기예보</b>(0.5m 단위) 값이에요.</div>' +
+    '<div class="sea-srcnote">' + (it.waveNow === "kma"
+      ? '＊ 지금 파고는 <b>기상청 단기예보</b>(0.5m 단위) 값이에요 — Open-Meteo 해양 값은 이번에 받지 못했어요.'
+      : '＊ 지금 파고는 <b>Open-Meteo 해양 모델</b>(0.1m 단위), 아래 날짜별 예보는 <b>기상청 단기·중기예보</b>(0.5m 단위) 값이에요.') + '</div>' +
     '<div class="sea-cc">' +
       '<span class="ok">파고 양호 <b>' + ok + "</b></span>" +
       '<span class="warn">주의 <b>' + warn + "</b></span>" +
