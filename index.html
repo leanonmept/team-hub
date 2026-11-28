@@ -6901,6 +6901,16 @@ function isStandaloneApp() {
   } catch (e) { return false; }
 }
 
+/* 아이폰·아이패드 판별(아이패드OS 는 MacIntel 로 옵니다).
+   iOS 는 <a download> 의 data: URL 저장이 막혀 있어 공유 시트(navigator.share)로 넘깁니다. */
+function isIOSDevice() {
+  try {
+    const ua = navigator.userAgent || "";
+    if (/iPad|iPhone|iPod/.test(ua)) return true;
+    return navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1;
+  } catch (e) { return false; }
+}
+
 function printDutySheet() {
   const P = dutyPrintData();
   const cvs = dutyPrintCanvas();
@@ -6908,6 +6918,7 @@ function printDutySheet() {
   const fname = P.fileBase + ".png";
   const title = P.team + " " + P.y + "년 " + (P.m + 1) + "월 당직표";
   const standalone = isStandaloneApp();
+  const ios = isIOSDevice();
 
   /* 공유 시트에 바로 넘길 File 을 미리 만들어 둡니다(아이폰은 클릭 순간의 사용자 동작이 필요). */
   let shareFile = null, shareBlob = null;
@@ -6926,9 +6937,13 @@ function printDutySheet() {
       '<div class="dsp-cap"><b>A4 가로 미리보기</b><span>PNG ' + DUTY_PNG_W + "×" + DUTY_PNG_H + "</span></div>" +
       '<div class="dsp-prev"><img id="dspImg" src="' + dataUrl + '" alt="' + esc(title) + ' 미리보기"></div>' +
       '<div class="dsp-note">' +
-        (standalone
-          ? "홈 화면 앱에서는 <b>🖨️ 바로 인쇄</b>가 열리지 않아요. <b>공유 / 아이폰 인쇄</b>를 누른 뒤 <b>프린트</b> 또는 <b>파일에 저장</b>을 골라 주세요."
-          : "미리보기를 길게 누르면 사진에 저장할 수 있어요. 인쇄는 <b>바로 인쇄</b> 또는 <b>공유</b>에서 프린트를 고르세요.") +
+        (ios
+          ? (standalone
+            ? "<b>🖼️ 이미지 저장</b>이나 <b>📤 공유 / 아이폰 인쇄</b>를 누르면 공유 시트가 열려 <b>이미지 저장 · 프린트 · 파일에 저장</b>을 고를 수 있어요. 홈 화면 앱에서는 <b>🖨️ 바로 인쇄</b> 창이 열리지 않습니다."
+            : "<b>🖼️ 이미지 저장</b>이나 <b>📤 공유 / 아이폰 인쇄</b>를 누르면 공유 시트에서 <b>이미지 저장 · 프린트 · 파일에 저장</b>을 고를 수 있어요. 미리보기를 길게 눌러 사진에 저장할 수도 있습니다.")
+          : (standalone
+            ? "홈 화면 앱에서는 <b>🖨️ 바로 인쇄</b>가 열리지 않아요. <b>공유 / 아이폰 인쇄</b>를 누른 뒤 <b>프린트</b> 또는 <b>파일에 저장</b>을 골라 주세요."
+            : "미리보기를 길게 누르면 사진에 저장할 수 있어요. 인쇄는 <b>바로 인쇄</b> 또는 <b>공유</b>에서 프린트를 고르세요.")) +
       "</div>" +
     "</div>";
 
@@ -6960,8 +6975,27 @@ function printDutySheet() {
         openPngTab();
       });
 
-      /* 2) 이미지 저장 — PNG 다운로드 */
+      /* 2) 이미지 저장 — 아이폰은 공유 시트(이미지 저장 · 파일에 저장), 안드로이드·PC 는 PNG 다운로드 */
       $("#dspSave").addEventListener("click", () => {
+        if (ios) {
+          const file = shareFile;
+          if (!file) {
+            toast("이미지를 준비하고 있어요. 잠시 뒤 다시 눌러 주세요.");
+            return;
+          }
+          let canFiles = false;
+          try { canFiles = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canFiles = false; }
+          if (canFiles) {
+            navigator.share({ files: [file], title: title }).catch(err => {
+              if (err && err.name === "AbortError") return;
+              openPngTab();
+            });
+            return;
+          }
+          /* iOS 인데 파일 공유가 안 되는 환경(구버전 등) → 새 탭 이미지로 안내 */
+          openPngTab();
+          return;
+        }
         const a = document.createElement("a");
         a.href = dataUrl; a.download = fname; a.rel = "noopener";
         document.body.appendChild(a); a.click(); a.remove();
